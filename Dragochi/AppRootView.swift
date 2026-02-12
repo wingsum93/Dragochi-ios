@@ -44,6 +44,8 @@ struct AppRootView: View {
             SettingsView(store: settingsStore)
                 .tabItem { Label("Settings", systemImage: "gearshape") }
         }
+        .tint(DragonTheme.current.color(.tabTintShine))
+        
         .sheet(item: $addSessionDraft) { draft in
             AddSessionView(
                 store: AddSessionStore(

@@ -10,6 +10,7 @@ import SwiftUI
 enum DragonColor: CaseIterable {
     case bgBase
     case surfaceCard
+    case tabTintShine
     case accentPrimary
     case accentPrimaryDim
     case accentPrimarySoft
@@ -27,6 +28,8 @@ enum DragonColor: CaseIterable {
             return Color(hex: 0x102216)
         case .surfaceCard:
             return Color(hex: 0x152E1E)
+        case .tabTintShine:
+            return Color(hex: 0x80FFCC)
         case .accentPrimary:
             return Color(hex: 0x13EC5B)
         case .accentPrimaryDim:
@@ -59,4 +62,3 @@ private extension Color {
         self.init(red: red, green: green, blue: blue, opacity: opacity)
     }
 }
-
