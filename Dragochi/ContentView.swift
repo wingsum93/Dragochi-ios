@@ -10,7 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @State private var selectedGameID = "valorant"
     @State private var selectedPlatformID = "pc"
-    @State private var selectedTeammates: Set<String> = ["alex", "sarah"]
+    @State private var selectedTeammates: Set<String> = ["m1", "f1"]
     @State private var notes = ""
 
     private let games: [GameCardModel] = [
@@ -26,9 +26,21 @@ struct ContentView: View {
     ]
 
     private let teammates: [TeammateChipModel] = [
-        .init(id: "alex", name: "Alex", avatarURL: URL(string: "https://www.figma.com/api/mcp/asset/daeb9f28-00fe-4f74-9100-3d79e9f913ff")),
-        .init(id: "sarah", name: "Sarah", avatarURL: URL(string: "https://www.figma.com/api/mcp/asset/aa3cf75c-d478-45f8-b314-44c1dbf80977")),
-        .init(id: "mike", name: "Mike", avatarURL: URL(string: "https://www.figma.com/api/mcp/asset/b92fdb2f-e40f-40eb-9db7-3e9c1a1eb22d"))
+        .init(id: "m1", name: "Mason", avatarAssetName: "M1"),
+        .init(id: "m2", name: "Kai", avatarAssetName: "M2"),
+        .init(id: "m3", name: "Noah", avatarAssetName: "M3"),
+        .init(id: "m4", name: "Leo", avatarAssetName: "M4"),
+        .init(id: "m5", name: "Aiden", avatarAssetName: "M5"),
+        .init(id: "m6", name: "Ryan", avatarAssetName: "M6"),
+        .init(id: "m7", name: "Evan", avatarAssetName: "M7"),
+        .init(id: "m8", name: "Jude", avatarAssetName: "M8"),
+        .init(id: "m9", name: "Liam", avatarAssetName: "M9"),
+        .init(id: "m10", name: "Owen", avatarAssetName: "M10"),
+        .init(id: "f1", name: "Ava", avatarAssetName: "F1"),
+        .init(id: "f2", name: "Mia", avatarAssetName: "F2"),
+        .init(id: "f3", name: "Luna", avatarAssetName: "F3"),
+        .init(id: "f4", name: "Ivy", avatarAssetName: "F4"),
+        .init(id: "f5", name: "Nora", avatarAssetName: "F5")
     ]
 
     var body: some View {
@@ -95,7 +107,7 @@ struct ContentView: View {
                                 }
                             }
                             DragonTeammateAvatarChip(
-                                model: .init(id: "add", name: "Add", avatarURL: nil),
+                                model: .init(id: "add", name: "Add"),
                                 state: .add,
                                 action: {}
                             )

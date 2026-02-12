@@ -46,7 +46,20 @@ struct GameCardModel: Identifiable, Hashable {
 struct TeammateChipModel: Identifiable, Hashable {
     let id: String
     let name: String
+    let avatarAssetName: String?
     let avatarURL: URL?
+
+    init(
+        id: String,
+        name: String,
+        avatarAssetName: String? = nil,
+        avatarURL: URL? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.avatarAssetName = avatarAssetName
+        self.avatarURL = avatarURL
+    }
 }
 
 struct PlatformOption: Identifiable, Hashable {
@@ -438,21 +451,7 @@ struct DragonTeammateAvatarChip: View {
                     .frame(width: 56, height: 56)
                     .opacity(state == .selected ? 1 : 0)
 
-                AsyncImage(url: model.avatarURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    default:
-                        Circle()
-                            .fill(DragonTheme.current.color(.surfaceCard))
-                            .overlay {
-                                Image(systemName: "person.fill")
-                                    .foregroundStyle(DragonTheme.current.color(.textTertiary))
-                            }
-                    }
-                }
+                avatarImage
                 .frame(width: 52, height: 52)
                 .clipShape(Circle())
                 .overlay {
@@ -460,6 +459,37 @@ struct DragonTeammateAvatarChip: View {
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private var avatarImage: some View {
+        if let avatarAssetName = model.avatarAssetName {
+            Image(avatarAssetName)
+                .resizable()
+                .scaledToFill()
+        } else if let avatarURL = model.avatarURL {
+            AsyncImage(url: avatarURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                default:
+                    fallbackAvatar
+                }
+            }
+        } else {
+            fallbackAvatar
+        }
+    }
+
+    private var fallbackAvatar: some View {
+        Circle()
+            .fill(DragonTheme.current.color(.surfaceCard))
+            .overlay {
+                Image(systemName: "person.fill")
+                    .foregroundStyle(DragonTheme.current.color(.textTertiary))
+            }
     }
 
     private var labelColor: Color {

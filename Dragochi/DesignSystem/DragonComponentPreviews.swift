@@ -17,9 +17,9 @@ struct DragonComponentStateMatrixView: View {
     ]
 
     private let teammates: [TeammateChipModel] = [
-        .init(id: "alex", name: "Alex", avatarURL: URL(string: "https://www.figma.com/api/mcp/asset/daeb9f28-00fe-4f74-9100-3d79e9f913ff")),
-        .init(id: "sarah", name: "Sarah", avatarURL: URL(string: "https://www.figma.com/api/mcp/asset/aa3cf75c-d478-45f8-b314-44c1dbf80977")),
-        .init(id: "mike", name: "Mike", avatarURL: URL(string: "https://www.figma.com/api/mcp/asset/b92fdb2f-e40f-40eb-9db7-3e9c1a1eb22d"))
+        .init(id: "m1", name: "Mason", avatarAssetName: "M1"),
+        .init(id: "f1", name: "Ava", avatarAssetName: "F1"),
+        .init(id: "legacy-url", name: "Legacy URL", avatarURL: URL(string: "https://www.figma.com/api/mcp/asset/daeb9f28-00fe-4f74-9100-3d79e9f913ff"))
     ]
 
     var body: some View {
@@ -54,7 +54,13 @@ struct DragonComponentStateMatrixView: View {
                 HStack(spacing: 16) {
                     DragonTeammateAvatarChip(model: teammates[0], state: .selected) {}
                     DragonTeammateAvatarChip(model: teammates[1], state: .unselected) {}
-                    DragonTeammateAvatarChip(model: .init(id: "add", name: "Add", avatarURL: nil), state: .add) {}
+                    DragonTeammateAvatarChip(model: .init(id: "add", name: "Add"), state: .add) {}
+                }
+
+                DragonSectionHeader(title: "Avatar URL Compatibility")
+                HStack(spacing: 16) {
+                    DragonTeammateAvatarChip(model: teammates[2], state: .unselected) {}
+                    DragonTeammateAvatarChip(model: .init(id: "fallback", name: "Fallback"), state: .unselected) {}
                 }
 
                 DragonSectionHeader(title: "Notes States")
