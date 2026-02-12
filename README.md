@@ -4,7 +4,7 @@ Dragochi 是一個遊戲時間追蹤 App，目標是先把 MVP 做到可用，�
 
 ## Current status: planning stage
 
-目前程式碼仍以 SwiftUI 模板為主（例如 `/Users/ericho/iosHub/Dragochi/Dragochi/ContentView.swift`、`/Users/ericho/iosHub/Dragochi/Dragochi/Item.swift`）。  
+目前程式碼仍以 SwiftUI 模板為主（例如 `/Users/ericho/iosHub/Dragochi/Dragochi/ContentView.swift`、`/Users/ericho/iosHub/Dragochi/Dragochi/DragochiApp.swift`）。  
 以下功能屬於規劃中，尚未完整落地為可用產品流程。
 
 詳細規格請看：[doc/detail-function.md](doc/detail-function.md)
@@ -29,4 +29,3 @@ Dragochi 是一個遊戲時間追蹤 App，目標是先把 MVP 做到可用，�
 ## 文件導覽
 
 - 詳細功能規格：`/Users/ericho/iosHub/Dragochi/doc/detail-function.md`
-
