@@ -20,7 +20,7 @@ struct DragochiApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            AppRootView(container: sharedModelContainer)
         }
         .modelContainer(sharedModelContainer)
     }
