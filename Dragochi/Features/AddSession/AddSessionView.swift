@@ -25,6 +25,7 @@ struct AddSessionView: View {
                     trendText: "+15% vs avg",
                     trendDirection: .up
                 )
+                .accessibilityIdentifier("hero.addSessionTitle")
 
                 VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
                     DragonSectionHeader(
@@ -114,6 +115,7 @@ struct AddSessionView: View {
                     state: store.state.isSaving ? .loading : .enabled,
                     action: { store.send(.saveTapped) }
                 )
+                .accessibilityIdentifier("action.saveSession")
                 DragonTextButton(
                     title: "Discard Entry",
                     state: .enabled,
@@ -121,6 +123,7 @@ struct AddSessionView: View {
                 )
             }
         }
+        .accessibilityIdentifier("screen.addSession")
         .onAppear { store.send(.onAppear) }
     }
 

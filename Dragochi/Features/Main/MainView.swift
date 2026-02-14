@@ -28,6 +28,7 @@ struct MainView: View {
             .padding(.horizontal, DragonTheme.current.spacing(.lg))
             .padding(.top, DragonTheme.current.spacing(.lg))
         }
+        .accessibilityIdentifier("screen.home")
         .onAppear { store.send(.onAppear) }
         .onReceive(timer) { _ in
             store.send(.tick)
@@ -58,6 +59,7 @@ struct MainView: View {
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("action.openAddSession")
         }
     }
 
@@ -77,6 +79,7 @@ struct MainView: View {
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("action.openAddSession")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

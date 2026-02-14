@@ -26,6 +26,7 @@ struct StatsView: View {
                 .padding(.bottom, 80)
             }
         }
+        .accessibilityIdentifier("screen.stats")
         .onAppear { store.send(.onAppear) }
     }
 
