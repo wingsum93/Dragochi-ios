@@ -16,10 +16,18 @@ struct MVIStoresTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
+
+            _ = try dependencies.gameRepository.create(name: "Genshin", imageAssetName: "genshin")
+            _ = try dependencies.gameRepository.create(name: "League of Legends", imageAssetName: "lol")
+
             let store = MainStore(dependencies: dependencies)
 
             store.send(.onAppear)
             #expect(!store.state.games.isEmpty)
+            let gameAssets = Set(store.state.games.compactMap(\.imageAssetName))
+            #expect(gameAssets.isSuperset(of: ["apex", "lol", "wwz", "clash_royale", "volarant"]))
+            #expect(store.state.games.contains(where: { $0.name == "Genshin" }) == false)
+            #expect(store.state.games.first(where: { $0.imageAssetName == "lol" })?.name == "LOL")
 
             store.send(.startStopTapped)
             #expect(store.state.isRunning)

@@ -16,8 +16,8 @@ final class SwiftDataGameRepository: GameRepository {
         self.modelContext = modelContext
     }
 
-    func create(name: String, icon: String?) throws -> GameEntity {
-        let record = GameRecord(name: name, icon: icon)
+    func create(name: String, imageAssetName: String?) throws -> GameEntity {
+        let record = GameRecord(name: name, imageAssetName: imageAssetName, icon: imageAssetName)
         modelContext.insert(record)
         try modelContext.save()
         return record.toEntity()
@@ -26,12 +26,18 @@ final class SwiftDataGameRepository: GameRepository {
     func upsert(_ game: GameEntity) throws -> GameEntity {
         if let existing = try fetchRecord(id: game.id) {
             existing.name = game.name
-            existing.icon = game.icon
+            existing.imageAssetName = game.imageAssetName
+            existing.icon = game.imageAssetName
             try modelContext.save()
             return existing.toEntity()
         }
 
-        let record = GameRecord(id: game.id, name: game.name, icon: game.icon)
+        let record = GameRecord(
+            id: game.id,
+            name: game.name,
+            imageAssetName: game.imageAssetName,
+            icon: game.imageAssetName
+        )
         modelContext.insert(record)
         try modelContext.save()
         return record.toEntity()
@@ -59,4 +65,3 @@ final class SwiftDataGameRepository: GameRepository {
         return try modelContext.fetch(descriptor).first
     }
 }
-

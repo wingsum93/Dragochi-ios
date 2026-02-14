@@ -18,11 +18,13 @@ struct SwiftDataRepositoriesTests {
             let modelContext = ModelContext(container)
             let repository = SwiftDataGameRepository(modelContext: modelContext)
 
-            let created = try repository.create(name: "Valorant", icon: nil)
+            let created = try repository.create(name: "Valorant", imageAssetName: "volarant")
             #expect(created.name == "Valorant")
+            #expect(created.imageAssetName == "volarant")
 
             let fetched = try repository.fetch(id: created.id)
             #expect(fetched?.id == created.id)
+            #expect(fetched?.imageAssetName == "volarant")
 
             let all = try repository.fetchAll()
             #expect(all.count == 1)
@@ -65,7 +67,7 @@ struct SwiftDataRepositoriesTests {
             let friendRepository = SwiftDataFriendRepository(modelContext: modelContext)
             let sessionRepository = SwiftDataSessionRepository(modelContext: modelContext)
 
-            let game = try gameRepository.create(name: "LoL", icon: nil)
+            let game = try gameRepository.create(name: "LOL", imageAssetName: "lol")
             let friend1 = try friendRepository.create(name: "Aiden", handle: nil)
             let friend2 = try friendRepository.create(name: "Kai", handle: nil)
             let friend3 = try friendRepository.create(name: "Noah", handle: nil)
@@ -116,4 +118,3 @@ struct SwiftDataRepositoriesTests {
         }
     }
 }
-

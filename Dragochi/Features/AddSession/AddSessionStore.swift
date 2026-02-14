@@ -149,10 +149,10 @@ final class AddSessionStore: ObservableObject {
             GameCardModel(
                 id: game.id.uuidString,
                 title: game.name,
-                imageURL: game.icon.flatMap { URL(string: $0) }
+                imageAssetName: game.imageAssetName
             )
         }
-        return cards + [GameCardModel(id: "add", title: "Add", imageURL: nil)]
+        return cards + [GameCardModel(id: "add", title: "Add", imageAssetName: nil)]
     }
 
     private func makeTeammateChips(from friends: [FriendEntity]) -> [TeammateChipModel] {

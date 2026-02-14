@@ -14,6 +14,7 @@ enum DragonTypography {
     case displayTimer
     case titleSection
     case labelSmall
+    case gameCardLabel
     case body
     case cta
 
@@ -25,6 +26,8 @@ enum DragonTypography {
             return dragonFont(named: "BeVietnamPro-SemiBold", size: 14, weight: .semibold, relativeTo: .headline)
         case .labelSmall:
             return dragonFont(named: "BeVietnamPro-Medium", size: 12, weight: .medium, relativeTo: .subheadline)
+        case .gameCardLabel:
+            return dragonFont(named: "BeVietnamPro-Medium", size: 10.8, weight: .medium, relativeTo: .subheadline)
         case .body:
             return dragonFont(named: "BeVietnamPro-Regular", size: 14, weight: .regular, relativeTo: .body)
         case .cta:
@@ -46,4 +49,3 @@ private func dragonFont(
 #endif
     return .system(size: size, weight: weight, design: .default)
 }
-

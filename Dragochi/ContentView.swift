@@ -14,9 +14,9 @@ struct ContentView: View {
     @State private var notes = ""
 
     private let games: [GameCardModel] = [
-        .init(id: "valorant", title: "Valorant", imageURL: URL(string: "https://www.figma.com/api/mcp/asset/5e99ed29-61aa-429d-9859-4ac4ee9efaa0")),
-        .init(id: "lol", title: "LoL", imageURL: URL(string: "https://www.figma.com/api/mcp/asset/c2898203-26fd-4144-8c9c-086806a4a809")),
-        .init(id: "genshin", title: "Genshin", imageURL: URL(string: "https://www.figma.com/api/mcp/asset/1b2b8dae-8c5c-4f6f-9a74-b1dbf1f7d174"))
+        .init(id: "valorant", title: "Valorant", imageAssetName: "volarant"),
+        .init(id: "lol", title: "LOL", imageAssetName: "lol"),
+        .init(id: "apex", title: "Apex Legends", imageAssetName: "apex")
     ]
 
     private let platforms: [PlatformOption] = [
@@ -71,7 +71,7 @@ struct ContentView: View {
                                 }
                             }
                             DragonSelectableGameCard(
-                                model: .init(id: "add", title: "Add", imageURL: nil),
+                                model: .init(id: "add", title: "Add", imageAssetName: nil),
                                 state: .add,
                                 action: {}
                             )

@@ -10,6 +10,12 @@ import Combine
 
 @MainActor
 final class MainStore: ObservableObject {
+    private struct CanonicalGame {
+        let name: String
+        let imageAssetName: String
+        let legacyNames: [String]
+    }
+
     struct State: Equatable {
         var selectedGameID: UUID?
         var selectedPlatform: Platform = .pc
@@ -44,6 +50,13 @@ final class MainStore: ObservableObject {
     private let sessionRepository: SessionRepository
     private let gameRepository: GameRepository
     private let friendRepository: FriendRepository
+    private let canonicalGames: [CanonicalGame] = [
+        .init(name: "Apex Legends", imageAssetName: "apex", legacyNames: []),
+        .init(name: "LOL", imageAssetName: "lol", legacyNames: ["league of legends", "lol"]),
+        .init(name: "World War Z", imageAssetName: "wwz", legacyNames: ["wwz"]),
+        .init(name: "Clash Royale", imageAssetName: "clash_royale", legacyNames: ["clash royale", "clash_royale"]),
+        .init(name: "Valorant", imageAssetName: "volarant", legacyNames: ["valorant"])
+    ]
 
     init(dependencies: AppDependencies) {
         self.sessionRepository = dependencies.sessionRepository
@@ -85,10 +98,7 @@ final class MainStore: ObservableObject {
 
     private func loadInitialData() {
         do {
-            var games = try gameRepository.fetchAll()
-            if games.isEmpty {
-                games = try seedGames()
-            }
+            let games = try syncGamesWithAssets()
             var friends = try friendRepository.fetchAll()
             if friends.isEmpty {
                 friends = try seedFriends()
@@ -96,7 +106,10 @@ final class MainStore: ObservableObject {
 
             state.games = games
             state.friends = friends
-            if state.selectedGameID == nil {
+            if let selectedGameID = state.selectedGameID,
+               games.contains(where: { $0.id == selectedGameID }) == false {
+                state.selectedGameID = games.first?.id
+            } else if state.selectedGameID == nil {
                 state.selectedGameID = games.first?.id
             }
             state.gameCards = makeGameCards(from: games)
@@ -165,15 +178,68 @@ final class MainStore: ObservableObject {
         )
     }
 
-    private func seedGames() throws -> [GameEntity] {
-        let seed: [(String, String)] = [
-            ("Valorant", "https://www.figma.com/api/mcp/asset/5e99ed29-61aa-429d-9859-4ac4ee9efaa0"),
-            ("LoL", "https://www.figma.com/api/mcp/asset/c2898203-26fd-4144-8c9c-086806a4a809"),
-            ("Genshin", "https://www.figma.com/api/mcp/asset/1b2b8dae-8c5c-4f6f-9a74-b1dbf1f7d174")
-        ]
-        return try seed.map { name, icon in
-            try gameRepository.create(name: name, icon: icon)
+    private func syncGamesWithAssets() throws -> [GameEntity] {
+        var games = try gameRepository.fetchAll()
+
+        for canonical in canonicalGames {
+            if let index = games.firstIndex(where: { $0.imageAssetName == canonical.imageAssetName }) {
+                var existing = games[index]
+                if existing.name != canonical.name || existing.imageAssetName != canonical.imageAssetName {
+                    existing.name = canonical.name
+                    existing.imageAssetName = canonical.imageAssetName
+                    games[index] = try gameRepository.upsert(existing)
+                }
+                continue
+            }
+
+            if let index = games.firstIndex(where: { isCanonicalMatch(gameName: $0.name, canonical: canonical) }) {
+                var existing = games[index]
+                if existing.name != canonical.name || existing.imageAssetName != canonical.imageAssetName {
+                    existing.name = canonical.name
+                    existing.imageAssetName = canonical.imageAssetName
+                    games[index] = try gameRepository.upsert(existing)
+                }
+                continue
+            }
+
+            let created = try gameRepository.create(
+                name: canonical.name,
+                imageAssetName: canonical.imageAssetName
+            )
+            games.append(created)
         }
+
+        return try removeLegacyGames(from: games)
+    }
+
+    private func removeLegacyGames(from games: [GameEntity]) throws -> [GameEntity] {
+        var remainingGames = games
+        let legacyGames = remainingGames.filter {
+            normalizeGameName($0.name) == "genshin" || $0.imageAssetName == "genshin"
+        }
+
+        for legacyGame in legacyGames {
+            try gameRepository.delete(id: legacyGame.id)
+        }
+
+        remainingGames.removeAll {
+            normalizeGameName($0.name) == "genshin" || $0.imageAssetName == "genshin"
+        }
+        return remainingGames
+    }
+
+    private func isCanonicalMatch(gameName: String, canonical: CanonicalGame) -> Bool {
+        let normalizedName = normalizeGameName(gameName)
+        if normalizedName == normalizeGameName(canonical.name) {
+            return true
+        }
+        return canonical.legacyNames.contains { normalizeGameName($0) == normalizedName }
+    }
+
+    private func normalizeGameName(_ name: String) -> String {
+        name
+            .lowercased()
+            .filter { $0.isLetter || $0.isNumber }
     }
 
     private func seedFriends() throws -> [FriendEntity] {
@@ -191,10 +257,10 @@ final class MainStore: ObservableObject {
             GameCardModel(
                 id: game.id.uuidString,
                 title: game.name,
-                imageURL: game.icon.flatMap { URL(string: $0) }
+                imageAssetName: game.imageAssetName
             )
         }
-        return cards + [GameCardModel(id: "add", title: "Add", imageURL: nil)]
+        return cards + [GameCardModel(id: "add", title: "Add", imageAssetName: nil)]
     }
 
     private func makeTeammateChips(from friends: [FriendEntity]) -> [TeammateChipModel] {

@@ -12,22 +12,28 @@ import SwiftData
 final class GameRecord {
     var id: UUID
     var name: String
+    var imageAssetName: String?
     var icon: String?
 
     init(
         id: UUID = UUID(),
         name: String,
+        imageAssetName: String? = nil,
         icon: String? = nil
     ) {
         self.id = id
         self.name = name
-        self.icon = icon
+        self.imageAssetName = imageAssetName
+        self.icon = icon ?? imageAssetName
     }
 }
 
 extension GameRecord {
     func toEntity() -> GameEntity {
-        GameEntity(id: id, name: name, icon: icon)
+        GameEntity(
+            id: id,
+            name: name,
+            imageAssetName: imageAssetName ?? icon
+        )
     }
 }
-

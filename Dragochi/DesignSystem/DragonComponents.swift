@@ -40,7 +40,7 @@ enum TrendDirection {
 struct GameCardModel: Identifiable, Hashable {
     let id: String
     let title: String
-    let imageURL: URL?
+    let imageAssetName: String?
 }
 
 struct TeammateChipModel: Identifiable, Hashable {
@@ -245,7 +245,7 @@ struct DragonSelectableGameCard: View {
                     .frame(width: 80, height: 112)
 
                     Text(model.title)
-                        .font(DragonTheme.current.font(.labelSmall))
+                        .font(DragonTheme.current.font(.gameCardLabel))
                         .foregroundStyle(.white)
                         .padding(.leading, 8)
                         .padding(.bottom, 8)
@@ -282,13 +282,12 @@ struct DragonSelectableGameCard: View {
                 .font(.system(size: 24, weight: .regular))
                 .foregroundStyle(DragonTheme.current.color(.textTertiary))
         case .selected, .unselected:
-            AsyncImage(url: model.imageURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image
+            Group {
+                if let imageAssetName = model.imageAssetName {
+                    Image(imageAssetName)
                         .resizable()
                         .scaledToFill()
-                default:
+                } else {
                     LinearGradient(
                         colors: [
                             DragonTheme.current.color(.surfaceCard),
