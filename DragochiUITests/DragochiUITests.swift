@@ -35,7 +35,21 @@ final class DragochiUITests: XCTestCase {
         let app = launchAppForScreenshots()
 
         app.tabBars.buttons["Stats"].tap()
-        waitForElementToAppear(app.staticTexts["Total Playtime"])
+        let totalPlaytime = app.staticTexts["Total Playtime"]
+        let platformBreakdown = app.staticTexts["Platform Breakdown"]
+        let gameBreakdown = app.staticTexts["Game Breakdown"]
+        let previousMonthButton = app.buttons["action.statsPreviousMonth"]
+        let nextMonthButton = app.buttons["action.statsNextMonth"]
+
+        waitForElementToAppear(totalPlaytime)
+        waitForElementToAppear(platformBreakdown)
+        waitForElementToAppear(gameBreakdown)
+        waitForElementToAppear(previousMonthButton)
+        waitForElementToAppear(nextMonthButton)
+
+        XCTAssertGreaterThan(gameBreakdown.frame.minY, platformBreakdown.frame.maxY)
+        XCTAssertFalse(previousMonthButton.isEnabled)
+        XCTAssertFalse(nextMonthButton.isEnabled)
         attachScreenshot(from: app, named: "stats.png")
     }
 

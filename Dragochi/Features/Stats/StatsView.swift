@@ -20,6 +20,7 @@ struct StatsView: View {
                     monthSelector
                     reportSummary
                     platformBreakdown
+                    gameBreakdown
                 }
                 .padding(.horizontal, DragonTheme.current.spacing(.lg))
                 .padding(.top, DragonTheme.current.spacing(.lg))
@@ -44,6 +45,9 @@ struct StatsView: View {
                 Image(systemName: "chevron.left")
             }
             .buttonStyle(.plain)
+            .disabled(!store.state.canGoPreviousMonth)
+            .opacity(store.state.canGoPreviousMonth ? 1 : 0.4)
+            .accessibilityIdentifier("action.statsPreviousMonth")
 
             Spacer()
 
@@ -59,6 +63,9 @@ struct StatsView: View {
                 Image(systemName: "chevron.right")
             }
             .buttonStyle(.plain)
+            .disabled(!store.state.canGoNextMonth)
+            .opacity(store.state.canGoNextMonth ? 1 : 0.4)
+            .accessibilityIdentifier("action.statsNextMonth")
         }
         .foregroundStyle(DragonTheme.current.color(.accentPrimary))
     }
@@ -93,6 +100,30 @@ struct StatsView: View {
             ForEach(store.state.report?.byPlatform ?? [], id: \.platform) { item in
                 HStack {
                     Text(item.platform.rawValue.uppercased())
+                        .font(DragonTheme.current.font(.labelSmall))
+                        .foregroundStyle(DragonTheme.current.color(.textPrimary))
+                    Spacer()
+                    Text(formatDuration(item.durationSeconds))
+                        .font(DragonTheme.current.font(.labelSmall))
+                        .foregroundStyle(DragonTheme.current.color(.accentPrimary))
+                }
+                .padding(.vertical, 6)
+            }
+        }
+        .padding(DragonTheme.current.spacing(.md))
+        .background(DragonTheme.current.color(.surfaceCard))
+        .clipShape(RoundedRectangle(cornerRadius: DragonTheme.current.radius(.card), style: .continuous))
+    }
+
+    private var gameBreakdown: some View {
+        VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
+            Text("Game Breakdown")
+                .font(DragonTheme.current.font(.labelSmall))
+                .foregroundStyle(DragonTheme.current.color(.textTertiary))
+
+            ForEach(Array((store.state.report?.byGame ?? []).enumerated()), id: \.offset) { _, item in
+                HStack {
+                    Text(store.gameName(for: item.gameID).uppercased())
                         .font(DragonTheme.current.font(.labelSmall))
                         .foregroundStyle(DragonTheme.current.color(.textPrimary))
                     Spacer()

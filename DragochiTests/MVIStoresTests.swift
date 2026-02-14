@@ -189,6 +189,86 @@ struct MVIStoresTests {
     }
 
     @Test
+    func statsStore_navigationSkipsEmptyMonths() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+
+            var calendar = Calendar.current
+
+            func monthStart(_ year: Int, _ month: Int) -> Date {
+                let components = DateComponents(year: year, month: month, day: 1, hour: 12)
+                let date = calendar.date(from: components) ?? .distantPast
+                return calendar.dateInterval(of: .month, for: date)?.start ?? date
+            }
+
+            func date(_ year: Int, _ month: Int, _ day: Int, _ hour: Int, _ minute: Int) -> Date {
+                let components = DateComponents(year: year, month: month, day: day, hour: hour, minute: minute)
+                return calendar.date(from: components) ?? .distantPast
+            }
+
+            _ = try dependencies.sessionRepository.create(
+                startAt: date(2025, 1, 10, 10, 0),
+                endAt: date(2025, 1, 10, 10, 30),
+                platform: .pc,
+                gameID: nil,
+                durationSeconds: nil,
+                note: nil,
+                friendIDs: []
+            )
+
+            _ = try dependencies.sessionRepository.create(
+                startAt: date(2025, 3, 10, 10, 0),
+                endAt: date(2025, 3, 10, 11, 0),
+                platform: .pc,
+                gameID: nil,
+                durationSeconds: nil,
+                note: nil,
+                friendIDs: []
+            )
+
+            let januaryStart = monthStart(2025, 1)
+            let marchStart = monthStart(2025, 3)
+            let store = StatsStore(dependencies: dependencies)
+
+            store.send(.onAppear)
+            #expect(store.state.availableMonthStarts == [januaryStart, marchStart])
+            #expect(store.state.monthStart == marchStart)
+            #expect(store.state.canGoPreviousMonth)
+            #expect(!store.state.canGoNextMonth)
+
+            store.send(.previousMonth)
+            #expect(store.state.monthStart == januaryStart)
+            #expect(!store.state.canGoPreviousMonth)
+            #expect(store.state.canGoNextMonth)
+
+            store.send(.nextMonth)
+            #expect(store.state.monthStart == marchStart)
+            #expect(store.state.canGoPreviousMonth)
+            #expect(!store.state.canGoNextMonth)
+        }
+    }
+
+    @Test
+    func statsStore_noEndedRecordsDisablesNavigation() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let store = StatsStore(dependencies: dependencies)
+
+            let currentMonthStart = Calendar.current.dateInterval(of: .month, for: Date())?.start ?? Date()
+
+            store.send(.onAppear)
+            #expect(store.state.availableMonthStarts.isEmpty)
+            #expect(store.state.monthStart == currentMonthStart)
+            #expect(!store.state.canGoPreviousMonth)
+            #expect(!store.state.canGoNextMonth)
+            #expect(store.state.report != nil)
+            #expect(store.state.report?.totalDurationSeconds == 0)
+        }
+    }
+
+    @Test
     func settingsStore_toggleAndBackup() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
