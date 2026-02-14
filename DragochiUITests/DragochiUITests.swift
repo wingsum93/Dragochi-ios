@@ -8,34 +8,97 @@
 import XCTest
 
 final class DragochiUITests: XCTestCase {
-
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
-    }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    func testCaptureHome() throws {
+        let app = launchAppForScreenshots()
+
+        waitForElementToAppear(app.staticTexts["Quick Track"])
+        attachScreenshot(from: app, named: "home.png")
+    }
+
+    @MainActor
+    func testCaptureHistory() throws {
+        let app = launchAppForScreenshots()
+
+        app.tabBars.buttons["History"].tap()
+        let totalPlaytimeLabel = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "TOTAL PLAYTIME:")).firstMatch
+        waitForElementToAppear(totalPlaytimeLabel)
+        attachScreenshot(from: app, named: "history.png")
+    }
+
+    @MainActor
+    func testCaptureStats() throws {
+        let app = launchAppForScreenshots()
+
+        app.tabBars.buttons["Stats"].tap()
+        waitForElementToAppear(app.staticTexts["Total Playtime"])
+        attachScreenshot(from: app, named: "stats.png")
+    }
+
+    @MainActor
+    func testCaptureSettings() throws {
+        let app = launchAppForScreenshots()
+
+        app.tabBars.buttons["Settings"].tap()
+        waitForElementToAppear(app.staticTexts["iCloud Sync"])
+        attachScreenshot(from: app, named: "settings.png")
+    }
+
+    @MainActor
+    func testCaptureAddSession() throws {
+        let app = launchAppForScreenshots()
+
+        waitForElementToAppear(app.staticTexts["Quick Track"])
+
+        let addButton = app.buttons.matching(NSPredicate(
+            format: "identifier == %@ OR label == %@ OR label == %@",
+            "plus",
+            "+",
+            "Add"
+        )).firstMatch
+        waitForElementToAppear(addButton)
+        addButton.tap()
+
+        waitForElementToAppear(app.staticTexts["Session Complete"])
+        attachScreenshot(from: app, named: "add-session.png")
+    }
+
+    @discardableResult
+    private func launchAppForScreenshots() -> XCUIApplication {
         let app = XCUIApplication()
+        app.launchArguments += [
+            "-AppleLanguages",
+            "(en)",
+            "-AppleLocale",
+            "en_US",
+            "-UIPreferredContentSizeCategoryName",
+            "UICTContentSizeCategoryM",
+            "-ui-testing"
+        ]
+        app.launchEnvironment["TZ"] = "UTC"
+        app.launchEnvironment["UIViewAnimationDurationMultiplier"] = "0"
         app.launch()
-
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        return app
     }
 
-    @MainActor
-    func testLaunchPerformance() throws {
-        // This measures how long it takes to launch your application.
-        measure(metrics: [XCTApplicationLaunchMetric()]) {
-            XCUIApplication().launch()
+    private func waitForElementToAppear(_ element: XCUIElement, timeout: TimeInterval = 10) {
+        let predicate = NSPredicate(format: "exists == true")
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
+        let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
+
+        if result != .completed {
+            XCTFail("Timed out waiting for element to appear: \(element)")
         }
+    }
+
+    private func attachScreenshot(from app: XCUIApplication, named name: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 }
