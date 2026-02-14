@@ -21,16 +21,17 @@ final class SwiftDataSessionRepository: SessionRepository {
         endAt: Date?,
         platform: Platform,
         gameID: UUID?,
+        durationSeconds: Int?,
         note: String?,
         friendIDs: [UUID]
     ) throws -> SessionEntity {
         let game = try fetchGameRecord(id: gameID)
-        let durationSeconds = Self.computeDurationSeconds(startAt: startAt, endAt: endAt)
+        let resolvedDuration = durationSeconds ?? Self.computeDurationSeconds(startAt: startAt, endAt: endAt)
 
         let record = SessionRecord(
             startAt: startAt,
             endAt: endAt,
-            durationSeconds: durationSeconds,
+            durationSeconds: resolvedDuration,
             platformRawValue: platform.rawValue,
             note: note,
             game: game
@@ -50,7 +51,8 @@ final class SwiftDataSessionRepository: SessionRepository {
 
         record.startAt = session.startAt
         record.endAt = session.endAt
-        record.durationSeconds = Self.computeDurationSeconds(startAt: session.startAt, endAt: session.endAt)
+        record.durationSeconds = session.durationSeconds
+            ?? Self.computeDurationSeconds(startAt: session.startAt, endAt: session.endAt)
         record.platformRawValue = session.platform.rawValue
         record.note = session.note
         record.game = try fetchGameRecord(id: session.gameID)

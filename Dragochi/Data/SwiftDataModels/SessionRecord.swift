@@ -54,6 +54,7 @@ extension SessionRecord {
             id: id,
             startAt: startAt,
             endAt: endAt,
+            durationSeconds: durationSeconds,
             platform: platform,
             gameID: game?.id,
             note: note,
@@ -61,4 +62,3 @@ extension SessionRecord {
         )
     }
 }
-

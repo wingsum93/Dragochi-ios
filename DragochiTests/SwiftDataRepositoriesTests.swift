@@ -79,6 +79,7 @@ struct SwiftDataRepositoriesTests {
                 endAt: end1,
                 platform: .pc,
                 gameID: game.id,
+                durationSeconds: nil,
                 note: "first",
                 friendIDs: [friend1.id, friend2.id]
             )
@@ -102,6 +103,7 @@ struct SwiftDataRepositoriesTests {
                 endAt: end2,
                 platform: .mobile,
                 gameID: nil,
+                durationSeconds: nil,
                 note: "second",
                 friendIDs: [friend2.id]
             )

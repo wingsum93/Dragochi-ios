@@ -10,6 +10,7 @@ import Combine
 
 struct MainView: View {
     @ObservedObject var store: MainStore
+    @SceneStorage("home.trackingSnapshotData") private var trackingSnapshotData: Data?
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -19,19 +20,24 @@ struct MainView: View {
 
             VStack(spacing: DragonTheme.current.spacing(.lg)) {
                 header
-                selectorChips
                 timerSection
-                resumeCard
+                sessionDetailSection
                 Spacer()
-                startStopButton
+                controlSection
             }
             .padding(.horizontal, DragonTheme.current.spacing(.lg))
             .padding(.top, DragonTheme.current.spacing(.lg))
         }
         .accessibilityIdentifier("screen.home")
-        .onAppear { store.send(.onAppear) }
+        .onAppear {
+            store.send(.onAppear)
+            store.send(.restoreTrackingSnapshot(trackingSnapshotData))
+        }
         .onReceive(timer) { _ in
             store.send(.tick)
+        }
+        .onChange(of: store.state.trackingSnapshotData) { _, data in
+            trackingSnapshotData = data
         }
     }
 
@@ -47,92 +53,61 @@ struct MainView: View {
             }
 
             Spacer()
-
-            Button {
-                store.send(.openAddSession)
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(DragonTheme.current.color(.accentPrimary))
-                    .frame(width: 36, height: 36)
-                    .background(DragonTheme.current.color(.surfaceCard))
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("action.openAddSession")
         }
-    }
-
-    private var selectorChips: some View {
-        HStack(spacing: DragonTheme.current.spacing(.sm)) {
-            if let game = selectedGameTitle {
-                chip(title: game, icon: "gamecontroller")
-            }
-            chip(title: store.state.selectedPlatform.rawValue.uppercased(), icon: "desktopcomputer")
-            Button {
-                store.send(.openAddSession)
-            } label: {
-                Image(systemName: "plus")
-                    .foregroundStyle(DragonTheme.current.color(.textTertiary))
-                    .frame(width: 32, height: 32)
-                    .background(DragonTheme.current.color(.surfaceCard))
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("action.openAddSession")
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var timerSection: some View {
-        VStack(spacing: DragonTheme.current.spacing(.md)) {
+        VStack(spacing: DragonTheme.current.spacing(.sm)) {
             Text(formatDuration(store.state.elapsedSeconds))
                 .font(DragonTheme.current.font(.displayTimer))
                 .foregroundStyle(DragonTheme.current.color(.textPrimary))
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
 
-            Text(store.state.isRunning ? "KEEP GOING" : "READY TO GRIND")
+            Text(statusText)
                 .font(DragonTheme.current.font(.labelSmall))
-                .foregroundStyle(DragonTheme.current.color(.accentPrimary))
+                .foregroundStyle(statusColor)
                 .tracking(2)
         }
         .padding(.top, DragonTheme.current.spacing(.lg))
     }
 
-    private var resumeCard: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("RESUME LAST SETUP")
+    private var sessionDetailSection: some View {
+        VStack(spacing: DragonTheme.current.spacing(.sm)) {
+            if let startAt = store.state.trackingStartAt {
+                Text("STARTED \(formatTime(startAt))")
                     .font(DragonTheme.current.font(.labelSmall))
                     .foregroundStyle(DragonTheme.current.color(.textTertiary))
-                if let game = selectedGameTitle {
-                    Text(game)
-                        .font(DragonTheme.current.font(.titleSection))
-                        .foregroundStyle(DragonTheme.current.color(.textPrimary))
-                }
-                Text(store.state.selectedPlatform.rawValue.uppercased())
-                    .font(DragonTheme.current.font(.labelSmall))
-                    .foregroundStyle(DragonTheme.current.color(.textTertiary))
+                    .tracking(1)
             }
 
-            Spacer()
-
-            Toggle("", isOn: Binding(
-                get: { store.state.resumeLastSetup },
-                set: { store.send(.toggleResume($0)) }
-            ))
-            .labelsHidden()
-            .tint(DragonTheme.current.color(.accentPrimary))
+            if let setup = store.state.activeSetup {
+                HStack(spacing: DragonTheme.current.spacing(.sm)) {
+                    chip(title: selectedGameTitle(setup.selectedGameID), icon: "gamecontroller")
+                    chip(title: setup.selectedPlatform.rawValue.uppercased(), icon: "desktopcomputer")
+                    chip(title: "\(setup.selectedFriendIDs.count) PERSON", icon: "person.2")
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
         }
-        .padding(DragonTheme.current.spacing(.md))
-        .background(DragonTheme.current.color(.surfaceCard))
-        .clipShape(RoundedRectangle(cornerRadius: DragonTheme.current.radius(.card), style: .continuous))
+        .frame(maxWidth: .infinity)
     }
 
-    private var startStopButton: some View {
+    @ViewBuilder
+    private var controlSection: some View {
+        if store.state.trackingStatus == .idle {
+            startButton
+        } else {
+            VStack(spacing: DragonTheme.current.spacing(.md)) {
+                stopButton
+                pauseResumeButton
+            }
+        }
+    }
+
+    private var startButton: some View {
         Button {
-            store.send(.startStopTapped)
+            store.send(.startTapped)
         } label: {
             ZStack {
                 Circle()
@@ -144,13 +119,74 @@ struct MainView: View {
                     .fill(DragonTheme.current.color(.surfaceCard))
                     .frame(width: 120, height: 120)
 
-                Text(store.state.isRunning ? "STOP" : "START")
+                Text("START")
                     .font(DragonTheme.current.font(.titleSection))
                     .foregroundStyle(DragonTheme.current.color(.textPrimary))
             }
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("action.startTracking")
         .padding(.bottom, DragonTheme.current.spacing(.xl))
+    }
+
+    private var stopButton: some View {
+        Button {
+            store.send(.stopTapped)
+        } label: {
+            ZStack {
+                Circle()
+                    .stroke(DragonTheme.current.color(.accentPrimary), lineWidth: 6)
+                    .frame(width: 180, height: 180)
+                    .shadow(color: DragonTheme.current.color(.accentPrimary).opacity(0.35), radius: 12)
+
+                Circle()
+                    .fill(DragonTheme.current.color(.surfaceCard))
+                    .frame(width: 132, height: 132)
+
+                Text("STOP")
+                    .font(DragonTheme.current.font(.titleSection))
+                    .foregroundStyle(DragonTheme.current.color(.textPrimary))
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("action.stopTracking")
+    }
+
+    private var pauseResumeButton: some View {
+        Button {
+            store.send(.pauseResumeTapped)
+        } label: {
+            Text(store.state.trackingStatus == .paused ? "RESUME" : "PAUSE")
+                .font(DragonTheme.current.font(.labelSmall))
+                .foregroundStyle(DragonTheme.current.color(.textTertiary))
+                .padding(.horizontal, 18)
+                .padding(.vertical, 8)
+                .background(Color.gray.opacity(0.25))
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("action.pauseResumeTracking")
+        .padding(.bottom, DragonTheme.current.spacing(.xl))
+    }
+
+    private var statusText: String {
+        switch store.state.trackingStatus {
+        case .idle:
+            return "READY TO GRIND"
+        case .running:
+            return "KEEP GOING"
+        case .paused:
+            return "PAUSED"
+        }
+    }
+
+    private var statusColor: Color {
+        switch store.state.trackingStatus {
+        case .paused:
+            return DragonTheme.current.color(.textTertiary)
+        case .idle, .running:
+            return DragonTheme.current.color(.accentPrimary)
+        }
     }
 
     private func chip(title: String, icon: String) -> some View {
@@ -167,9 +203,8 @@ struct MainView: View {
         .clipShape(Capsule())
     }
 
-    private var selectedGameTitle: String? {
-        guard let id = store.state.selectedGameID else { return nil }
-        return store.state.games.first { $0.id == id }?.name
+    private func selectedGameTitle(_ id: UUID) -> String {
+        store.state.games.first(where: { $0.id == id })?.name ?? "Unknown Game"
     }
 
     private func formatDuration(_ seconds: Int) -> String {
@@ -177,5 +212,11 @@ struct MainView: View {
         let minutes = (seconds % 3600) / 60
         let remaining = seconds % 60
         return String(format: "%02d:%02d:%02d", hours, minutes, remaining)
+    }
+
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter.string(from: date)
     }
 }

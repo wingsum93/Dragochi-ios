@@ -55,6 +55,9 @@ struct AppRootView: View {
                 store: AddSessionStore(
                     dependencies: dependencies,
                     draft: draft,
+                    onSetupConfirmed: draft.mode == .preStartSetup ? { setup in
+                        mainStore.send(.preStartSetupConfirmed(setup))
+                    } : nil,
                     onClose: { addSessionDraft = nil }
                 )
             )

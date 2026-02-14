@@ -11,6 +11,7 @@ struct SessionEntity: Identifiable, Codable, Hashable {
     let id: UUID
     var startAt: Date
     var endAt: Date?
+    var durationSeconds: Int?
     var platform: Platform
     var gameID: UUID?
     var note: String?
@@ -20,6 +21,7 @@ struct SessionEntity: Identifiable, Codable, Hashable {
         id: UUID = UUID(),
         startAt: Date,
         endAt: Date? = nil,
+        durationSeconds: Int? = nil,
         platform: Platform,
         gameID: UUID? = nil,
         note: String? = nil,
@@ -28,6 +30,7 @@ struct SessionEntity: Identifiable, Codable, Hashable {
         self.id = id
         self.startAt = startAt
         self.endAt = endAt
+        self.durationSeconds = durationSeconds
         self.platform = platform
         self.gameID = gameID
         self.note = note
@@ -39,10 +42,4 @@ extension SessionEntity {
     var isRunning: Bool {
         endAt == nil
     }
-
-    var durationSeconds: Int? {
-        guard let endAt else { return nil }
-        return max(0, Int(endAt.timeIntervalSince(startAt)))
-    }
 }
-

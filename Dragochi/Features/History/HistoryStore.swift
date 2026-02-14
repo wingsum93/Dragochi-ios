@@ -67,6 +67,7 @@ final class HistoryStore: ObservableObject {
         case .openAddSession:
             state.pendingAddSessionDraft = AddSessionDraft(
                 id: UUID(),
+                mode: .manualEntry,
                 sessionID: nil,
                 startAt: Date(),
                 endAt: Date(),

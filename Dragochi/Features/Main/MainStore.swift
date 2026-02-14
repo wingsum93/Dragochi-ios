@@ -16,32 +16,44 @@ final class MainStore: ObservableObject {
         let legacyNames: [String]
     }
 
+    enum TrackingStatus: String, Codable, Equatable {
+        case idle
+        case running
+        case paused
+    }
+
+    struct TrackingSessionSnapshot: Codable, Equatable {
+        let sessionID: UUID
+        let startAt: Date
+        let setup: SessionSetupInput
+        let accumulatedActiveSeconds: Int
+        let activeSegmentStartedAt: Date?
+        let status: TrackingStatus
+    }
+
     struct State: Equatable {
-        var selectedGameID: UUID?
-        var selectedPlatform: Platform = .pc
-        var selectedFriendIDs: Set<UUID> = []
-        var resumeLastSetup: Bool = true
-        var isRunning: Bool = false
+        var trackingStatus: TrackingStatus = .idle
         var elapsedSeconds: Int = 0
         var currentSessionID: UUID?
-        var runningStartAt: Date?
+        var trackingStartAt: Date?
+        var activeSegmentStartedAt: Date?
+        var accumulatedActiveSeconds: Int = 0
+        var activeSetup: SessionSetupInput?
         var games: [GameEntity] = []
         var friends: [FriendEntity] = []
-        var gameCards: [GameCardModel] = []
-        var teammateChips: [TeammateChipModel] = []
         var pendingAddSessionDraft: AddSessionDraft?
+        var trackingSnapshotData: Data?
         var errorMessage: String?
     }
 
     enum Action {
         case onAppear
-        case startStopTapped
-        case selectGame(UUID)
-        case selectPlatform(Platform)
-        case toggleFriend(UUID)
-        case toggleResume(Bool)
+        case startTapped
+        case preStartSetupConfirmed(SessionSetupInput)
+        case pauseResumeTapped
+        case stopTapped
         case tick
-        case openAddSession
+        case restoreTrackingSnapshot(Data?)
         case clearPendingDraft
     }
 
@@ -50,6 +62,9 @@ final class MainStore: ObservableObject {
     private let sessionRepository: SessionRepository
     private let gameRepository: GameRepository
     private let friendRepository: FriendRepository
+    private let now: () -> Date
+    private let encoder = JSONEncoder()
+    private let decoder = JSONDecoder()
     private let canonicalGames: [CanonicalGame] = [
         .init(name: "Apex Legends", imageAssetName: "apex", legacyNames: []),
         .init(name: "LOL", imageAssetName: "lol", legacyNames: ["league of legends", "lol"]),
@@ -58,39 +73,41 @@ final class MainStore: ObservableObject {
         .init(name: "Valorant", imageAssetName: "volarant", legacyNames: ["valorant"])
     ]
 
-    init(dependencies: AppDependencies) {
+    init(dependencies: AppDependencies, now: @escaping () -> Date = Date.init) {
         self.sessionRepository = dependencies.sessionRepository
         self.gameRepository = dependencies.gameRepository
         self.friendRepository = dependencies.friendRepository
+        self.now = now
     }
 
     func send(_ action: Action) {
         switch action {
         case .onAppear:
             loadInitialData()
-        case .startStopTapped:
-            handleStartStop()
-        case .selectGame(let id):
-            state.selectedGameID = id
-        case .selectPlatform(let platform):
-            state.selectedPlatform = platform
-        case .toggleFriend(let id):
-            if state.selectedFriendIDs.contains(id) {
-                state.selectedFriendIDs.remove(id)
-            } else {
-                state.selectedFriendIDs.insert(id)
-            }
-        case .toggleResume(let isOn):
-            state.resumeLastSetup = isOn
-        case .tick:
-            guard state.isRunning, let startAt = state.runningStartAt else { return }
-            state.elapsedSeconds = max(0, Int(Date().timeIntervalSince(startAt)))
-        case .openAddSession:
-            state.pendingAddSessionDraft = buildDraft(
+        case .startTapped:
+            guard state.trackingStatus == .idle else { return }
+            let draftDate = now()
+            state.pendingAddSessionDraft = AddSessionDraft(
+                id: UUID(),
+                mode: .preStartSetup,
                 sessionID: nil,
-                startAt: Date(),
-                endAt: Date()
+                startAt: draftDate,
+                endAt: draftDate,
+                selectedGameID: nil,
+                selectedPlatform: .pc,
+                selectedFriendIDs: [],
+                note: ""
             )
+        case .preStartSetupConfirmed(let setup):
+            startTracking(with: setup)
+        case .pauseResumeTapped:
+            handlePauseResume()
+        case .stopTapped:
+            stopTracking()
+        case .tick:
+            state.elapsedSeconds = currentElapsedSeconds(at: now())
+        case .restoreTrackingSnapshot(let data):
+            restoreTrackingSnapshot(from: data)
         case .clearPendingDraft:
             state.pendingAddSessionDraft = nil
         }
@@ -98,84 +115,166 @@ final class MainStore: ObservableObject {
 
     private func loadInitialData() {
         do {
-            let games = try syncGamesWithAssets()
+            state.games = try syncGamesWithAssets()
             var friends = try friendRepository.fetchAll()
             if friends.isEmpty {
                 friends = try seedFriends()
             }
-
-            state.games = games
             state.friends = friends
-            if let selectedGameID = state.selectedGameID,
-               games.contains(where: { $0.id == selectedGameID }) == false {
-                state.selectedGameID = games.first?.id
-            } else if state.selectedGameID == nil {
-                state.selectedGameID = games.first?.id
-            }
-            state.gameCards = makeGameCards(from: games)
-            state.teammateChips = makeTeammateChips(from: friends)
         } catch {
             state.errorMessage = error.localizedDescription
         }
     }
 
-    private func handleStartStop() {
-        if state.isRunning {
-            guard let sessionID = state.currentSessionID, let startAt = state.runningStartAt else { return }
-            let endAt = Date()
-            let session = SessionEntity(
-                id: sessionID,
+    private func startTracking(with setup: SessionSetupInput) {
+        guard state.trackingStatus == .idle else { return }
+
+        let startAt = now()
+        do {
+            let created = try sessionRepository.create(
                 startAt: startAt,
-                endAt: endAt,
-                platform: state.selectedPlatform,
-                gameID: state.selectedGameID,
-                note: nil,
-                friendIDs: Array(state.selectedFriendIDs)
+                endAt: nil,
+                platform: setup.selectedPlatform,
+                gameID: setup.selectedGameID,
+                durationSeconds: nil,
+                note: setup.note.isEmpty ? nil : setup.note,
+                friendIDs: setup.selectedFriendIDs
             )
-            do {
-                _ = try sessionRepository.update(session)
-                state.isRunning = false
-                state.elapsedSeconds = max(0, Int(endAt.timeIntervalSince(startAt)))
-                state.pendingAddSessionDraft = buildDraft(
-                    sessionID: sessionID,
-                    startAt: startAt,
-                    endAt: endAt
-                )
-            } catch {
-                state.errorMessage = error.localizedDescription
-            }
-        } else {
-            let startAt = Date()
-            do {
-                let created = try sessionRepository.create(
-                    startAt: startAt,
-                    endAt: nil,
-                    platform: state.selectedPlatform,
-                    gameID: state.selectedGameID,
-                    note: nil,
-                    friendIDs: Array(state.selectedFriendIDs)
-                )
-                state.currentSessionID = created.id
-                state.runningStartAt = startAt
-                state.isRunning = true
-                state.elapsedSeconds = 0
-            } catch {
-                state.errorMessage = error.localizedDescription
-            }
+
+            state.currentSessionID = created.id
+            state.trackingStartAt = startAt
+            state.activeSegmentStartedAt = startAt
+            state.accumulatedActiveSeconds = 0
+            state.elapsedSeconds = 0
+            state.activeSetup = setup
+            state.trackingStatus = .running
+            syncTrackingSnapshotData()
+        } catch {
+            state.errorMessage = error.localizedDescription
         }
     }
 
-    private func buildDraft(sessionID: UUID?, startAt: Date, endAt: Date) -> AddSessionDraft {
-        AddSessionDraft(
-            id: UUID(),
-            sessionID: sessionID,
+    private func handlePauseResume() {
+        switch state.trackingStatus {
+        case .idle:
+            return
+        case .running:
+            guard let activeSegmentStartedAt = state.activeSegmentStartedAt else { return }
+            let additional = max(0, Int(now().timeIntervalSince(activeSegmentStartedAt)))
+            state.accumulatedActiveSeconds += additional
+            state.activeSegmentStartedAt = nil
+            state.trackingStatus = .paused
+            state.elapsedSeconds = state.accumulatedActiveSeconds
+            syncTrackingSnapshotData()
+        case .paused:
+            state.activeSegmentStartedAt = now()
+            state.trackingStatus = .running
+            syncTrackingSnapshotData()
+        }
+    }
+
+    private func stopTracking() {
+        guard state.trackingStatus != .idle else { return }
+        guard
+            let sessionID = state.currentSessionID,
+            let startAt = state.trackingStartAt,
+            let setup = state.activeSetup
+        else { return }
+
+        let endAt = now()
+        let durationSeconds = currentElapsedSeconds(at: endAt)
+
+        let session = SessionEntity(
+            id: sessionID,
             startAt: startAt,
             endAt: endAt,
-            selectedGameID: state.selectedGameID,
-            selectedPlatform: state.selectedPlatform,
-            selectedFriendIDs: Array(state.selectedFriendIDs),
-            note: ""
+            durationSeconds: durationSeconds,
+            platform: setup.selectedPlatform,
+            gameID: setup.selectedGameID,
+            note: setup.note.isEmpty ? nil : setup.note,
+            friendIDs: setup.selectedFriendIDs
         )
+
+        do {
+            _ = try sessionRepository.update(session)
+            state.elapsedSeconds = durationSeconds
+            clearTrackingState(resetElapsed: false)
+        } catch {
+            state.errorMessage = error.localizedDescription
+        }
+    }
+
+    private func restoreTrackingSnapshot(from data: Data?) {
+        guard state.currentSessionID == nil else { return }
+        guard let data else { return }
+
+        do {
+            let snapshot = try decoder.decode(TrackingSessionSnapshot.self, from: data)
+            guard snapshot.status != .idle else { return }
+
+            state.currentSessionID = snapshot.sessionID
+            state.trackingStartAt = snapshot.startAt
+            state.activeSetup = snapshot.setup
+            state.accumulatedActiveSeconds = max(0, snapshot.accumulatedActiveSeconds)
+            state.activeSegmentStartedAt = snapshot.activeSegmentStartedAt
+            state.trackingStatus = snapshot.status
+            state.elapsedSeconds = currentElapsedSeconds(at: now())
+            state.trackingSnapshotData = data
+        } catch {
+            state.errorMessage = error.localizedDescription
+            state.trackingSnapshotData = nil
+        }
+    }
+
+    private func clearTrackingState(resetElapsed: Bool) {
+        state.currentSessionID = nil
+        state.trackingStartAt = nil
+        state.activeSegmentStartedAt = nil
+        state.accumulatedActiveSeconds = 0
+        state.activeSetup = nil
+        state.trackingStatus = .idle
+        if resetElapsed {
+            state.elapsedSeconds = 0
+        }
+        state.trackingSnapshotData = nil
+    }
+
+    private func currentElapsedSeconds(at date: Date) -> Int {
+        switch state.trackingStatus {
+        case .idle:
+            return state.elapsedSeconds
+        case .paused:
+            return max(0, state.accumulatedActiveSeconds)
+        case .running:
+            guard let activeSegmentStartedAt = state.activeSegmentStartedAt else {
+                return max(0, state.accumulatedActiveSeconds)
+            }
+            let segment = max(0, Int(date.timeIntervalSince(activeSegmentStartedAt)))
+            return max(0, state.accumulatedActiveSeconds + segment)
+        }
+    }
+
+    private func syncTrackingSnapshotData() {
+        guard
+            let sessionID = state.currentSessionID,
+            let startAt = state.trackingStartAt,
+            let setup = state.activeSetup,
+            state.trackingStatus != .idle
+        else {
+            state.trackingSnapshotData = nil
+            return
+        }
+
+        let snapshot = TrackingSessionSnapshot(
+            sessionID: sessionID,
+            startAt: startAt,
+            setup: setup,
+            accumulatedActiveSeconds: max(0, state.accumulatedActiveSeconds),
+            activeSegmentStartedAt: state.activeSegmentStartedAt,
+            status: state.trackingStatus
+        )
+
+        state.trackingSnapshotData = try? encoder.encode(snapshot)
     }
 
     private func syncGamesWithAssets() throws -> [GameEntity] {
@@ -249,32 +348,6 @@ final class MainStore: ObservableObject {
         ]
         return try names.map { name in
             try friendRepository.create(name: name, handle: nil)
-        }
-    }
-
-    private func makeGameCards(from games: [GameEntity]) -> [GameCardModel] {
-        let cards = games.map { game in
-            GameCardModel(
-                id: game.id.uuidString,
-                title: game.name,
-                imageAssetName: game.imageAssetName
-            )
-        }
-        return cards + [GameCardModel(id: "add", title: "Add", imageAssetName: nil)]
-    }
-
-    private func makeTeammateChips(from friends: [FriendEntity]) -> [TeammateChipModel] {
-        let assetNames = [
-            "M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9", "M10",
-            "F1", "F2", "F3", "F4", "F5"
-        ]
-        return friends.enumerated().map { index, friend in
-            let assetName = index < assetNames.count ? assetNames[index] : nil
-            return TeammateChipModel(
-                id: friend.id.uuidString,
-                name: friend.name,
-                avatarAssetName: assetName
-            )
         }
     }
 }

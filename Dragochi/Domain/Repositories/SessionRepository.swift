@@ -14,6 +14,7 @@ protocol SessionRepository {
         endAt: Date?,
         platform: Platform,
         gameID: UUID?,
+        durationSeconds: Int?,
         note: String?,
         friendIDs: [UUID]
     ) throws -> SessionEntity
@@ -23,4 +24,3 @@ protocol SessionRepository {
     func fetchEnded(between start: Date, and end: Date) throws -> [SessionEntity]
     func delete(id: UUID) throws
 }
-

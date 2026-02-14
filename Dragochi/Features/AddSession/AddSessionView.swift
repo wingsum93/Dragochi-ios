@@ -8,7 +8,11 @@
 import SwiftUI
 
 struct AddSessionView: View {
-    @ObservedObject var store: AddSessionStore
+    @StateObject private var store: AddSessionStore
+
+    init(store: AddSessionStore) {
+        _store = StateObject(wrappedValue: store)
+    }
 
     private let platforms: [PlatformOption] = [
         .init(id: "pc", iconName: "desktopcomputer", title: "PC"),
@@ -20,10 +24,10 @@ struct AddSessionView: View {
         DragonBottomSheetContainer {
             VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.xl)) {
                 DragonSessionHero(
-                    title: "Session Complete",
-                    durationText: formattedDuration,
-                    trendText: "+15% vs avg",
-                    trendDirection: .up
+                    title: heroTitle,
+                    durationText: heroDuration,
+                    trendText: heroTrendText,
+                    trendDirection: heroTrendDirection
                 )
                 .accessibilityIdentifier("hero.addSessionTitle")
 
@@ -110,17 +114,23 @@ struct AddSessionView: View {
         } footer: {
             VStack(spacing: DragonTheme.current.spacing(.md)) {
                 DragonPrimaryCTAButton(
-                    title: "Save Session",
+                    title: primaryButtonTitle,
                     icon: "arrow.right",
                     state: store.state.isSaving ? .loading : .enabled,
                     action: { store.send(.saveTapped) }
                 )
                 .accessibilityIdentifier("action.saveSession")
                 DragonTextButton(
-                    title: "Discard Entry",
+                    title: secondaryButtonTitle,
                     state: .enabled,
                     action: { store.send(.discardTapped) }
                 )
+                if let errorMessage = store.state.errorMessage {
+                    Text(errorMessage)
+                        .font(DragonTheme.current.font(.labelSmall))
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
         }
         .accessibilityIdentifier("screen.addSession")
@@ -141,5 +151,29 @@ struct AddSessionView: View {
         let minutes = (seconds % 3600) / 60
         let remaining = seconds % 60
         return String(format: "%02d:%02d:%02d", hours, minutes, remaining)
+    }
+
+    private var heroTitle: String {
+        store.state.mode == .preStartSetup ? "Session Setup" : "Session Complete"
+    }
+
+    private var heroDuration: String {
+        store.state.mode == .preStartSetup ? "00:00:00" : formattedDuration
+    }
+
+    private var heroTrendText: String {
+        store.state.mode == .preStartSetup ? "Ready to start tracking" : "+15% vs avg"
+    }
+
+    private var heroTrendDirection: TrendDirection {
+        store.state.mode == .preStartSetup ? .neutral : .up
+    }
+
+    private var primaryButtonTitle: String {
+        store.state.mode == .preStartSetup ? "Start Tracking" : "Save Session"
+    }
+
+    private var secondaryButtonTitle: String {
+        store.state.mode == .preStartSetup ? "Cancel" : "Discard Entry"
     }
 }

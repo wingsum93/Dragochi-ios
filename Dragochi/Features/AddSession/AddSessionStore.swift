@@ -8,8 +8,21 @@
 import Foundation
 import Combine
 
+enum AddSessionMode: String, Codable, Hashable {
+    case manualEntry
+    case preStartSetup
+}
+
+struct SessionSetupInput: Codable, Hashable {
+    let selectedGameID: UUID
+    let selectedPlatform: Platform
+    let selectedFriendIDs: [UUID]
+    let note: String
+}
+
 struct AddSessionDraft: Identifiable, Hashable {
     let id: UUID
+    let mode: AddSessionMode
     let sessionID: UUID?
     let startAt: Date
     let endAt: Date
@@ -22,6 +35,7 @@ struct AddSessionDraft: Identifiable, Hashable {
 @MainActor
 final class AddSessionStore: ObservableObject {
     struct State: Equatable {
+        var mode: AddSessionMode
         var sessionID: UUID?
         var startAt: Date
         var endAt: Date
@@ -52,18 +66,22 @@ final class AddSessionStore: ObservableObject {
     private let sessionRepository: SessionRepository
     private let gameRepository: GameRepository
     private let friendRepository: FriendRepository
+    private let onSetupConfirmed: ((SessionSetupInput) -> Void)?
     private let onClose: () -> Void
 
     init(
         dependencies: AppDependencies,
         draft: AddSessionDraft,
+        onSetupConfirmed: ((SessionSetupInput) -> Void)? = nil,
         onClose: @escaping () -> Void = {}
     ) {
         self.sessionRepository = dependencies.sessionRepository
         self.gameRepository = dependencies.gameRepository
         self.friendRepository = dependencies.friendRepository
+        self.onSetupConfirmed = onSetupConfirmed
         self.onClose = onClose
         self.state = State(
+            mode: draft.mode,
             sessionID: draft.sessionID,
             startAt: draft.startAt,
             endAt: draft.endAt,
@@ -111,14 +129,33 @@ final class AddSessionStore: ObservableObject {
     }
 
     private func saveSession() {
+        if state.mode == .preStartSetup {
+            guard let selectedGameID = state.selectedGameID else {
+                state.errorMessage = "Please select a game before starting."
+                return
+            }
+
+            let setup = SessionSetupInput(
+                selectedGameID: selectedGameID,
+                selectedPlatform: state.selectedPlatform,
+                selectedFriendIDs: Array(state.selectedFriendIDs),
+                note: state.note
+            )
+            onSetupConfirmed?(setup)
+            onClose()
+            return
+        }
+
         state.isSaving = true
         defer { state.isSaving = false }
 
         let endAt = state.endAt
+        let durationSeconds = max(0, Int(endAt.timeIntervalSince(state.startAt)))
         let session = SessionEntity(
             id: state.sessionID ?? UUID(),
             startAt: state.startAt,
             endAt: endAt,
+            durationSeconds: durationSeconds,
             platform: state.selectedPlatform,
             gameID: state.selectedGameID,
             note: state.note.isEmpty ? nil : state.note,
@@ -132,6 +169,7 @@ final class AddSessionStore: ObservableObject {
                     endAt: session.endAt,
                     platform: session.platform,
                     gameID: session.gameID,
+                    durationSeconds: session.durationSeconds,
                     note: session.note,
                     friendIDs: session.friendIDs
                 )

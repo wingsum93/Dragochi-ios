@@ -54,16 +54,14 @@ final class DragochiUITests: XCTestCase {
 
         waitForElementToAppear(app.staticTexts["Quick Track"])
 
-        let addButton = app.buttons.matching(NSPredicate(
-            format: "identifier == %@ OR label == %@ OR label == %@",
-            "plus",
-            "+",
-            "Add"
-        )).firstMatch
-        waitForElementToAppear(addButton)
-        addButton.tap()
+        let startButton = app.buttons["action.startTracking"]
+        waitForElementToAppear(startButton)
+        startButton.tap()
 
-        waitForElementToAppear(app.staticTexts["Session Complete"])
+        waitForElementToAppear(app.staticTexts["Session Setup"])
+        waitForElementToAppear(app.staticTexts["Game Played"])
+        sleep(4)
+        XCTAssertTrue(app.staticTexts["Game Played"].exists)
         attachScreenshot(from: app, named: "add-session.png")
     }
 
