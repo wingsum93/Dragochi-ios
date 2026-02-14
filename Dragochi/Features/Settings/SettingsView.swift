@@ -99,6 +99,7 @@ struct SettingsView: View {
                 .padding(.bottom, 80)
             }
         }
+        .accessibilityIdentifier("screen.settings")
         .onAppear { store.send(.onAppear) }
     }
 
@@ -109,4 +110,3 @@ struct SettingsView: View {
         return formatter.string(from: date)
     }
 }
-

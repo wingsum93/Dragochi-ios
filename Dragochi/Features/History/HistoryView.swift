@@ -38,9 +38,11 @@ struct HistoryView: View {
                     .shadow(color: DragonTheme.current.color(.accentPrimary).opacity(0.4), radius: 10)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("action.openAddSession")
             .padding(.trailing, DragonTheme.current.spacing(.lg))
             .padding(.bottom, DragonTheme.current.spacing(.xl))
         }
+        .accessibilityIdentifier("screen.history")
         .onAppear { store.send(.onAppear) }
     }
 
@@ -140,4 +142,3 @@ struct HistoryView: View {
         return "\(hours)H \(minutes)M"
     }
 }
-

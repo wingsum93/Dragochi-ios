@@ -34,15 +34,19 @@ struct AppRootView: View {
         TabView {
             MainView(store: mainStore)
                 .tabItem { Label("Home", systemImage: "house") }
+                .accessibilityIdentifier("tab.home")
 
             HistoryView(store: historyStore)
                 .tabItem { Label("History", systemImage: "clock.arrow.circlepath") }
+                .accessibilityIdentifier("tab.history")
 
             StatsView(store: statsStore)
                 .tabItem { Label("Stats", systemImage: "chart.bar") }
+                .accessibilityIdentifier("tab.stats")
 
             SettingsView(store: settingsStore)
                 .tabItem { Label("Settings", systemImage: "gearshape") }
+                .accessibilityIdentifier("tab.settings")
         }
         .tint(DragonTheme.current.color(.tabTintShine))
         
