@@ -12,13 +12,17 @@ import SwiftData
 struct AppDependencies {
     let sessionRepository: SessionRepository
     let gameRepository: GameRepository
+    let enabledGameSelectionRepository: EnabledGameSelectionRepository
     let friendRepository: FriendRepository
     let analyticsService: AnalyticsService
     let backupService: BackupService
+    let gameCatalogService: GameCatalogService
+    let gameCatalogSyncService: GameCatalogSyncService
 
     init(modelContext: ModelContext) {
         self.sessionRepository = SwiftDataSessionRepository(modelContext: modelContext)
         self.gameRepository = SwiftDataGameRepository(modelContext: modelContext)
+        self.enabledGameSelectionRepository = SwiftDataEnabledGameSelectionRepository(modelContext: modelContext)
         self.friendRepository = SwiftDataFriendRepository(modelContext: modelContext)
         self.analyticsService = SwiftDataAnalyticsService(sessionRepository: sessionRepository)
         self.backupService = StubBackupService(
@@ -26,5 +30,20 @@ struct AppDependencies {
             gameRepository: gameRepository,
             friendRepository: friendRepository
         )
+        self.gameCatalogService = FirebaseRemoteConfigGameCatalogService()
+        let catalogDefaults = Self.makeCatalogDefaults()
+        self.gameCatalogSyncService = GameCatalogSyncService(
+            gameRepository: gameRepository,
+            enabledSelectionRepository: enabledGameSelectionRepository,
+            catalogService: gameCatalogService,
+            defaults: catalogDefaults
+        )
+    }
+
+    private static func makeCatalogDefaults() -> UserDefaults {
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+            return UserDefaults(suiteName: "dragochi.catalog.defaults.\(UUID().uuidString)") ?? .standard
+        }
+        return .standard
     }
 }

@@ -12,6 +12,7 @@ enum SwiftDataStack {
     static func makeContainer(inMemory: Bool) throws -> ModelContainer {
         let schema = Schema([
             GameRecord.self,
+            EnabledGameSelectionRecord.self,
             FriendRecord.self,
             SessionRecord.self,
             SessionFriendRecord.self,
@@ -24,4 +25,3 @@ enum SwiftDataStack {
         try makeContainer(inMemory: true)
     }
 }
-

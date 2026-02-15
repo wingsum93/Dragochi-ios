@@ -54,6 +54,7 @@ final class AddSessionStore: ObservableObject {
     enum Action {
         case onAppear
         case selectGame(UUID)
+        case addGameTapped
         case selectPlatform(Platform)
         case toggleFriend(UUID)
         case updateNote(String)
@@ -65,20 +66,27 @@ final class AddSessionStore: ObservableObject {
 
     private let sessionRepository: SessionRepository
     private let gameRepository: GameRepository
+    private let enabledGameSelectionRepository: EnabledGameSelectionRepository
     private let friendRepository: FriendRepository
+    private let gameCatalogSyncService: GameCatalogSyncService
     private let onSetupConfirmed: ((SessionSetupInput) -> Void)?
+    private let onOpenGameSettings: () -> Void
     private let onClose: () -> Void
 
     init(
         dependencies: AppDependencies,
         draft: AddSessionDraft,
         onSetupConfirmed: ((SessionSetupInput) -> Void)? = nil,
+        onOpenGameSettings: @escaping () -> Void = {},
         onClose: @escaping () -> Void = {}
     ) {
         self.sessionRepository = dependencies.sessionRepository
         self.gameRepository = dependencies.gameRepository
+        self.enabledGameSelectionRepository = dependencies.enabledGameSelectionRepository
         self.friendRepository = dependencies.friendRepository
+        self.gameCatalogSyncService = dependencies.gameCatalogSyncService
         self.onSetupConfirmed = onSetupConfirmed
+        self.onOpenGameSettings = onOpenGameSettings
         self.onClose = onClose
         self.state = State(
             mode: draft.mode,
@@ -98,6 +106,8 @@ final class AddSessionStore: ObservableObject {
             loadData()
         case .selectGame(let id):
             state.selectedGameID = id
+        case .addGameTapped:
+            onOpenGameSettings()
         case .selectPlatform(let platform):
             state.selectedPlatform = platform
         case .toggleFriend(let id):
@@ -117,12 +127,33 @@ final class AddSessionStore: ObservableObject {
 
     private func loadData() {
         do {
+            _ = try gameCatalogSyncService.seedFromFallbackIfNeeded()
             let games = try gameRepository.fetchAll()
+            let enabledRemoteIDs = try enabledGameSelectionRepository.fetchEnabledRemoteIDs()
             let friends = try friendRepository.fetchAll()
             state.games = games
             state.friends = friends
-            state.gameCards = makeGameCards(from: games)
+            state.gameCards = makeGameCards(from: games, enabledRemoteIDs: enabledRemoteIDs)
             state.teammateChips = makeTeammateChips(from: friends)
+            state.errorMessage = nil
+
+            if !ProcessInfo.processInfo.arguments.contains("-ui-testing") {
+                Task { [weak self] in
+                    await self?.refreshFromRemote()
+                }
+            }
+        } catch {
+            state.errorMessage = error.localizedDescription
+        }
+    }
+
+    private func refreshFromRemote() async {
+        do {
+            _ = try await gameCatalogSyncService.refreshFromRemote()
+            let refreshedGames = try gameRepository.fetchAll()
+            let refreshedEnabled = try enabledGameSelectionRepository.fetchEnabledRemoteIDs()
+            state.games = refreshedGames
+            state.gameCards = makeGameCards(from: refreshedGames, enabledRemoteIDs: refreshedEnabled)
         } catch {
             state.errorMessage = error.localizedDescription
         }
@@ -182,14 +213,27 @@ final class AddSessionStore: ObservableObject {
         }
     }
 
-    private func makeGameCards(from games: [GameEntity]) -> [GameCardModel] {
-        let cards = games.map { game in
+    private func makeGameCards(from games: [GameEntity], enabledRemoteIDs: Set<String>) -> [GameCardModel] {
+        let cards = games
+            .filter { game in
+                guard let remoteID = game.remoteID else { return false }
+                return enabledRemoteIDs.contains(remoteID)
+            }
+            .sorted { lhs, rhs in
+                lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+            }
+            .map { game in
             GameCardModel(
                 id: game.id.uuidString,
                 title: game.name,
                 imageAssetName: game.imageAssetName
             )
         }
+
+        if cards.isEmpty {
+            return [GameCardModel(id: "add", title: "Add", imageAssetName: nil)]
+        }
+
         return cards + [GameCardModel(id: "add", title: "Add", imageAssetName: nil)]
     }
 

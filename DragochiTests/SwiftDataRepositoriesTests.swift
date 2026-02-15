@@ -18,7 +18,7 @@ struct SwiftDataRepositoriesTests {
             let modelContext = ModelContext(container)
             let repository = SwiftDataGameRepository(modelContext: modelContext)
 
-            let created = try repository.create(name: "Valorant", imageAssetName: "volarant")
+            let created = try repository.create(name: "Valorant", imageAssetName: "volarant", remoteID: nil)
             #expect(created.name == "Valorant")
             #expect(created.imageAssetName == "volarant")
 
@@ -67,7 +67,7 @@ struct SwiftDataRepositoriesTests {
             let friendRepository = SwiftDataFriendRepository(modelContext: modelContext)
             let sessionRepository = SwiftDataSessionRepository(modelContext: modelContext)
 
-            let game = try gameRepository.create(name: "LOL", imageAssetName: "lol")
+            let game = try gameRepository.create(name: "LOL", imageAssetName: "lol", remoteID: nil)
             let friend1 = try friendRepository.create(name: "Aiden", handle: nil)
             let friend2 = try friendRepository.create(name: "Kai", handle: nil)
             let friend3 = try friendRepository.create(name: "Noah", handle: nil)

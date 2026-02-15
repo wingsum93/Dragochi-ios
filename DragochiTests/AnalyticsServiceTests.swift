@@ -33,8 +33,8 @@ struct AnalyticsServiceTests {
                 return calendar.date(from: components) ?? .distantPast
             }
 
-            let gameA = try dependencies.gameRepository.create(name: "Apex Legends", imageAssetName: "apex")
-            let gameB = try dependencies.gameRepository.create(name: "LOL", imageAssetName: "lol")
+            let gameA = try dependencies.gameRepository.create(name: "Apex Legends", imageAssetName: "apex", remoteID: nil)
+            let gameB = try dependencies.gameRepository.create(name: "LOL", imageAssetName: "lol", remoteID: nil)
 
             _ = try dependencies.sessionRepository.create(
                 startAt: date(2025, 1, 10, 10, 0),

@@ -10,12 +10,6 @@ import Combine
 
 @MainActor
 final class MainStore: ObservableObject {
-    private struct CanonicalGame {
-        let name: String
-        let imageAssetName: String
-        let legacyNames: [String]
-    }
-
     enum TrackingStatus: String, Codable, Equatable {
         case idle
         case running
@@ -62,22 +56,19 @@ final class MainStore: ObservableObject {
     private let sessionRepository: SessionRepository
     private let gameRepository: GameRepository
     private let friendRepository: FriendRepository
+    private let gameCatalogSyncService: GameCatalogSyncService
     private let now: () -> Date
+    private let isUITesting: Bool
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
-    private let canonicalGames: [CanonicalGame] = [
-        .init(name: "Apex Legends", imageAssetName: "apex", legacyNames: []),
-        .init(name: "LOL", imageAssetName: "lol", legacyNames: ["league of legends", "lol"]),
-        .init(name: "World War Z", imageAssetName: "wwz", legacyNames: ["wwz"]),
-        .init(name: "Clash Royale", imageAssetName: "clash_royale", legacyNames: ["clash royale", "clash_royale"]),
-        .init(name: "Valorant", imageAssetName: "volarant", legacyNames: ["valorant"])
-    ]
 
     init(dependencies: AppDependencies, now: @escaping () -> Date = Date.init) {
         self.sessionRepository = dependencies.sessionRepository
         self.gameRepository = dependencies.gameRepository
         self.friendRepository = dependencies.friendRepository
+        self.gameCatalogSyncService = dependencies.gameCatalogSyncService
         self.now = now
+        self.isUITesting = ProcessInfo.processInfo.arguments.contains("-ui-testing")
     }
 
     func send(_ action: Action) {
@@ -115,12 +106,18 @@ final class MainStore: ObservableObject {
 
     private func loadInitialData() {
         do {
-            state.games = try syncGamesWithAssets()
+            _ = try gameCatalogSyncService.seedFromFallbackIfNeeded()
+            state.games = try sortedGames()
             var friends = try friendRepository.fetchAll()
             if friends.isEmpty {
                 friends = try seedFriends()
             }
             state.friends = friends
+
+            guard !isUITesting else { return }
+            Task { [weak self] in
+                await self?.refreshCatalogFromRemote()
+            }
         } catch {
             state.errorMessage = error.localizedDescription
         }
@@ -277,68 +274,20 @@ final class MainStore: ObservableObject {
         state.trackingSnapshotData = try? encoder.encode(snapshot)
     }
 
-    private func syncGamesWithAssets() throws -> [GameEntity] {
-        var games = try gameRepository.fetchAll()
+    private func refreshCatalogFromRemote() async {
+        do {
+            _ = try await gameCatalogSyncService.refreshFromRemote()
+            state.games = try sortedGames()
+        } catch {
+            state.errorMessage = error.localizedDescription
+        }
+    }
 
-        for canonical in canonicalGames {
-            if let index = games.firstIndex(where: { $0.imageAssetName == canonical.imageAssetName }) {
-                var existing = games[index]
-                if existing.name != canonical.name || existing.imageAssetName != canonical.imageAssetName {
-                    existing.name = canonical.name
-                    existing.imageAssetName = canonical.imageAssetName
-                    games[index] = try gameRepository.upsert(existing)
-                }
-                continue
+    private func sortedGames() throws -> [GameEntity] {
+        try gameRepository.fetchAll()
+            .sorted { lhs, rhs in
+                lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
             }
-
-            if let index = games.firstIndex(where: { isCanonicalMatch(gameName: $0.name, canonical: canonical) }) {
-                var existing = games[index]
-                if existing.name != canonical.name || existing.imageAssetName != canonical.imageAssetName {
-                    existing.name = canonical.name
-                    existing.imageAssetName = canonical.imageAssetName
-                    games[index] = try gameRepository.upsert(existing)
-                }
-                continue
-            }
-
-            let created = try gameRepository.create(
-                name: canonical.name,
-                imageAssetName: canonical.imageAssetName
-            )
-            games.append(created)
-        }
-
-        return try removeLegacyGames(from: games)
-    }
-
-    private func removeLegacyGames(from games: [GameEntity]) throws -> [GameEntity] {
-        var remainingGames = games
-        let legacyGames = remainingGames.filter {
-            normalizeGameName($0.name) == "genshin" || $0.imageAssetName == "genshin"
-        }
-
-        for legacyGame in legacyGames {
-            try gameRepository.delete(id: legacyGame.id)
-        }
-
-        remainingGames.removeAll {
-            normalizeGameName($0.name) == "genshin" || $0.imageAssetName == "genshin"
-        }
-        return remainingGames
-    }
-
-    private func isCanonicalMatch(gameName: String, canonical: CanonicalGame) -> Bool {
-        let normalizedName = normalizeGameName(gameName)
-        if normalizedName == normalizeGameName(canonical.name) {
-            return true
-        }
-        return canonical.legacyNames.contains { normalizeGameName($0) == normalizedName }
-    }
-
-    private func normalizeGameName(_ name: String) -> String {
-        name
-            .lowercased()
-            .filter { $0.isLetter || $0.isNumber }
     }
 
     private func seedFriends() throws -> [FriendEntity] {

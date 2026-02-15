@@ -1,0 +1,7 @@
+[
+  { "id": "apex_legends", "name": "Apex Legends", "imageAssetName": "apex" },
+  { "id": "lol", "name": "LOL", "imageAssetName": "lol" },
+  { "id": "world_war_z", "name": "World War Z", "imageAssetName": "wwz" },
+  { "id": "clash_royale", "name": "Clash Royale", "imageAssetName": "clash_royale" },
+  { "id": "valorant", "name": "Valorant", "imageAssetName": "volarant" }
+]

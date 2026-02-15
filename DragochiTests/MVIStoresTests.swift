@@ -121,7 +121,7 @@ struct MVIStoresTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let game = try dependencies.gameRepository.create(name: "Apex Legends", imageAssetName: "apex")
+            let game = try dependencies.gameRepository.create(name: "Apex Legends", imageAssetName: "apex", remoteID: nil)
 
             let draft = AddSessionDraft(
                 id: UUID(),

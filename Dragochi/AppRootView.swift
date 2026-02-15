@@ -11,6 +11,7 @@ import SwiftData
 @MainActor
 struct AppRootView: View {
     @State private var addSessionDraft: AddSessionDraft?
+    @State private var isShowingGameSettings = false
 
     @StateObject private var mainStore: MainStore
     @StateObject private var historyStore: HistoryStore
@@ -58,7 +59,19 @@ struct AppRootView: View {
                     onSetupConfirmed: draft.mode == .preStartSetup ? { setup in
                         mainStore.send(.preStartSetupConfirmed(setup))
                     } : nil,
+                    onOpenGameSettings: {
+                        addSessionDraft = nil
+                        isShowingGameSettings = true
+                    },
                     onClose: { addSessionDraft = nil }
+                )
+            )
+        }
+        .fullScreenCover(isPresented: $isShowingGameSettings) {
+            GameSettingsView(
+                store: GameSettingsStore(
+                    dependencies: dependencies,
+                    onClose: { isShowingGameSettings = false }
                 )
             )
         }

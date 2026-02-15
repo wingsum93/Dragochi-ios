@@ -48,7 +48,9 @@ struct AddSessionView: View {
                                     model: game,
                                     state: selectionState(for: game),
                                     action: {
-                                        if game.id != "add", let uuid = UUID(uuidString: game.id) {
+                                        if game.id == "add" {
+                                            store.send(.addGameTapped)
+                                        } else if let uuid = UUID(uuidString: game.id) {
                                             store.send(.selectGame(uuid))
                                         }
                                     }

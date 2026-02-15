@@ -11,15 +11,18 @@ struct GameEntity: Identifiable, Codable, Hashable {
     let id: UUID
     var name: String
     var imageAssetName: String?
+    var remoteID: String?
 
     init(
         id: UUID = UUID(),
         name: String,
-        imageAssetName: String? = nil
+        imageAssetName: String? = nil,
+        remoteID: String? = nil
     ) {
         self.id = id
         self.name = name
         self.imageAssetName = imageAssetName
+        self.remoteID = remoteID
     }
 }
 
@@ -29,6 +32,7 @@ extension GameEntity {
         case name
         case imageAssetName
         case icon
+        case remoteID
     }
 
     init(from decoder: Decoder) throws {
@@ -37,6 +41,7 @@ extension GameEntity {
         name = try container.decode(String.self, forKey: .name)
         imageAssetName = try container.decodeIfPresent(String.self, forKey: .imageAssetName)
             ?? container.decodeIfPresent(String.self, forKey: .icon)
+        remoteID = try container.decodeIfPresent(String.self, forKey: .remoteID)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -45,5 +50,6 @@ extension GameEntity {
         try container.encode(name, forKey: .name)
         try container.encodeIfPresent(imageAssetName, forKey: .imageAssetName)
         try container.encodeIfPresent(imageAssetName, forKey: .icon)
+        try container.encodeIfPresent(remoteID, forKey: .remoteID)
     }
 }

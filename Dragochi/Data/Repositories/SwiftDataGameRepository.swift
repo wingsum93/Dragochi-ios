@@ -16,8 +16,13 @@ final class SwiftDataGameRepository: GameRepository {
         self.modelContext = modelContext
     }
 
-    func create(name: String, imageAssetName: String?) throws -> GameEntity {
-        let record = GameRecord(name: name, imageAssetName: imageAssetName, icon: imageAssetName)
+    func create(name: String, imageAssetName: String?, remoteID: String?) throws -> GameEntity {
+        let record = GameRecord(
+            name: name,
+            imageAssetName: imageAssetName,
+            icon: imageAssetName,
+            remoteID: remoteID
+        )
         modelContext.insert(record)
         try modelContext.save()
         return record.toEntity()
@@ -28,6 +33,7 @@ final class SwiftDataGameRepository: GameRepository {
             existing.name = game.name
             existing.imageAssetName = game.imageAssetName
             existing.icon = game.imageAssetName
+            existing.remoteID = game.remoteID
             try modelContext.save()
             return existing.toEntity()
         }
@@ -36,7 +42,8 @@ final class SwiftDataGameRepository: GameRepository {
             id: game.id,
             name: game.name,
             imageAssetName: game.imageAssetName,
-            icon: game.imageAssetName
+            icon: game.imageAssetName,
+            remoteID: game.remoteID
         )
         modelContext.insert(record)
         try modelContext.save()
@@ -47,9 +54,19 @@ final class SwiftDataGameRepository: GameRepository {
         try fetchRecord(id: id)?.toEntity()
     }
 
+    func fetch(remoteID: String) throws -> GameEntity? {
+        try fetchRecord(remoteID: remoteID)?.toEntity()
+    }
+
     func fetchAll() throws -> [GameEntity] {
         let descriptor = FetchDescriptor<GameRecord>()
         return try modelContext.fetch(descriptor).map { $0.toEntity() }
+    }
+
+    func referencedGameIDs() throws -> Set<UUID> {
+        let descriptor = FetchDescriptor<SessionRecord>()
+        let sessions = try modelContext.fetch(descriptor)
+        return Set(sessions.compactMap { $0.game?.id })
     }
 
     func delete(id: UUID) throws {
@@ -61,6 +78,13 @@ final class SwiftDataGameRepository: GameRepository {
     private func fetchRecord(id: UUID) throws -> GameRecord? {
         let descriptor = FetchDescriptor<GameRecord>(
             predicate: #Predicate { $0.id == id }
+        )
+        return try modelContext.fetch(descriptor).first
+    }
+
+    private func fetchRecord(remoteID: String) throws -> GameRecord? {
+        let descriptor = FetchDescriptor<GameRecord>(
+            predicate: #Predicate { $0.remoteID == remoteID }
         )
         return try modelContext.fetch(descriptor).first
     }
