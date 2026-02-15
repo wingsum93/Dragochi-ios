@@ -150,7 +150,7 @@ struct SettingsView: View {
         .onAppear { store.send(.onAppear) }
         .sheet(isPresented: $isShowingOpenSourceLicenses) {
             NavigationStack {
-                List(openSourceLicenses) { license in
+                List(openSourceLicenses) { (license: OpenSourceLicenseItem) in
                     Button {
                         guard let url = license.url else { return }
                         openURL(url)
@@ -165,7 +165,7 @@ struct SettingsView: View {
                                     .font(DragonTheme.current.font(.labelSmall))
                                     .foregroundStyle(DragonTheme.current.color(.textPrimary))
                                 Text(license.subtitle)
-                                    .font(DragonTheme.current.font(.micro))
+                                    .font(DragonTheme.current.font(.gameCardLabel))
                                     .foregroundStyle(DragonTheme.current.color(.textTertiary))
                             }
 
