@@ -75,13 +75,29 @@ struct NotesQuickAction: Identifiable, Hashable {
 }
 
 struct DragonBottomSheetContainer<Content: View, Footer: View>: View {
+    private let topInset: CGFloat
+    private let contentTopPadding: CGFloat
+    private let minimumContentBottomPadding: CGFloat
+    private let footerGradientHeight: CGFloat
+    private let extraContentBottomPadding: CGFloat
     private let content: Content
     private let footer: Footer
+    @State private var bottomOverlayHeight: CGFloat = 0
 
     init(
+        topInset: CGFloat = 70,
+        contentTopPadding: CGFloat = 12,
+        minimumContentBottomPadding: CGFloat = 100,
+        footerGradientHeight: CGFloat = 54,
+        extraContentBottomPadding: CGFloat = 12,
         @ViewBuilder content: () -> Content,
         @ViewBuilder footer: () -> Footer
     ) {
+        self.topInset = topInset
+        self.contentTopPadding = contentTopPadding
+        self.minimumContentBottomPadding = minimumContentBottomPadding
+        self.footerGradientHeight = footerGradientHeight
+        self.extraContentBottomPadding = extraContentBottomPadding
         self.content = content()
         self.footer = footer()
     }
@@ -103,8 +119,14 @@ struct DragonBottomSheetContainer<Content: View, Footer: View>: View {
                 ScrollView(showsIndicators: false) {
                     content
                         .padding(.horizontal, DragonTheme.current.spacing(.lg))
-                        .padding(.top, DragonTheme.current.spacing(.sm))
-                        .padding(.bottom, 100)
+                        .padding(.top, contentTopPadding)
+                        .padding(
+                            .bottom,
+                            max(
+                                minimumContentBottomPadding,
+                                bottomOverlayHeight + extraContentBottomPadding
+                            )
+                        )
                 }
             }
             .background(
@@ -127,7 +149,7 @@ struct DragonBottomSheetContainer<Content: View, Footer: View>: View {
                         startPoint: .top,
                         endPoint: .bottom
                     )
-                    .frame(height: 54)
+                    .frame(height: footerGradientHeight)
 
                     footer
                         .padding(.horizontal, DragonTheme.current.spacing(.lg))
@@ -135,15 +157,26 @@ struct DragonBottomSheetContainer<Content: View, Footer: View>: View {
                         .padding(.top, DragonTheme.current.spacing(.md))
                         .background(DragonTheme.current.color(.bgBase))
                 }
+                .background(
+                    GeometryReader { proxy in
+                        Color.clear.preference(
+                            key: DragonFooterOverlayHeightPreferenceKey.self,
+                            value: proxy.size.height
+                        )
+                    }
+                )
             }
-            .padding(.top, 70)
+            .onPreferenceChange(DragonFooterOverlayHeightPreferenceKey.self) { height in
+                bottomOverlayHeight = height
+            }
+            .padding(.top, topInset)
         }
     }
 }
 
 struct DragonSessionHero: View {
     let title: String
-    let durationText: String
+    let durationText: String?
     let trendText: String
     let trendDirection: TrendDirection
 
@@ -155,11 +188,13 @@ struct DragonSessionHero: View {
                 .tracking(0.7)
                 .textCase(.uppercase)
 
-            Text(durationText)
-                .font(DragonTheme.current.font(.displayTimer))
-                .foregroundStyle(DragonTheme.current.color(.accentPrimary))
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
+            if let durationText, !durationText.isEmpty {
+                Text(durationText)
+                    .font(DragonTheme.current.font(.displayTimer))
+                    .foregroundStyle(DragonTheme.current.color(.accentPrimary))
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
+            }
 
             HStack(spacing: DragonTheme.current.spacing(.xxs)) {
                 Image(systemName: trendDirection.iconName)
@@ -575,6 +610,14 @@ private enum NotesState {
     case idle
     case focused
     case filled
+}
+
+private struct DragonFooterOverlayHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
 }
 
 struct DragonPrimaryCTAButton: View {

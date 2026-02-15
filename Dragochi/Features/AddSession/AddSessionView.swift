@@ -21,7 +21,10 @@ struct AddSessionView: View {
     ]
 
     var body: some View {
-        DragonBottomSheetContainer {
+        DragonBottomSheetContainer(
+            topInset: 24,
+            contentTopPadding: DragonTheme.current.spacing(.xs)
+        ) {
             VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.xl)) {
                 DragonSessionHero(
                     title: heroTitle,
@@ -157,8 +160,8 @@ struct AddSessionView: View {
         store.state.mode == .preStartSetup ? "Session Setup" : "Session Complete"
     }
 
-    private var heroDuration: String {
-        store.state.mode == .preStartSetup ? "00:00:00" : formattedDuration
+    private var heroDuration: String? {
+        store.state.mode == .preStartSetup ? nil : formattedDuration
     }
 
     private var heroTrendText: String {

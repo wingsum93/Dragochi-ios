@@ -74,6 +74,14 @@ final class DragochiUITests: XCTestCase {
 
         waitForElementToAppear(app.staticTexts["Session Setup"])
         waitForElementToAppear(app.staticTexts["Game Played"])
+        let notesHeader = app.staticTexts["Session Notes"]
+        waitForElementToAppear(notesHeader)
+        let startTrackingButton = app.buttons["action.saveSession"]
+        waitForElementToAppear(startTrackingButton)
+
+        XCTAssertFalse(app.staticTexts["00:00:00"].exists)
+        XCTAssertLessThan(notesHeader.frame.maxY, startTrackingButton.frame.minY)
+
         sleep(4)
         XCTAssertTrue(app.staticTexts["Game Played"].exists)
         attachScreenshot(from: app, named: "add-session.png")
