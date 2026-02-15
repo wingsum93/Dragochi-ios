@@ -9,6 +9,23 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var store: SettingsStore
+    @Environment(\.openURL) private var openURL
+    @State private var isShowingOpenSourceLicenses = false
+
+    private let openSourceLicenses: [OpenSourceLicenseItem] = [
+        .init(
+            icon: "swift",
+            title: "Swift",
+            subtitle: "Apache License 2.0",
+            url: URL(string: "https://github.com/swiftlang/swift/blob/main/LICENSE.txt")
+        ),
+        .init(
+            icon: "hammer.fill",
+            title: "swift-collections",
+            subtitle: "Apache License 2.0",
+            url: URL(string: "https://github.com/apple/swift-collections/blob/main/LICENSE.txt")
+        )
+    ]
 
     var body: some View {
         ZStack {
@@ -93,6 +110,36 @@ struct SettingsView: View {
                     .padding(DragonTheme.current.spacing(.md))
                     .background(DragonTheme.current.color(.surfaceCard))
                     .clipShape(RoundedRectangle(cornerRadius: DragonTheme.current.radius(.card), style: .continuous))
+
+                    VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
+                        Text("About")
+                            .font(DragonTheme.current.font(.titleSection))
+                            .foregroundStyle(DragonTheme.current.color(.textPrimary))
+
+                        Button {
+                            isShowingOpenSourceLicenses = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "doc.text")
+                                    .foregroundStyle(DragonTheme.current.color(.textPrimary))
+
+                                Text("Open Source License")
+                                    .font(DragonTheme.current.font(.labelSmall))
+                                    .foregroundStyle(DragonTheme.current.color(.textPrimary))
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(DragonTheme.current.color(.textTertiary))
+                            }
+                            .padding(.vertical, 6)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(DragonTheme.current.spacing(.md))
+                    .background(DragonTheme.current.color(.surfaceCard))
+                    .clipShape(RoundedRectangle(cornerRadius: DragonTheme.current.radius(.card), style: .continuous))
                 }
                 .padding(.horizontal, DragonTheme.current.spacing(.lg))
                 .padding(.top, DragonTheme.current.spacing(.lg))
@@ -101,6 +148,38 @@ struct SettingsView: View {
         }
         .accessibilityIdentifier("screen.settings")
         .onAppear { store.send(.onAppear) }
+        .sheet(isPresented: $isShowingOpenSourceLicenses) {
+            NavigationStack {
+                List(openSourceLicenses) { license in
+                    Button {
+                        guard let url = license.url else { return }
+                        openURL(url)
+                    } label: {
+                        HStack(spacing: DragonTheme.current.spacing(.md)) {
+                            Image(systemName: license.icon)
+                                .frame(width: 24)
+                                .foregroundStyle(DragonTheme.current.color(.textPrimary))
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(license.title)
+                                    .font(DragonTheme.current.font(.labelSmall))
+                                    .foregroundStyle(DragonTheme.current.color(.textPrimary))
+                                Text(license.subtitle)
+                                    .font(DragonTheme.current.font(.micro))
+                                    .foregroundStyle(DragonTheme.current.color(.textTertiary))
+                            }
+
+                            Spacer()
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .navigationTitle("Open Source License")
+                .navigationBarTitleDisplayMode(.inline)
+            }
+            .presentationDetents([.medium, .large])
+        }
     }
 
     private func formatDate(_ date: Date) -> String {
@@ -109,4 +188,12 @@ struct SettingsView: View {
         formatter.timeStyle = .short
         return formatter.string(from: date)
     }
+}
+
+private struct OpenSourceLicenseItem: Identifiable {
+    let id = UUID()
+    let icon: String
+    let title: String
+    let subtitle: String
+    let url: URL?
 }
