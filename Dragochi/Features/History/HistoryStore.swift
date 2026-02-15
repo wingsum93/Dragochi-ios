@@ -19,7 +19,7 @@ final class HistoryStore: ObservableObject {
     struct HistoryRow: Identifiable, Equatable {
         let id: UUID
         let gameTitle: String
-        let subtitle: String
+        let platform: Platform
         let durationText: String
         let timeText: String
     }
@@ -35,7 +35,6 @@ final class HistoryStore: ObservableObject {
         var sections: [HistorySection] = []
         var totalPlaytimeSeconds: Int = 0
         var isLoading: Bool = false
-        var pendingAddSessionDraft: AddSessionDraft?
         var errorMessage: String?
     }
 
@@ -43,8 +42,6 @@ final class HistoryStore: ObservableObject {
         case onAppear
         case selectFilter(HistoryFilter)
         case refresh
-        case openAddSession
-        case clearPendingDraft
     }
 
     @Published private(set) var state = State()
@@ -64,20 +61,6 @@ final class HistoryStore: ObservableObject {
         case .selectFilter(let filter):
             state.filter = filter
             loadSessions()
-        case .openAddSession:
-            state.pendingAddSessionDraft = AddSessionDraft(
-                id: UUID(),
-                mode: .manualEntry,
-                sessionID: nil,
-                startAt: Date(),
-                endAt: Date(),
-                selectedGameID: nil,
-                selectedPlatform: .pc,
-                selectedFriendIDs: [],
-                note: ""
-            )
-        case .clearPendingDraft:
-            state.pendingAddSessionDraft = nil
         }
     }
 
@@ -94,11 +77,10 @@ final class HistoryStore: ObservableObject {
             let rows = sessions.compactMap { session -> HistoryRow? in
                 guard let endAt = session.endAt else { return nil }
                 let title = session.gameID.flatMap { gameMap[$0] } ?? "Unknown Game"
-                let subtitle = session.platform.rawValue.uppercased()
                 return HistoryRow(
                     id: session.id,
                     gameTitle: title,
-                    subtitle: subtitle,
+                    platform: session.platform,
                     durationText: formatDurationShort(session.durationSeconds ?? 0),
                     timeText: formatTime(endAt)
                 )

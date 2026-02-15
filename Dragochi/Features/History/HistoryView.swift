@@ -11,7 +11,7 @@ struct HistoryView: View {
     @ObservedObject var store: HistoryStore
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
+        ZStack {
             DragonTheme.current.color(.bgBase).ignoresSafeArea()
 
             ScrollView {
@@ -23,24 +23,8 @@ struct HistoryView: View {
                 }
                 .padding(.horizontal, DragonTheme.current.spacing(.lg))
                 .padding(.top, DragonTheme.current.spacing(.lg))
-                .padding(.bottom, 120)
+                .padding(.bottom, DragonTheme.current.spacing(.xl))
             }
-
-            Button {
-                store.send(.openAddSession)
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(.black)
-                    .frame(width: 54, height: 54)
-                    .background(DragonTheme.current.color(.accentPrimary))
-                    .clipShape(Circle())
-                    .shadow(color: DragonTheme.current.color(.accentPrimary).opacity(0.4), radius: 10)
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("action.openAddSession")
-            .padding(.trailing, DragonTheme.current.spacing(.lg))
-            .padding(.bottom, DragonTheme.current.spacing(.xl))
         }
         .accessibilityIdentifier("screen.history")
         .onAppear { store.send(.onAppear) }
@@ -102,12 +86,12 @@ struct HistoryView: View {
     }
 
     private func rowCard(_ row: HistoryStore.HistoryRow) -> some View {
-        HStack {
+        HStack(spacing: DragonTheme.current.spacing(.md)) {
             Circle()
                 .fill(DragonTheme.current.color(.surfaceCard))
                 .frame(width: 44, height: 44)
                 .overlay {
-                    Image(systemName: "gamecontroller")
+                    Image(systemName: platformIconName(for: row.platform))
                         .foregroundStyle(DragonTheme.current.color(.textTertiary))
                 }
 
@@ -115,7 +99,7 @@ struct HistoryView: View {
                 Text(row.gameTitle)
                     .font(DragonTheme.current.font(.titleSection))
                     .foregroundStyle(DragonTheme.current.color(.textPrimary))
-                Text(row.subtitle)
+                Text(row.platform.rawValue.uppercased())
                     .font(DragonTheme.current.font(.labelSmall))
                     .foregroundStyle(DragonTheme.current.color(.textTertiary))
             }
@@ -134,6 +118,17 @@ struct HistoryView: View {
         .padding(DragonTheme.current.spacing(.md))
         .background(DragonTheme.current.color(.surfaceCard))
         .clipShape(RoundedRectangle(cornerRadius: DragonTheme.current.radius(.card), style: .continuous))
+    }
+
+    private func platformIconName(for platform: Platform) -> String {
+        switch platform {
+        case .pc:
+            return "desktopcomputer"
+        case .console:
+            return "gamecontroller"
+        case .mobile:
+            return "iphone"
+        }
     }
 
     private func formatDuration(_ seconds: Int) -> String {

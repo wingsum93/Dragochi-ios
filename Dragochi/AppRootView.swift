@@ -67,10 +67,5 @@ struct AppRootView: View {
             addSessionDraft = draft
             mainStore.send(.clearPendingDraft)
         }
-        .onChange(of: historyStore.state.pendingAddSessionDraft) { _, draft in
-            guard let draft else { return }
-            addSessionDraft = draft
-            historyStore.send(.clearPendingDraft)
-        }
     }
 }
