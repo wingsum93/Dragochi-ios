@@ -13,7 +13,9 @@ final class GameSettingsStore: ObservableObject {
     struct State: Equatable {
         var query: String = ""
         var catalog: [CatalogGame] = []
-        var enabledRemoteIDs: Set<String> = []
+        var originalEnabledRemoteIDs: Set<String> = []
+        var draftEnabledRemoteIDs: Set<String> = []
+        var isShowingConfirmChangesDialog: Bool = false
         var isLoading: Bool = false
         var errorMessage: String?
     }
@@ -23,7 +25,10 @@ final class GameSettingsStore: ObservableObject {
         case updateQuery(String)
         case clearQuery
         case toggle(remoteID: String)
-        case closeTapped
+        case backTapped
+        case doneTapped
+        case confirmSaveChanges
+        case cancelSaveChanges
     }
 
     @Published private(set) var state = State()
@@ -34,11 +39,15 @@ final class GameSettingsStore: ObservableObject {
     private let isUITesting: Bool
     private let onClose: () -> Void
 
-    init(dependencies: AppDependencies, onClose: @escaping () -> Void) {
+    init(
+        dependencies: AppDependencies,
+        onClose: @escaping () -> Void,
+        isUITesting: Bool = ProcessInfo.processInfo.arguments.contains("-ui-testing")
+    ) {
         self.gameRepository = dependencies.gameRepository
         self.enabledSelectionRepository = dependencies.enabledGameSelectionRepository
         self.gameCatalogSyncService = dependencies.gameCatalogSyncService
-        self.isUITesting = ProcessInfo.processInfo.arguments.contains("-ui-testing")
+        self.isUITesting = isUITesting
         self.onClose = onClose
     }
 
@@ -52,8 +61,14 @@ final class GameSettingsStore: ObservableObject {
             state.query = ""
         case .toggle(let remoteID):
             toggle(remoteID: remoteID)
-        case .closeTapped:
+        case .backTapped:
             onClose()
+        case .doneTapped:
+            doneTapped()
+        case .confirmSaveChanges:
+            confirmSaveChanges()
+        case .cancelSaveChanges:
+            state.isShowingConfirmChangesDialog = false
         }
     }
 
@@ -71,8 +86,16 @@ final class GameSettingsStore: ObservableObject {
 
         do {
             let fallbackCatalog = try gameCatalogSyncService.seedFromFallbackIfNeeded()
-            state.catalog = sortCatalog(fallbackCatalog)
-            state.enabledRemoteIDs = try enabledSelectionRepository.fetchEnabledRemoteIDs()
+            let sortedCatalog = sortCatalog(fallbackCatalog)
+            state.catalog = sortedCatalog
+
+            let fetchedEnabled = try enabledSelectionRepository.fetchEnabledRemoteIDs()
+            let catalogIDs = Set(sortedCatalog.map(\.id))
+            let enabledWithinCatalog = fetchedEnabled.intersection(catalogIDs)
+
+            state.originalEnabledRemoteIDs = enabledWithinCatalog
+            state.draftEnabledRemoteIDs = enabledWithinCatalog
+            state.isShowingConfirmChangesDialog = false
             state.errorMessage = nil
 
             guard !isUITesting else { return }
@@ -87,8 +110,22 @@ final class GameSettingsStore: ObservableObject {
     private func refreshFromRemote() async {
         do {
             let catalog = try await gameCatalogSyncService.refreshFromRemote()
-            state.catalog = sortCatalog(catalog)
-            state.enabledRemoteIDs = try enabledSelectionRepository.fetchEnabledRemoteIDs()
+            let sortedCatalog = sortCatalog(catalog)
+            state.catalog = sortedCatalog
+
+            let catalogIDs = Set(sortedCatalog.map(\.id))
+            let hasUnsavedChanges = state.draftEnabledRemoteIDs != state.originalEnabledRemoteIDs
+
+            if hasUnsavedChanges {
+                state.originalEnabledRemoteIDs.formIntersection(catalogIDs)
+                state.draftEnabledRemoteIDs.formIntersection(catalogIDs)
+            } else {
+                let fetchedEnabled = try enabledSelectionRepository.fetchEnabledRemoteIDs()
+                let enabledWithinCatalog = fetchedEnabled.intersection(catalogIDs)
+                state.originalEnabledRemoteIDs = enabledWithinCatalog
+                state.draftEnabledRemoteIDs = enabledWithinCatalog
+            }
+
             state.errorMessage = nil
         } catch {
             state.errorMessage = error.localizedDescription
@@ -96,18 +133,43 @@ final class GameSettingsStore: ObservableObject {
     }
 
     private func toggle(remoteID: String) {
+        if state.draftEnabledRemoteIDs.contains(remoteID) {
+            state.draftEnabledRemoteIDs.remove(remoteID)
+        } else {
+            state.draftEnabledRemoteIDs.insert(remoteID)
+        }
+        state.errorMessage = nil
+    }
+
+    private func doneTapped() {
+        guard state.draftEnabledRemoteIDs != state.originalEnabledRemoteIDs else {
+            onClose()
+            return
+        }
+        state.isShowingConfirmChangesDialog = true
+    }
+
+    private func confirmSaveChanges() {
         do {
-            if state.enabledRemoteIDs.contains(remoteID) {
-                try enabledSelectionRepository.disable(remoteID: remoteID)
-                state.enabledRemoteIDs.remove(remoteID)
-                try deleteUnreferencedGame(remoteID: remoteID)
-            } else {
+            let toEnable = state.draftEnabledRemoteIDs.subtracting(state.originalEnabledRemoteIDs).sorted()
+            let toDisable = state.originalEnabledRemoteIDs.subtracting(state.draftEnabledRemoteIDs).sorted()
+
+            for remoteID in toEnable {
                 try enabledSelectionRepository.enable(remoteID: remoteID)
-                state.enabledRemoteIDs.insert(remoteID)
                 try upsertEnabledGame(remoteID: remoteID)
             }
+
+            for remoteID in toDisable {
+                try enabledSelectionRepository.disable(remoteID: remoteID)
+                try deleteUnreferencedGame(remoteID: remoteID)
+            }
+
+            state.originalEnabledRemoteIDs = state.draftEnabledRemoteIDs
+            state.isShowingConfirmChangesDialog = false
             state.errorMessage = nil
+            onClose()
         } catch {
+            state.isShowingConfirmChangesDialog = false
             state.errorMessage = error.localizedDescription
         }
     }

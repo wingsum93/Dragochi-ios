@@ -9,8 +9,17 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var store: SettingsStore
+    let onOpenGameSettings: () -> Void
     @Environment(\.openURL) private var openURL
     @State private var isShowingOpenSourceLicenses = false
+
+    init(
+        store: SettingsStore,
+        onOpenGameSettings: @escaping () -> Void = {}
+    ) {
+        self.store = store
+        self.onOpenGameSettings = onOpenGameSettings
+    }
 
     private let openSourceLicenses: [OpenSourceLicenseItem] = [
         .init(
@@ -106,6 +115,34 @@ struct SettingsView: View {
                             .buttonStyle(.plain)
                             .disabled(store.state.isImporting)
                         }
+                    }
+                    .padding(DragonTheme.current.spacing(.md))
+                    .background(DragonTheme.current.color(.surfaceCard))
+                    .clipShape(RoundedRectangle(cornerRadius: DragonTheme.current.radius(.card), style: .continuous))
+
+                    VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
+                        Text("Game")
+                            .font(DragonTheme.current.font(.titleSection))
+                            .foregroundStyle(DragonTheme.current.color(.textPrimary))
+
+                        Button {
+                            onOpenGameSettings()
+                        } label: {
+                            HStack {
+                                Text("Game Settings (Temp)")
+                                    .font(DragonTheme.current.font(.labelSmall))
+                                    .foregroundStyle(DragonTheme.current.color(.textPrimary))
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(DragonTheme.current.color(.textTertiary))
+                            }
+                            .padding(.vertical, 6)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("action.openGameSettingsFromSettings")
                     }
                     .padding(DragonTheme.current.spacing(.md))
                     .background(DragonTheme.current.color(.surfaceCard))

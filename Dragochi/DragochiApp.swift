@@ -9,6 +9,9 @@ import SwiftUI
 import SwiftData
 import UIKit
 import FirebaseCore
+#if canImport(FirebaseCrashlytics)
+import FirebaseCrashlytics
+#endif
 
 @main
 struct DragochiApp: App {
@@ -36,13 +39,19 @@ struct DragochiApp: App {
 
     private func configureFirebaseIfPossible() {
         guard !isRunningTests else { return }
-        guard FirebaseApp.app() == nil else { return }
-        guard
-            let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
-            let options = FirebaseOptions(contentsOfFile: path)
-        else {
-            return
+        if FirebaseApp.app() == nil {
+            guard
+                let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
+                let options = FirebaseOptions(contentsOfFile: path)
+            else {
+                return
+            }
+            FirebaseApp.configure(options: options)
         }
-        FirebaseApp.configure(options: options)
+#if canImport(FirebaseCrashlytics)
+        if FirebaseApp.app() != nil {
+            Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
+        }
+#endif
     }
 }

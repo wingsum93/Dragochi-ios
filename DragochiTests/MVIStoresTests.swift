@@ -154,6 +154,128 @@ struct MVIStoresTests {
     }
 
     @Test
+    func gameSettingsStore_doneTappedWithoutChangesClosesImmediately() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            var didClose = false
+            let store = GameSettingsStore(
+                dependencies: dependencies,
+                onClose: { didClose = true },
+                isUITesting: true
+            )
+
+            store.send(.onAppear)
+            store.send(.doneTapped)
+
+            #expect(didClose)
+            #expect(!store.state.isShowingConfirmChangesDialog)
+        }
+    }
+
+    @Test
+    func gameSettingsStore_doneTappedWithChangesShowsDialogAndNoKeepsPage() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            var didClose = false
+            let store = GameSettingsStore(
+                dependencies: dependencies,
+                onClose: { didClose = true },
+                isUITesting: true
+            )
+
+            store.send(.onAppear)
+            guard let remoteID = store.state.catalog.first?.id else {
+                Issue.record("Expected catalog to contain at least one game.")
+                return
+            }
+
+            let persistedBeforeToggle = try dependencies.enabledGameSelectionRepository.fetchEnabledRemoteIDs()
+
+            store.send(.toggle(remoteID: remoteID))
+
+            let persistedAfterToggle = try dependencies.enabledGameSelectionRepository.fetchEnabledRemoteIDs()
+            #expect(persistedAfterToggle == persistedBeforeToggle)
+            #expect(store.state.draftEnabledRemoteIDs != store.state.originalEnabledRemoteIDs)
+
+            store.send(.doneTapped)
+            #expect(store.state.isShowingConfirmChangesDialog)
+            #expect(!didClose)
+
+            store.send(.cancelSaveChanges)
+
+            let persistedAfterCancel = try dependencies.enabledGameSelectionRepository.fetchEnabledRemoteIDs()
+            #expect(!store.state.isShowingConfirmChangesDialog)
+            #expect(persistedAfterCancel == persistedBeforeToggle)
+            #expect(!didClose)
+        }
+    }
+
+    @Test
+    func gameSettingsStore_confirmSavePersistsDiffAndCloses() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            var didClose = false
+            let store = GameSettingsStore(
+                dependencies: dependencies,
+                onClose: { didClose = true },
+                isUITesting: true
+            )
+
+            store.send(.onAppear)
+            guard let remoteID = store.state.catalog.first?.id else {
+                Issue.record("Expected catalog to contain at least one game.")
+                return
+            }
+
+            #expect(try dependencies.gameRepository.fetch(remoteID: remoteID) != nil)
+
+            store.send(.toggle(remoteID: remoteID))
+            store.send(.doneTapped)
+            #expect(store.state.isShowingConfirmChangesDialog)
+
+            store.send(.confirmSaveChanges)
+
+            let persistedAfterConfirm = try dependencies.enabledGameSelectionRepository.fetchEnabledRemoteIDs()
+            #expect(didClose)
+            #expect(!store.state.isShowingConfirmChangesDialog)
+            #expect(store.state.originalEnabledRemoteIDs == store.state.draftEnabledRemoteIDs)
+            #expect(!persistedAfterConfirm.contains(remoteID))
+            #expect(try dependencies.gameRepository.fetch(remoteID: remoteID) == nil)
+        }
+    }
+
+    @Test
+    func gameSettingsStore_backTappedClosesWithoutSavingDraftChanges() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            var didClose = false
+            let store = GameSettingsStore(
+                dependencies: dependencies,
+                onClose: { didClose = true },
+                isUITesting: true
+            )
+
+            store.send(.onAppear)
+            guard let remoteID = store.state.catalog.first?.id else {
+                Issue.record("Expected catalog to contain at least one game.")
+                return
+            }
+
+            let persistedBeforeBack = try dependencies.enabledGameSelectionRepository.fetchEnabledRemoteIDs()
+            store.send(.toggle(remoteID: remoteID))
+            store.send(.backTapped)
+            let persistedAfterBack = try dependencies.enabledGameSelectionRepository.fetchEnabledRemoteIDs()
+
+            #expect(didClose)
+            #expect(persistedAfterBack == persistedBeforeBack)
+        }
+    }
+
+    @Test
     func historyStore_buildsSections() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()

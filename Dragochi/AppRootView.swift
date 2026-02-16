@@ -34,7 +34,7 @@ struct AppRootView: View {
     var body: some View {
         TabView {
             MainView(store: mainStore)
-                .tabItem { Label("Home", systemImage: "house") }
+                .tabItem { Label("Home", systemImage: "gamecontroller") }
                 .accessibilityIdentifier("tab.home")
 
             HistoryView(store: historyStore)
@@ -45,7 +45,10 @@ struct AppRootView: View {
                 .tabItem { Label("Stats", systemImage: "chart.bar") }
                 .accessibilityIdentifier("tab.stats")
 
-            SettingsView(store: settingsStore)
+            SettingsView(
+                store: settingsStore,
+                onOpenGameSettings: { isShowingGameSettings = true }
+            )
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .accessibilityIdentifier("tab.settings")
         }
