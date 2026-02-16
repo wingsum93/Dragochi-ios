@@ -162,5 +162,5 @@ Don’t:
   - `/Users/ericho/iosHub/Dragochi/Dragochi/Theme/DragonTypography.swift`
   - `/Users/ericho/iosHub/Dragochi/Dragochi/Theme/DragonRadius.swift`
   - `/Users/ericho/iosHub/Dragochi/Dragochi/Theme/DragonSpacing.swift`
-- Components: `/Users/ericho/iosHub/Dragochi/Dragochi/DesignSystem/DragonComponents.swift`
+- Components: `/Users/ericho/iosHub/Dragochi/Dragochi/DesignSystem/`
 - State previews: `/Users/ericho/iosHub/Dragochi/Dragochi/DesignSystem/DragonComponentPreviews.swift`

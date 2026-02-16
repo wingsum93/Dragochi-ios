@@ -38,7 +38,7 @@ struct AddSessionView: View {
                     DragonSectionHeader(
                         title: "Game Played",
                         trailingText: "See all",
-                        trailingAction: {}
+                        trailingAction: { store.send(.addGameTapped) }
                     )
 
                     ScrollView(.horizontal, showsIndicators: false) {

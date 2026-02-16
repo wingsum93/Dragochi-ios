@@ -689,11 +689,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		6BC2D4A72F430001003F269E /* FirebaseCrashlytics */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 6B80F2012F3D100100288C65 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseCrashlytics;
-		};
 		6B80F2022F3D100100288C65 /* FirebaseCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 6B80F2012F3D100100288C65 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
@@ -703,6 +698,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 6B80F2012F3D100100288C65 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseRemoteConfig;
+		};
+		6BC2D4A72F430001003F269E /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6B80F2012F3D100100288C65 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
