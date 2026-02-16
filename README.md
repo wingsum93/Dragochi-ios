@@ -30,6 +30,12 @@ Dragochi 是一個遊戲時間追蹤 App，目標是先把 MVP 做到可用，�
 
 - 詳細功能規格：`/Users/ericho/iosHub/Dragochi/doc/detail-function.md`
 
+## Release Bundle Identifier
+
+- Release bundle ID 固定為 `com.ericho.Dragochi`（App Store/TestFlight）。
+- Debug bundle ID 使用 `com.ericho.dragochi.dev`（本機開發）。
+- 僅大小寫變更不屬於可用的 App Store app identity migration path。
+
 ## UI Screenshot Export Workflow
 
 `DragochiUITests` keeps screenshot artifacts as XCTest attachments (`home.png`, `history.png`, `stats.png`, `settings.png`, `add-session.png`).

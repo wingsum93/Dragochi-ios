@@ -108,6 +108,7 @@
 			buildPhases = (
 				6B6731232F3CD87E00288C65 /* Sources */,
 				6B6731242F3CD87E00288C65 /* Frameworks */,
+				6BC2D4A52F42F910003F269E /* Copy Firebase Config */,
 				6B6731252F3CD87E00288C65 /* Resources */,
 			);
 			buildRules = (
@@ -246,6 +247,30 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		6BC2D4A52F42F910003F269E /* Copy Firebase Config */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(PROJECT_DIR)/firebase/dev/GoogleService-Info.plist",
+				"$(PROJECT_DIR)/firebase/prod/GoogleService-Info.plist",
+			);
+			name = "Copy Firebase Config";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\nDEV=\"${PROJECT_DIR}/firebase/dev/GoogleService-Info.plist\"\nPROD=\"${PROJECT_DIR}/firebase/prod/GoogleService-Info.plist\"\nDEV_BUNDLE_ID=$(/usr/libexec/PlistBuddy -c \"Print :BUNDLE_ID\" \"${DEV}\" 2>/dev/null || true)\nPROD_BUNDLE_ID=$(/usr/libexec/PlistBuddy -c \"Print :BUNDLE_ID\" \"${PROD}\" 2>/dev/null || true)\nPRODUCT_BUNDLE_ID_LOWER=$(echo \"${PRODUCT_BUNDLE_IDENTIFIER}\" | tr '[:upper:]' '[:lower:]')\nDEV_BUNDLE_ID_LOWER=$(echo \"${DEV_BUNDLE_ID}\" | tr '[:upper:]' '[:lower:]')\nPROD_BUNDLE_ID_LOWER=$(echo \"${PROD_BUNDLE_ID}\" | tr '[:upper:]' '[:lower:]')\n\nif [ \"${PRODUCT_BUNDLE_ID_LOWER}\" = \"${DEV_BUNDLE_ID_LOWER}\" ]; then\n  SRC=\"${DEV}\"\nelif [ \"${PRODUCT_BUNDLE_ID_LOWER}\" = \"${PROD_BUNDLE_ID_LOWER}\" ]; then\n  SRC=\"${PROD}\"\nelif [ \"${CONFIGURATION}\" = \"Release\" ]; then\n  SRC=\"${PROD}\"\nelse\n  SRC=\"${DEV}\"\nfi\n\nDEST=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleService-Info.plist\"\ncp \"${SRC}\" \"${DEST}\"\necho \"Copied Firebase plist: ${SRC} -> ${DEST}\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		6B6731232F3CD87E00288C65 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -342,6 +367,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "Dragochi Dev";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -399,6 +425,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = Dragochi;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
@@ -415,6 +442,7 @@
 				DEVELOPMENT_TEAM = 7H2U3B75K6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Dragochi Dev";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -426,7 +454,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ericho.Dragochi;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ericho.dragochi.dev;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

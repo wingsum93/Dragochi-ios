@@ -7,19 +7,16 @@
 
 import Foundation
 
-#if canImport(FirebaseRemoteConfig)
 import FirebaseRemoteConfig
-#if canImport(FirebaseCore)
 import FirebaseCore
-#endif
-#endif
 
 private let defaultFallbackCatalog: [CatalogGame] = [
     CatalogGame(id: "apex_legends", name: "Apex Legends", imageAssetName: "apex"),
     CatalogGame(id: "lol", name: "LOL", imageAssetName: "lol"),
     CatalogGame(id: "world_war_z", name: "World War Z", imageAssetName: "wwz"),
     CatalogGame(id: "clash_royale", name: "Clash Royale", imageAssetName: "clash_royale"),
-    CatalogGame(id: "valorant", name: "Valorant", imageAssetName: "volarant")
+    CatalogGame(id: "valorant", name: "Valorant", imageAssetName: "volarant"),
+    CatalogGame(id: "fallback", name: "Fall Back", imageAssetName: "volarant")
 ]
 
 @MainActor
@@ -41,10 +38,12 @@ final class FirebaseRemoteConfigGameCatalogService: GameCatalogService {
     }
 
     func fetchLatestCatalog() async throws -> [CatalogGame] {
-#if canImport(FirebaseRemoteConfig)
-#if canImport(FirebaseCore)
-        guard FirebaseApp.app() != nil else { return fallback }
-#endif
+
+        guard FirebaseApp.app() != nil else {
+            print("FCB Game Catalog: Firebase not yet initialized. Using fallback.")
+            return fallback
+        }
+        
         let remoteConfig = RemoteConfig.remoteConfig()
         let settings = RemoteConfigSettings()
         settings.minimumFetchInterval = 0
@@ -62,12 +61,8 @@ final class FirebaseRemoteConfigGameCatalogService: GameCatalogService {
         }
 
         return fallback
-#else
-        return fallback
-#endif
     }
 
-#if canImport(FirebaseRemoteConfig)
     private func fetchAndActivate(remoteConfig: RemoteConfig) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             remoteConfig.fetchAndActivate { _, error in
@@ -79,7 +74,6 @@ final class FirebaseRemoteConfigGameCatalogService: GameCatalogService {
             }
         }
     }
-#endif
 
     private func fallbackJSONString() -> String? {
         guard let data = try? JSONEncoder().encode(fallback) else { return nil }

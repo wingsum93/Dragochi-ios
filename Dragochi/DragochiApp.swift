@@ -8,9 +8,7 @@
 import SwiftUI
 import SwiftData
 import UIKit
-#if canImport(FirebaseCore)
 import FirebaseCore
-#endif
 
 @main
 struct DragochiApp: App {
@@ -37,7 +35,6 @@ struct DragochiApp: App {
     }
 
     private func configureFirebaseIfPossible() {
-#if canImport(FirebaseCore)
         guard !isRunningTests else { return }
         guard FirebaseApp.app() == nil else { return }
         guard
@@ -47,6 +44,5 @@ struct DragochiApp: App {
             return
         }
         FirebaseApp.configure(options: options)
-#endif
     }
 }
