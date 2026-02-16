@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		6BC2D4A32F41E4F6003F269E /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 6B80F2022F3D100100288C65 /* FirebaseCore */; };
 		6BC2D4A42F41E4F6003F269E /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 6B80F2032F3D100100288C65 /* FirebaseRemoteConfig */; };
+		6BC2D4A62F430001003F269E /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 6BC2D4A72F430001003F269E /* FirebaseCrashlytics */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +58,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6BC2D4A62F430001003F269E /* FirebaseCrashlytics in Frameworks */,
 				6BC2D4A42F41E4F6003F269E /* FirebaseRemoteConfig in Frameworks */,
 				6BC2D4A32F41E4F6003F269E /* FirebaseCore in Frameworks */,
 			);
@@ -109,6 +111,7 @@
 				6B6731232F3CD87E00288C65 /* Sources */,
 				6B6731242F3CD87E00288C65 /* Frameworks */,
 				6BC2D4A52F42F910003F269E /* Copy Firebase Config */,
+				6BC2D4A82F430101003F269E /* Upload Crashlytics Symbols */,
 				6B6731252F3CD87E00288C65 /* Resources */,
 			);
 			buildRules = (
@@ -120,6 +123,7 @@
 			);
 			name = Dragochi;
 			packageProductDependencies = (
+				6BC2D4A72F430001003F269E /* FirebaseCrashlytics */,
 				6B80F2022F3D100100288C65 /* FirebaseCore */,
 				6B80F2032F3D100100288C65 /* FirebaseRemoteConfig */,
 			);
@@ -268,6 +272,31 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "set -e\nDEV=\"${PROJECT_DIR}/firebase/dev/GoogleService-Info.plist\"\nPROD=\"${PROJECT_DIR}/firebase/prod/GoogleService-Info.plist\"\nDEV_BUNDLE_ID=$(/usr/libexec/PlistBuddy -c \"Print :BUNDLE_ID\" \"${DEV}\" 2>/dev/null || true)\nPROD_BUNDLE_ID=$(/usr/libexec/PlistBuddy -c \"Print :BUNDLE_ID\" \"${PROD}\" 2>/dev/null || true)\nPRODUCT_BUNDLE_ID_LOWER=$(echo \"${PRODUCT_BUNDLE_IDENTIFIER}\" | tr '[:upper:]' '[:lower:]')\nDEV_BUNDLE_ID_LOWER=$(echo \"${DEV_BUNDLE_ID}\" | tr '[:upper:]' '[:lower:]')\nPROD_BUNDLE_ID_LOWER=$(echo \"${PROD_BUNDLE_ID}\" | tr '[:upper:]' '[:lower:]')\n\nif [ \"${PRODUCT_BUNDLE_ID_LOWER}\" = \"${DEV_BUNDLE_ID_LOWER}\" ]; then\n  SRC=\"${DEV}\"\nelif [ \"${PRODUCT_BUNDLE_ID_LOWER}\" = \"${PROD_BUNDLE_ID_LOWER}\" ]; then\n  SRC=\"${PROD}\"\nelif [ \"${CONFIGURATION}\" = \"Release\" ]; then\n  SRC=\"${PROD}\"\nelse\n  SRC=\"${DEV}\"\nfi\n\nDEST=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleService-Info.plist\"\ncp \"${SRC}\" \"${DEST}\"\necho \"Copied Firebase plist: ${SRC} -> ${DEST}\"\n";
+		};
+		6BC2D4A82F430101003F269E /* Upload Crashlytics Symbols */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run",
+				"$(DWARF_DSYM_FOLDER_PATH)/$(DWARF_DSYM_FILE_NAME)",
+				"$(DWARF_DSYM_FOLDER_PATH)/$(DWARF_DSYM_FILE_NAME)/Contents/Info.plist",
+				"$(DWARF_DSYM_FOLDER_PATH)/$(DWARF_DSYM_FILE_NAME)/Contents/Resources/DWARF/$(TARGET_NAME)",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist",
+				"$(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)",
+				"$(TARGET_BUILD_DIR)/$(EXECUTABLE_FOLDER_PATH)/$(PRODUCT_NAME).debug.dylib",
+			);
+			name = "Upload Crashlytics Symbols";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\nif [ \"${CONFIGURATION}\" != \"Release\" ]; then\n  echo \"Skipping Crashlytics dSYM upload for ${CONFIGURATION}\"\n  exit 0\nfi\n\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -660,6 +689,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		6BC2D4A72F430001003F269E /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6B80F2012F3D100100288C65 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
+		};
 		6B80F2022F3D100100288C65 /* FirebaseCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 6B80F2012F3D100100288C65 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
