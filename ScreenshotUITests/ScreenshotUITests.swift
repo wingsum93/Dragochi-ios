@@ -137,7 +137,7 @@ final class ScreenshotUITests: XCTestCase {
 
         waitForElementToAppear(app.staticTexts["No friends yet"])
         XCTAssertEqual(friendRowCount(in: app), 0)
-        attachScreenshot(from: app, named: "friend-settings-from-add-session-no-friend.png")
+        attachScreenshot(from: app, named: "friend-settings-no-friend.png")
     }
 
     @MainActor
@@ -150,7 +150,7 @@ final class ScreenshotUITests: XCTestCase {
 
         waitForElementToAppear(app.staticTexts["Ava"])
         XCTAssertEqual(friendRowCount(in: app), 1)
-        attachScreenshot(from: app, named: "friend-settings-from-add-session-one-friend.png")
+        attachScreenshot(from: app, named: "friend-settings-one-friend.png")
     }
 
     @MainActor
@@ -170,7 +170,7 @@ final class ScreenshotUITests: XCTestCase {
         waitForElementToAppear(app.staticTexts["Ava"])
         waitForElementToAppear(app.staticTexts["Kai"])
         XCTAssertEqual(friendRowCount(in: app), 5)
-        attachScreenshot(from: app, named: "friend-settings-from-add-session-many-friends.png")
+        attachScreenshot(from: app, named: "friend-settings-many-friends.png")
     }
 
     @discardableResult

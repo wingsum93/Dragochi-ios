@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 XCRESULT_PATH="${1:-}"
-OUTPUT_DIR="${2:-screenshots}"
+OUTPUT_DIR="${2:-$PROJECT_ROOT/screenshots}"
 
 if [[ -z "$XCRESULT_PATH" ]]; then
   echo "Usage: $0 <path-to.xcresult> [output-dir]" >&2
@@ -28,6 +31,9 @@ required_names=(
   "stats.png"
   "settings.png"
   "add-session.png"
+  "friend-settings-no-friend.png"
+  "friend-settings-one-friend.png"
+  "friend-settings-many-friends.png"
 )
 
 temp_json="$(mktemp)"

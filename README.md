@@ -38,7 +38,7 @@ Dragochi 是一個遊戲時間追蹤 App，目標是先把 MVP 做到可用，�
 
 ## UI Screenshot Export Workflow
 
-`ScreenshotUITests` keeps screenshot artifacts as XCTest attachments (`home.png`, `home_start.png`, `history.png`, `stats.png`, `settings.png`, `add-session.png`).
+`ScreenshotUITests` keeps screenshot artifacts as XCTest attachments (`home.png`, `home_start.png`, `history.png`, `stats.png`, `settings.png`, `add-session.png`, `friend-settings-no-friend.png`, `friend-settings-one-friend.png`, `friend-settings-many-friends.png`).
 
 Run UI tests with a deterministic simulator destination and keep the result bundle:
 
@@ -50,10 +50,10 @@ xcodebuild test \
   -resultBundlePath build/ScreenshotUITests.xcresult
 ```
 
-Export attachment PNG files into the tracked baseline folder:
+Export attachment PNG files into the tracked baseline folder (`/Users/ericho/iosHub/Dragochi/screenshots` by default):
 
 ```bash
-scripts/export_ui_screenshots.sh build/ScreenshotUITests.xcresult screenshots
+scripts/export_ui_screenshots.sh build/ScreenshotUITests.xcresult
 ```
 
 You can also provide a custom output path as the second argument.
