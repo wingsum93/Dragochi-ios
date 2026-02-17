@@ -9,6 +9,8 @@ import SwiftUI
 
 struct DragonComponentStateMatrixView: View {
     @State private var sampleNotes = ""
+    @State private var resumeWithImageEnabled = true
+    @State private var resumeFallbackEnabled = false
 
     private let gameModels: [GameCardModel] = [
         .init(id: "valorant", title: "Valorant", imageAssetName: "volarant"),
@@ -21,6 +23,22 @@ struct DragonComponentStateMatrixView: View {
         .init(id: "f1", name: "Ava", avatarAssetName: "F1"),
         .init(id: "legacy-url", name: "Legacy URL", avatarURL: URL(string: "https://www.figma.com/api/mcp/asset/daeb9f28-00fe-4f74-9100-3d79e9f913ff"))
     ]
+
+    private let resumeWithImageModel = DragonResumeLastSetupModel(
+        id: UUID(),
+        gameTitle: "Valorant",
+        gameImageAssetName: "volarant",
+        platformLabel: "PC",
+        teammatesLabel: "w/ Mason & Ava"
+    )
+
+    private let resumeFallbackModel = DragonResumeLastSetupModel(
+        id: UUID(),
+        gameTitle: "Unknown Game",
+        gameImageAssetName: nil,
+        platformLabel: "MOBILE",
+        teammatesLabel: "Solo"
+    )
 
     var body: some View {
         ScrollView {
@@ -82,6 +100,27 @@ struct DragonComponentStateMatrixView: View {
                     DragonTextButton(title: "Discard Entry", state: .enabled) {}
                     DragonTextButton(title: "Discard Entry", state: .pressed) {}
                     DragonTextButton(title: "Discard Entry", state: .disabled) {}
+                }
+
+                DragonSectionHeader(title: "Resume Last Setup")
+                VStack(spacing: 12) {
+                    DragonResumeLastSetupCard(
+                        model: resumeWithImageModel,
+                        isResumeEnabled: resumeWithImageEnabled,
+                        onToggleResume: { isEnabled in
+                            resumeWithImageEnabled = isEnabled
+                        },
+                        onTap: {}
+                    )
+
+                    DragonResumeLastSetupCard(
+                        model: resumeFallbackModel,
+                        isResumeEnabled: resumeFallbackEnabled,
+                        onToggleResume: { isEnabled in
+                            resumeFallbackEnabled = isEnabled
+                        },
+                        onTap: {}
+                    )
                 }
             }
             .padding(24)

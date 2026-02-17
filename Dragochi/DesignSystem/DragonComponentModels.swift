@@ -43,3 +43,11 @@ struct NotesQuickAction: Identifiable, Hashable {
     let id: String
     let iconName: String
 }
+
+struct DragonResumeLastSetupModel: Identifiable, Hashable {
+    let id: UUID
+    let gameTitle: String
+    let gameImageAssetName: String?
+    let platformLabel: String
+    let teammatesLabel: String
+}

@@ -12,6 +12,53 @@ import Testing
 
 struct MVIStoresTests {
     @Test
+    func mainStore_loadsLatestEndedSessionForResumeCard() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+
+            let older = try dependencies.sessionRepository.create(
+                startAt: Date(timeIntervalSince1970: 1_700_000_000),
+                endAt: Date(timeIntervalSince1970: 1_700_000_300),
+                platform: .pc,
+                gameID: nil,
+                durationSeconds: nil,
+                note: nil,
+                friendIDs: []
+            )
+
+            let newer = try dependencies.sessionRepository.create(
+                startAt: Date(timeIntervalSince1970: 1_700_000_400),
+                endAt: Date(timeIntervalSince1970: 1_700_000_900),
+                platform: .mobile,
+                gameID: nil,
+                durationSeconds: nil,
+                note: nil,
+                friendIDs: []
+            )
+
+            let store = MainStore(dependencies: dependencies)
+            store.send(.onAppear)
+
+            #expect(older.id != newer.id)
+            #expect(store.state.latestEndedSession?.id == newer.id)
+        }
+    }
+
+    @Test
+    func mainStore_noEndedSessionsKeepsLatestEndedSessionNil() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let store = MainStore(dependencies: dependencies)
+
+            store.send(.onAppear)
+
+            #expect(store.state.latestEndedSession == nil)
+        }
+    }
+
+    @Test
     func mainStore_trackingPauseResumeAndRestoreFlow() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()

@@ -11,6 +11,7 @@ import Combine
 struct MainView: View {
     @ObservedObject var store: MainStore
     @SceneStorage("home.trackingSnapshotData") private var trackingSnapshotData: Data?
+    @State private var isResumeLastSetupEnabled = true
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -23,10 +24,18 @@ struct MainView: View {
                 timerSection
                 sessionDetailSection
                 Spacer()
-                controlSection
             }
             .padding(.horizontal, DragonTheme.current.spacing(.lg))
             .padding(.top, DragonTheme.current.spacing(.lg))
+
+            controlSection
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                .padding(.horizontal, DragonTheme.current.spacing(.lg))
+        }
+        .overlay(alignment: .bottom) {
+            resumeLastSetupSection
+                .padding(.horizontal, DragonTheme.current.spacing(.lg))
+                .padding(.bottom, DragonTheme.current.spacing(.lg))
         }
         .accessibilityIdentifier("screen.home")
         .onAppear {
@@ -105,6 +114,20 @@ struct MainView: View {
         }
     }
 
+    @ViewBuilder
+    private var resumeLastSetupSection: some View {
+        if store.state.trackingStatus == .idle, let model = resumeLastSetupModel {
+            DragonResumeLastSetupCard(
+                model: model,
+                isResumeEnabled: isResumeLastSetupEnabled,
+                onToggleResume: { isEnabled in
+                    isResumeLastSetupEnabled = isEnabled
+                },
+                onTap: {}
+            )
+        }
+    }
+
     private var startButton: some View {
         Button {
             store.send(.startTapped)
@@ -126,7 +149,6 @@ struct MainView: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("action.startTracking")
-        .padding(.bottom, DragonTheme.current.spacing(.xl))
     }
 
     private var stopButton: some View {
@@ -166,7 +188,6 @@ struct MainView: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("action.pauseResumeTracking")
-        .padding(.bottom, DragonTheme.current.spacing(.xl))
     }
 
     private var statusText: String {
@@ -205,6 +226,40 @@ struct MainView: View {
 
     private func selectedGameTitle(_ id: UUID) -> String {
         store.state.games.first(where: { $0.id == id })?.name ?? "Unknown Game"
+    }
+
+    private var resumeLastSetupModel: DragonResumeLastSetupModel? {
+        guard let session = store.state.latestEndedSession else { return nil }
+        let selectedGame = session.gameID.flatMap { id in
+            store.state.games.first(where: { $0.id == id })
+        }
+
+        return DragonResumeLastSetupModel(
+            id: session.id,
+            gameTitle: selectedGame?.name ?? "Unknown Game",
+            gameImageAssetName: selectedGame?.imageAssetName,
+            platformLabel: session.platform.rawValue.uppercased(),
+            teammatesLabel: teammatesLabel(for: session.friendIDs)
+        )
+    }
+
+    private func teammatesLabel(for friendIDs: [UUID]) -> String {
+        let names = friendIDs.compactMap { friendID in
+            store.state.friends.first(where: { $0.id == friendID })?.name
+        }
+
+        guard !names.isEmpty else {
+            return friendIDs.isEmpty ? "Solo" : "\(friendIDs.count) teammates"
+        }
+
+        if names.count == 1 {
+            return "w/ \(names[0])"
+        }
+        if names.count == 2 {
+            return "w/ \(names[0]) & \(names[1])"
+        }
+
+        return "w/ \(names[0]), \(names[1]) +\(names.count - 2)"
     }
 
     private func formatDuration(_ seconds: Int) -> String {

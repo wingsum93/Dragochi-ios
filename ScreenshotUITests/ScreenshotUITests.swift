@@ -1,19 +1,19 @@
 //
-//  DragochiUITests.swift
-//  DragochiUITests
+//  ScreenshotUITests.swift
+//  ScreenshotUITests
 //
 //  Created by eric ho on 11/2/2026.
 //
 
 import XCTest
 
-final class DragochiUITests: XCTestCase {
+final class ScreenshotUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
     }
 
     @MainActor
-    func testCaptureHome() throws {
+    func testScreenshotHome() throws {
         let app = launchAppForScreenshots()
 
         waitForElementToAppear(app.staticTexts["Quick Track"])
@@ -21,7 +21,7 @@ final class DragochiUITests: XCTestCase {
     }
 
     @MainActor
-    func testCaptureHistory() throws {
+    func testScreenshotHistory() throws {
         let app = launchAppForScreenshots()
 
         app.tabBars.buttons["History"].tap()
@@ -31,7 +31,7 @@ final class DragochiUITests: XCTestCase {
     }
 
     @MainActor
-    func testCaptureStats() throws {
+    func testScreenshotStats() throws {
         let app = launchAppForScreenshots()
 
         app.tabBars.buttons["Stats"].tap()
@@ -54,7 +54,7 @@ final class DragochiUITests: XCTestCase {
     }
 
     @MainActor
-    func testCaptureSettings() throws {
+    func testScreenshotSettings() throws {
         let app = launchAppForScreenshots()
 
         app.tabBars.buttons["Settings"].tap()
@@ -63,7 +63,7 @@ final class DragochiUITests: XCTestCase {
     }
 
     @MainActor
-    func testCaptureAddSession() throws {
+    func testScreenshotSessionSetup() throws {
         let app = launchAppForScreenshots()
 
         waitForElementToAppear(app.staticTexts["Quick Track"])

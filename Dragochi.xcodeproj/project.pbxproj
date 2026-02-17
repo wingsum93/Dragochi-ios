@@ -32,7 +32,7 @@
 /* Begin PBXFileReference section */
 		6B6731272F3CD87E00288C65 /* Dragochi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Dragochi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6B6731362F3CD88000288C65 /* DragochiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DragochiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		6B6731402F3CD88000288C65 /* DragochiUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DragochiUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		6B6731402F3CD88000288C65 /* ScreenshotUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScreenshotUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -46,9 +46,9 @@
 			path = DragochiTests;
 			sourceTree = "<group>";
 		};
-		6B6731432F3CD88000288C65 /* DragochiUITests */ = {
+		6B6731432F3CD88000288C65 /* ScreenshotUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DragochiUITests;
+			path = ScreenshotUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -86,7 +86,7 @@
 			children = (
 				6B6731292F3CD87E00288C65 /* Dragochi */,
 				6B6731392F3CD88000288C65 /* DragochiTests */,
-				6B6731432F3CD88000288C65 /* DragochiUITests */,
+				6B6731432F3CD88000288C65 /* ScreenshotUITests */,
 				6B6731282F3CD87E00288C65 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -96,7 +96,7 @@
 			children = (
 				6B6731272F3CD87E00288C65 /* Dragochi.app */,
 				6B6731362F3CD88000288C65 /* DragochiTests.xctest */,
-				6B6731402F3CD88000288C65 /* DragochiUITests.xctest */,
+				6B6731402F3CD88000288C65 /* ScreenshotUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -154,9 +154,9 @@
 			productReference = 6B6731362F3CD88000288C65 /* DragochiTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		6B67313F2F3CD88000288C65 /* DragochiUITests */ = {
+		6B67313F2F3CD88000288C65 /* ScreenshotUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 6B6731502F3CD88000288C65 /* Build configuration list for PBXNativeTarget "DragochiUITests" */;
+			buildConfigurationList = 6B6731502F3CD88000288C65 /* Build configuration list for PBXNativeTarget "ScreenshotUITests" */;
 			buildPhases = (
 				6B67313C2F3CD88000288C65 /* Sources */,
 				6B67313D2F3CD88000288C65 /* Frameworks */,
@@ -168,13 +168,13 @@
 				6B6731422F3CD88000288C65 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				6B6731432F3CD88000288C65 /* DragochiUITests */,
+				6B6731432F3CD88000288C65 /* ScreenshotUITests */,
 			);
-			name = DragochiUITests;
+			name = ScreenshotUITests;
 			packageProductDependencies = (
 			);
-			productName = DragochiUITests;
-			productReference = 6B6731402F3CD88000288C65 /* DragochiUITests.xctest */;
+			productName = ScreenshotUITests;
+			productReference = 6B6731402F3CD88000288C65 /* ScreenshotUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -222,7 +222,7 @@
 			targets = (
 				6B6731262F3CD87E00288C65 /* Dragochi */,
 				6B6731352F3CD88000288C65 /* DragochiTests */,
-				6B67313F2F3CD88000288C65 /* DragochiUITests */,
+				6B67313F2F3CD88000288C65 /* ScreenshotUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -596,7 +596,7 @@
 				DEVELOPMENT_TEAM = 7H2U3B75K6;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ericho.DragochiUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ericho.ScreenshotUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -620,7 +620,7 @@
 				DEVELOPMENT_TEAM = 7H2U3B75K6;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ericho.DragochiUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ericho.ScreenshotUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -666,7 +666,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		6B6731502F3CD88000288C65 /* Build configuration list for PBXNativeTarget "DragochiUITests" */ = {
+		6B6731502F3CD88000288C65 /* Build configuration list for PBXNativeTarget "ScreenshotUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				6B6731512F3CD88000288C65 /* Debug */,

@@ -35,6 +35,7 @@ final class MainStore: ObservableObject {
         var activeSetup: SessionSetupInput?
         var games: [GameEntity] = []
         var friends: [FriendEntity] = []
+        var latestEndedSession: SessionEntity?
         var pendingAddSessionDraft: AddSessionDraft?
         var trackingSnapshotData: Data?
         var errorMessage: String?
@@ -113,6 +114,7 @@ final class MainStore: ObservableObject {
                 friends = try seedFriends()
             }
             state.friends = friends
+            state.latestEndedSession = try fetchLatestEndedSession()
 
             guard !isUITesting else { return }
             Task { [weak self] in
@@ -194,6 +196,7 @@ final class MainStore: ObservableObject {
 
         do {
             _ = try sessionRepository.update(session)
+            state.latestEndedSession = session
             state.elapsedSeconds = durationSeconds
             clearTrackingState(resetElapsed: false)
         } catch {
@@ -281,6 +284,18 @@ final class MainStore: ObservableObject {
         } catch {
             state.errorMessage = error.localizedDescription
         }
+    }
+
+    private func fetchLatestEndedSession() throws -> SessionEntity? {
+        let endedSessions = try sessionRepository.fetchEnded(between: .distantPast, and: now())
+        return endedSessions.sorted { lhs, rhs in
+            let lhsDate = lhs.endAt ?? lhs.startAt
+            let rhsDate = rhs.endAt ?? rhs.startAt
+            if lhsDate == rhsDate {
+                return lhs.startAt > rhs.startAt
+            }
+            return lhsDate > rhsDate
+        }.first
     }
 
     private func sortedGames() throws -> [GameEntity] {
