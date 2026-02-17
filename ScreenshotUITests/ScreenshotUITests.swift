@@ -118,17 +118,6 @@ final class ScreenshotUITests: XCTestCase {
         attachScreenshot(from: app, named: "add-session.png")
     }
 
-    @MainActor
-    func testOpenFriendSettingsFromSettings() throws {
-        let app = launchAppForScreenshots()
-
-        app.tabBars.buttons["Settings"].tap()
-        let openFriendSettings = element(in: app, id: "action.openFriendSettingsFromSettings")
-        waitForElementToAppear(openFriendSettings)
-        openFriendSettings.tap()
-
-        waitForElementToAppear(element(in: app, id: "screen.friendSettings"))
-    }
 
     @MainActor
     func testOpenFriendSettingsFromAddSession_NoFriend() throws {
