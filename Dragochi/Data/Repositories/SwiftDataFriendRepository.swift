@@ -16,8 +16,18 @@ final class SwiftDataFriendRepository: FriendRepository {
         self.modelContext = modelContext
     }
 
-    func create(name: String, handle: String?) throws -> FriendEntity {
-        let record = FriendRecord(name: name, handle: handle)
+    func create(
+        name: String,
+        handle: String?,
+        avatarAssetName: String? = nil,
+        isActive: Bool = true
+    ) throws -> FriendEntity {
+        let record = FriendRecord(
+            name: name,
+            handle: handle,
+            avatarAssetName: avatarAssetName,
+            isActive: isActive
+        )
         modelContext.insert(record)
         try modelContext.save()
         return record.toEntity()
@@ -27,11 +37,19 @@ final class SwiftDataFriendRepository: FriendRepository {
         if let existing = try fetchRecord(id: friend.id) {
             existing.name = friend.name
             existing.handle = friend.handle
+            existing.avatarAssetName = friend.avatarAssetName
+            existing.isActive = friend.isActive
             try modelContext.save()
             return existing.toEntity()
         }
 
-        let record = FriendRecord(id: friend.id, name: friend.name, handle: friend.handle)
+        let record = FriendRecord(
+            id: friend.id,
+            name: friend.name,
+            handle: friend.handle,
+            avatarAssetName: friend.avatarAssetName,
+            isActive: friend.isActive
+        )
         modelContext.insert(record)
         try modelContext.save()
         return record.toEntity()
@@ -39,6 +57,13 @@ final class SwiftDataFriendRepository: FriendRepository {
 
     func fetch(id: UUID) throws -> FriendEntity? {
         try fetchRecord(id: id)?.toEntity()
+    }
+
+    func fetchActive() throws -> [FriendEntity] {
+        let descriptor = FetchDescriptor<FriendRecord>(
+            predicate: #Predicate { $0.isActive == true }
+        )
+        return try modelContext.fetch(descriptor).map { $0.toEntity() }
     }
 
     func fetchAll() throws -> [FriendEntity] {
@@ -59,4 +84,3 @@ final class SwiftDataFriendRepository: FriendRepository {
         return try modelContext.fetch(descriptor).first
     }
 }
-

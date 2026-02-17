@@ -55,6 +55,7 @@ struct MVIStoresTests {
             store.send(.onAppear)
 
             #expect(store.state.latestEndedSession == nil)
+            #expect(store.state.friends.isEmpty)
         }
     }
 
@@ -197,6 +198,112 @@ struct MVIStoresTests {
             #expect(receivedSetup != nil)
             #expect(receivedSetup?.selectedFriendIDs.isEmpty == true)
             #expect(didClose)
+        }
+    }
+
+    @Test
+    func addSessionStore_showsNoTeammateChipsWhenNoActiveFriends() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let draft = AddSessionDraft(
+                id: UUID(),
+                mode: .manualEntry,
+                sessionID: nil,
+                startAt: Date(),
+                endAt: Date(),
+                selectedGameID: nil,
+                selectedPlatform: .pc,
+                selectedFriendIDs: [],
+                note: ""
+            )
+
+            let store = AddSessionStore(dependencies: dependencies, draft: draft)
+            store.send(.onAppear)
+
+            #expect(store.state.teammateChips.isEmpty)
+        }
+    }
+
+    @Test
+    func addSessionStore_usesPersistedFriendAvatarAsset() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let friend = try dependencies.friendRepository.create(
+                name: "Ava",
+                handle: nil,
+                avatarAssetName: "F2",
+                isActive: true
+            )
+            let draft = AddSessionDraft(
+                id: UUID(),
+                mode: .manualEntry,
+                sessionID: nil,
+                startAt: Date(),
+                endAt: Date(),
+                selectedGameID: nil,
+                selectedPlatform: .pc,
+                selectedFriendIDs: [friend.id],
+                note: ""
+            )
+
+            let store = AddSessionStore(dependencies: dependencies, draft: draft)
+            store.send(.onAppear)
+
+            #expect(store.state.teammateChips.count == 1)
+            #expect(store.state.teammateChips.first?.avatarAssetName == "F2")
+            #expect(store.state.selectedFriendIDs.contains(friend.id))
+        }
+    }
+
+    @Test
+    func friendSettingsStore_addEditDeleteAndValidation() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let existing = try dependencies.friendRepository.create(
+                name: "Mason",
+                handle: nil,
+                avatarAssetName: "M1",
+                isActive: true
+            )
+            let store = FriendSettingsStore(dependencies: dependencies)
+
+            store.send(.onAppear)
+            #expect(store.state.friends.count == 1)
+
+            store.send(.addTapped)
+            store.send(.updateEditingName("  mason  "))
+            store.send(.saveEditingTapped)
+            #expect(store.state.editValidationMessage != nil)
+
+            store.send(.updateEditingName("Ava"))
+            store.send(.selectEditingAvatar("F4"))
+            store.send(.saveEditingTapped)
+            #expect(store.state.friends.count == 2)
+
+            guard let addedFriend = store.state.friends.first(where: { $0.name == "Ava" }) else {
+                Issue.record("Expected newly added friend.")
+                return
+            }
+            #expect(addedFriend.avatarAssetName == "F4")
+            #expect(addedFriend.isActive)
+
+            store.send(.editTapped(existing.id))
+            store.send(.updateEditingName("Mason Prime"))
+            store.send(.selectEditingAvatar("M2"))
+            store.send(.saveEditingTapped)
+            #expect(store.state.friends.first(where: { $0.id == existing.id })?.name == "Mason Prime")
+            #expect(store.state.friends.first(where: { $0.id == existing.id })?.avatarAssetName == "M2")
+
+            store.send(.deleteTapped(existing.id))
+            #expect(store.state.isShowingDeleteDialog)
+            store.send(.confirmDeleteTapped)
+            #expect(!store.state.friends.contains(where: { $0.id == existing.id }))
+
+            let persisted = try dependencies.friendRepository.fetch(id: existing.id)
+            #expect(persisted?.isActive == false)
         }
     }
 

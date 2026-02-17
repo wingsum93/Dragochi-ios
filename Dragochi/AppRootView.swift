@@ -19,6 +19,7 @@ struct AppRootView: View {
 
     @State private var addSessionDraft: AddSessionDraft?
     @State private var isShowingGameSettings = false
+    @State private var isShowingFriendSettings = false
     @State private var selectedTab: Tab = .home
 
     @StateObject private var mainStore: MainStore
@@ -66,7 +67,8 @@ struct AppRootView: View {
 
             SettingsView(
                 store: settingsStore,
-                onOpenGameSettings: { isShowingGameSettings = true }
+                onOpenGameSettings: { isShowingGameSettings = true },
+                onOpenFriendSettings: { isShowingFriendSettings = true }
             )
                 .tabItem {
                     Label("Settings", systemImage: "gearshape")
@@ -93,6 +95,9 @@ struct AppRootView: View {
                         addSessionDraft = nil
                         isShowingGameSettings = true
                     },
+                    onOpenFriendSettings: {
+                        isShowingFriendSettings = true
+                    },
                     onClose: { addSessionDraft = nil }
                 )
             )
@@ -102,6 +107,14 @@ struct AppRootView: View {
                 store: GameSettingsStore(
                     dependencies: dependencies,
                     onClose: { isShowingGameSettings = false }
+                )
+            )
+        }
+        .fullScreenCover(isPresented: $isShowingFriendSettings) {
+            FriendSettingsView(
+                store: FriendSettingsStore(
+                    dependencies: dependencies,
+                    onClose: { isShowingFriendSettings = false }
                 )
             )
         }

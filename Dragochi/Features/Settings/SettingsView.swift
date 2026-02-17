@@ -10,15 +10,18 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var store: SettingsStore
     let onOpenGameSettings: () -> Void
+    let onOpenFriendSettings: () -> Void
     @Environment(\.openURL) private var openURL
     @State private var isShowingOpenSourceLicenses = false
 
     init(
         store: SettingsStore,
-        onOpenGameSettings: @escaping () -> Void = {}
+        onOpenGameSettings: @escaping () -> Void = {},
+        onOpenFriendSettings: @escaping () -> Void = {}
     ) {
         self.store = store
         self.onOpenGameSettings = onOpenGameSettings
+        self.onOpenFriendSettings = onOpenFriendSettings
     }
 
     private let openSourceLicenses: [OpenSourceLicenseItem] = [
@@ -143,6 +146,34 @@ struct SettingsView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("action.openGameSettingsFromSettings")
+                    }
+                    .padding(DragonTheme.current.spacing(.md))
+                    .background(DragonTheme.current.color(.surfaceCard))
+                    .clipShape(RoundedRectangle(cornerRadius: DragonTheme.current.radius(.card), style: .continuous))
+
+                    VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
+                        Text("Friend")
+                            .font(DragonTheme.current.font(.titleSection))
+                            .foregroundStyle(DragonTheme.current.color(.textPrimary))
+
+                        Button {
+                            onOpenFriendSettings()
+                        } label: {
+                            HStack {
+                                Text("Friend List")
+                                    .font(DragonTheme.current.font(.labelSmall))
+                                    .foregroundStyle(DragonTheme.current.color(.textPrimary))
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(DragonTheme.current.color(.textTertiary))
+                            }
+                            .padding(.vertical, 6)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("action.openFriendSettingsFromSettings")
                     }
                     .padding(DragonTheme.current.spacing(.md))
                     .background(DragonTheme.current.color(.surfaceCard))

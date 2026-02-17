@@ -116,6 +116,34 @@ final class ScreenshotUITests: XCTestCase {
         attachScreenshot(from: app, named: "add-session.png")
     }
 
+    @MainActor
+    func testOpenFriendSettingsFromSettings() throws {
+        let app = launchAppForScreenshots()
+
+        app.tabBars.buttons["Settings"].tap()
+        let openFriendSettings = element(in: app, id: "action.openFriendSettingsFromSettings")
+        waitForElementToAppear(openFriendSettings)
+        openFriendSettings.tap()
+
+        waitForElementToAppear(element(in: app, id: "screen.friendSettings"))
+    }
+
+    @MainActor
+    func testOpenFriendSettingsFromAddSession() throws {
+        let app = launchAppForScreenshots()
+        ensureTrackingIsIdle(in: app)
+
+        let startButton = element(in: app, id: "action.startTracking")
+        startButton.tap()
+
+        waitForElementToAppear(element(in: app, id: "screen.addSession"))
+        let addTeammateButton = element(in: app, id: "action.addTeammate")
+        waitForElementToAppear(addTeammateButton)
+        addTeammateButton.tap()
+
+        waitForElementToAppear(element(in: app, id: "screen.friendSettings"))
+    }
+
     @discardableResult
     private func launchAppForScreenshots() -> XCUIApplication {
         let app = XCUIApplication()

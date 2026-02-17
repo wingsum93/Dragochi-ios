@@ -103,8 +103,9 @@ struct AddSessionView: View {
                             DragonTeammateAvatarChip(
                                 model: .init(id: "add", name: "Add"),
                                 state: .add,
-                                action: {}
+                                action: { store.send(.addTeammateTapped) }
                             )
+                            .accessibilityIdentifier("action.addTeammate")
                         }
                     }
                 }
@@ -148,6 +149,9 @@ struct AddSessionView: View {
             }
         }
         .onAppear { store.send(.onAppear) }
+        .onReceive(NotificationCenter.default.publisher(for: .friendsDidChange)) { _ in
+            store.send(.onAppear)
+        }
     }
 
     private func selectionState(for card: GameCardModel) -> SelectionState {

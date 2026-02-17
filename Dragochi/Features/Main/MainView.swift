@@ -47,6 +47,9 @@ struct MainView: View {
         .onChange(of: store.state.trackingSnapshotData) { _, data in
             trackingSnapshotData = data
         }
+        .onReceive(NotificationCenter.default.publisher(for: .friendsDidChange)) { _ in
+            store.send(.onAppear)
+        }
     }
 
     private var header: some View {

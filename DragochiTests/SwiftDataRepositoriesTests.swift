@@ -41,16 +41,31 @@ struct SwiftDataRepositoriesTests {
             let modelContext = ModelContext(container)
             let repository = SwiftDataFriendRepository(modelContext: modelContext)
 
-            let created = try repository.create(name: "Mason", handle: "@mason")
+            let created = try repository.create(
+                name: "Mason",
+                handle: "@mason",
+                avatarAssetName: "M1",
+                isActive: true
+            )
             #expect(created.name == "Mason")
+            #expect(created.avatarAssetName == "M1")
+            #expect(created.isActive)
 
             let fetched = try repository.fetch(id: created.id)
             #expect(fetched?.handle == "@mason")
+            #expect(fetched?.avatarAssetName == "M1")
 
             var updated = created
             updated.name = "Mason Updated"
+            updated.avatarAssetName = "F3"
+            updated.isActive = false
             let upserted = try repository.upsert(updated)
             #expect(upserted.name == "Mason Updated")
+            #expect(upserted.avatarAssetName == "F3")
+            #expect(!upserted.isActive)
+
+            let active = try repository.fetchActive()
+            #expect(active.isEmpty)
 
             try repository.delete(id: created.id)
             #expect(try repository.fetch(id: created.id) == nil)

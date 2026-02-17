@@ -55,6 +55,7 @@ final class AddSessionStore: ObservableObject {
         case onAppear
         case selectGame(UUID)
         case addGameTapped
+        case addTeammateTapped
         case selectPlatform(Platform)
         case toggleFriend(UUID)
         case updateNote(String)
@@ -71,6 +72,7 @@ final class AddSessionStore: ObservableObject {
     private let gameCatalogSyncService: GameCatalogSyncService
     private let onSetupConfirmed: ((SessionSetupInput) -> Void)?
     private let onOpenGameSettings: () -> Void
+    private let onOpenFriendSettings: () -> Void
     private let onClose: () -> Void
 
     init(
@@ -78,6 +80,7 @@ final class AddSessionStore: ObservableObject {
         draft: AddSessionDraft,
         onSetupConfirmed: ((SessionSetupInput) -> Void)? = nil,
         onOpenGameSettings: @escaping () -> Void = {},
+        onOpenFriendSettings: @escaping () -> Void = {},
         onClose: @escaping () -> Void = {}
     ) {
         self.sessionRepository = dependencies.sessionRepository
@@ -87,6 +90,7 @@ final class AddSessionStore: ObservableObject {
         self.gameCatalogSyncService = dependencies.gameCatalogSyncService
         self.onSetupConfirmed = onSetupConfirmed
         self.onOpenGameSettings = onOpenGameSettings
+        self.onOpenFriendSettings = onOpenFriendSettings
         self.onClose = onClose
         self.state = State(
             mode: draft.mode,
@@ -108,6 +112,8 @@ final class AddSessionStore: ObservableObject {
             state.selectedGameID = id
         case .addGameTapped:
             onOpenGameSettings()
+        case .addTeammateTapped:
+            onOpenFriendSettings()
         case .selectPlatform(let platform):
             state.selectedPlatform = platform
         case .toggleFriend(let id):
@@ -130,9 +136,11 @@ final class AddSessionStore: ObservableObject {
             _ = try gameCatalogSyncService.seedFromFallbackIfNeeded()
             let games = try gameRepository.fetchAll()
             let enabledRemoteIDs = try enabledGameSelectionRepository.fetchEnabledRemoteIDs()
-            let friends = try friendRepository.fetchAll()
+            let friends = try activeFriends()
+            let activeIDs = Set(friends.map(\.id))
             state.games = games
             state.friends = friends
+            state.selectedFriendIDs = state.selectedFriendIDs.intersection(activeIDs)
             state.gameCards = makeGameCards(from: games, enabledRemoteIDs: enabledRemoteIDs)
             state.teammateChips = makeTeammateChips(from: friends)
             state.errorMessage = nil
@@ -238,17 +246,22 @@ final class AddSessionStore: ObservableObject {
     }
 
     private func makeTeammateChips(from friends: [FriendEntity]) -> [TeammateChipModel] {
-        let assetNames = [
-            "M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9", "M10",
-            "F1", "F2", "F3", "F4", "F5"
-        ]
-        return friends.enumerated().map { index, friend in
-            let assetName = index < assetNames.count ? assetNames[index] : nil
+        return friends
+            .sorted { lhs, rhs in
+                lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+            }
+            .map { friend in
             return TeammateChipModel(
                 id: friend.id.uuidString,
                 name: friend.name,
-                avatarAssetName: assetName
+                avatarAssetName: friend.avatarAssetName
             )
+        }
+    }
+
+    private func activeFriends() throws -> [FriendEntity] {
+        try friendRepository.fetchActive().sorted { lhs, rhs in
+            lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
         }
     }
 }

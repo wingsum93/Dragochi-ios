@@ -109,11 +109,7 @@ final class MainStore: ObservableObject {
         do {
             _ = try gameCatalogSyncService.seedFromFallbackIfNeeded()
             state.games = try sortedGames()
-            var friends = try friendRepository.fetchAll()
-            if friends.isEmpty {
-                friends = try seedFriends()
-            }
-            state.friends = friends
+            state.friends = try friendRepository.fetchActive()
             state.latestEndedSession = try fetchLatestEndedSession()
 
             guard !isUITesting else { return }
@@ -305,13 +301,4 @@ final class MainStore: ObservableObject {
             }
     }
 
-    private func seedFriends() throws -> [FriendEntity] {
-        let names = [
-            "Mason", "Kai", "Noah", "Leo", "Aiden", "Ryan", "Evan", "Jude",
-            "Liam", "Owen", "Ava", "Mia", "Luna", "Ivy", "Nora"
-        ]
-        return try names.map { name in
-            try friendRepository.create(name: name, handle: nil)
-        }
-    }
 }

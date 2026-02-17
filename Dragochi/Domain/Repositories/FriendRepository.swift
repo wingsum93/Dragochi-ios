@@ -9,10 +9,21 @@ import Foundation
 
 @MainActor
 protocol FriendRepository {
-    func create(name: String, handle: String?) throws -> FriendEntity
+    func create(
+        name: String,
+        handle: String?,
+        avatarAssetName: String?,
+        isActive: Bool
+    ) throws -> FriendEntity
     func upsert(_ friend: FriendEntity) throws -> FriendEntity
     func fetch(id: UUID) throws -> FriendEntity?
+    func fetchActive() throws -> [FriendEntity]
     func fetchAll() throws -> [FriendEntity]
     func delete(id: UUID) throws
 }
 
+extension FriendRepository {
+    func create(name: String, handle: String?) throws -> FriendEntity {
+        try create(name: name, handle: handle, avatarAssetName: nil, isActive: true)
+    }
+}
