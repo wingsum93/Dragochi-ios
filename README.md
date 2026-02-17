@@ -38,7 +38,7 @@ Dragochi 是一個遊戲時間追蹤 App，目標是先把 MVP 做到可用，�
 
 ## UI Screenshot Export Workflow
 
-`ScreenshotUITests` keeps screenshot artifacts as XCTest attachments (`home.png`, `history.png`, `stats.png`, `settings.png`, `add-session.png`).
+`ScreenshotUITests` keeps screenshot artifacts as XCTest attachments (`home.png`, `home_start.png`, `history.png`, `stats.png`, `settings.png`, `add-session.png`).
 
 Run UI tests with a deterministic simulator destination and keep the result bundle:
 
@@ -46,6 +46,7 @@ Run UI tests with a deterministic simulator destination and keep the result bund
 xcodebuild test \
   -scheme Dragochi \
   -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+  -maximum-concurrent-test-simulator-destinations 1 \
   -resultBundlePath build/ScreenshotUITests.xcresult
 ```
 

@@ -10,7 +10,20 @@ import SwiftUI
 struct DragonSelectableGameCard: View {
     let model: GameCardModel
     let state: SelectionState
+    let accessibilityIdentifier: String?
     let action: () -> Void
+
+    init(
+        model: GameCardModel,
+        state: SelectionState,
+        accessibilityIdentifier: String? = nil,
+        action: @escaping () -> Void
+    ) {
+        self.model = model
+        self.state = state
+        self.accessibilityIdentifier = accessibilityIdentifier
+        self.action = action
+    }
 
     var body: some View {
         Button(action: action) {
@@ -59,6 +72,7 @@ struct DragonSelectableGameCard: View {
             .opacity(opacityValue)
         }
         .buttonStyle(.plain)
+        .withAccessibilityIdentifier(accessibilityIdentifier)
     }
 
     @ViewBuilder
@@ -111,5 +125,16 @@ struct DragonSelectableGameCard: View {
 
     private var opacityValue: Double {
         state == .unselected ? 0.62 : 1
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func withAccessibilityIdentifier(_ identifier: String?) -> some View {
+        if let identifier {
+            accessibilityIdentifier(identifier)
+        } else {
+            self
+        }
     }
 }

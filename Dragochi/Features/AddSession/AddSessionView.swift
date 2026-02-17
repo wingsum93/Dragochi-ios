@@ -47,6 +47,9 @@ struct AddSessionView: View {
                                 DragonSelectableGameCard(
                                     model: game,
                                     state: selectionState(for: game),
+                                    accessibilityIdentifier: game.id == "add"
+                                        ? "action.addGame"
+                                        : "action.selectGame.\(game.id)",
                                     action: {
                                         if game.id == "add" {
                                             store.send(.addGameTapped)
@@ -59,6 +62,7 @@ struct AddSessionView: View {
                         }
                     }
                 }
+                .accessibilityIdentifier("section.gamePlayed")
 
                 VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
                     DragonSectionHeader(title: "Platform")
@@ -115,6 +119,7 @@ struct AddSessionView: View {
                         ]
                     )
                 }
+                .accessibilityIdentifier("section.sessionNotes")
             }
         } footer: {
             VStack(spacing: DragonTheme.current.spacing(.md)) {

@@ -56,6 +56,7 @@ struct MainView: View {
                 Text("Quick Track")
                     .font(DragonTheme.current.font(.titleSection))
                     .foregroundStyle(DragonTheme.current.color(.textPrimary))
+                    .accessibilityIdentifier("screen.home")
                 Text("PRODUCTIVITY MODE")
                     .font(DragonTheme.current.font(.labelSmall))
                     .foregroundStyle(DragonTheme.current.color(.textTertiary))
@@ -145,6 +146,7 @@ struct MainView: View {
                 Text("START")
                     .font(DragonTheme.current.font(.titleSection))
                     .foregroundStyle(DragonTheme.current.color(.textPrimary))
+                    .accessibilityIdentifier("action.startTracking")
             }
         }
         .buttonStyle(.plain)
@@ -168,6 +170,7 @@ struct MainView: View {
                 Text("STOP")
                     .font(DragonTheme.current.font(.titleSection))
                     .foregroundStyle(DragonTheme.current.color(.textPrimary))
+                    .accessibilityIdentifier("action.stopTracking")
             }
         }
         .buttonStyle(.plain)

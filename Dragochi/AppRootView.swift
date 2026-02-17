@@ -34,22 +34,34 @@ struct AppRootView: View {
     var body: some View {
         TabView {
             MainView(store: mainStore)
-                .tabItem { Label("Home", systemImage: "gamecontroller") }
+                .tabItem {
+                    Label("Home", systemImage: "gamecontroller")
+                        .accessibilityIdentifier("tab.home.button")
+                }
                 .accessibilityIdentifier("tab.home")
 
             HistoryView(store: historyStore)
-                .tabItem { Label("History", systemImage: "clock.arrow.circlepath") }
+                .tabItem {
+                    Label("History", systemImage: "clock.arrow.circlepath")
+                        .accessibilityIdentifier("tab.history.button")
+                }
                 .accessibilityIdentifier("tab.history")
 
             StatsView(store: statsStore)
-                .tabItem { Label("Stats", systemImage: "chart.bar") }
+                .tabItem {
+                    Label("Stats", systemImage: "chart.bar")
+                        .accessibilityIdentifier("tab.stats.button")
+                }
                 .accessibilityIdentifier("tab.stats")
 
             SettingsView(
                 store: settingsStore,
                 onOpenGameSettings: { isShowingGameSettings = true }
             )
-                .tabItem { Label("Settings", systemImage: "gearshape") }
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape")
+                        .accessibilityIdentifier("tab.settings.button")
+                }
                 .accessibilityIdentifier("tab.settings")
         }
         .tint(DragonTheme.current.color(.tabTintShine))

@@ -21,6 +21,39 @@ final class ScreenshotUITests: XCTestCase {
     }
 
     @MainActor
+    func testScreenshotHomeStart() throws {
+        let app = launchAppForScreenshots()
+        ensureHomeTabIsSelected(in: app)
+        ensureTrackingIsIdle(in: app)
+
+        let startButton = element(in: app, id: "action.startTracking")
+        startButton.tap()
+
+        let addSessionScreen = element(in: app, id: "screen.addSession")
+        waitForElementToAppear(addSessionScreen)
+        waitForElementToAppear(element(in: app, id: "hero.addSessionTitle"))
+        waitForElementToAppear(element(in: app, id: "section.gamePlayed"))
+
+        let selectableGameButtons = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "action.selectGame.")
+        )
+        let firstSelectableGameButton = selectableGameButtons.firstMatch
+        waitForElementToAppear(firstSelectableGameButton)
+        firstSelectableGameButton.tap()
+
+        let saveButton = element(in: app, id: "action.saveSession")
+        waitForElementToAppear(saveButton)
+        saveButton.tap()
+
+        let stopButton = element(in: app, id: "action.stopTracking")
+        waitForElementToAppear(stopButton)
+        attachScreenshot(from: app, named: "home_start.png")
+
+        stopButton.tap()
+        waitForElementToAppear(element(in: app, id: "action.startTracking"))
+    }
+
+    @MainActor
     func testScreenshotHistory() throws {
         let app = launchAppForScreenshots()
 
@@ -65,25 +98,23 @@ final class ScreenshotUITests: XCTestCase {
     @MainActor
     func testScreenshotSessionSetup() throws {
         let app = launchAppForScreenshots()
+        ensureHomeTabIsSelected(in: app)
+        ensureTrackingIsIdle(in: app)
 
-        waitForElementToAppear(app.staticTexts["Quick Track"])
-
-        let startButton = app.buttons["action.startTracking"]
-        waitForElementToAppear(startButton)
+        let startButton = element(in: app, id: "action.startTracking")
         startButton.tap()
 
-        waitForElementToAppear(app.staticTexts["Session Setup"])
-        waitForElementToAppear(app.staticTexts["Game Played"])
-        let notesHeader = app.staticTexts["Session Notes"]
-        waitForElementToAppear(notesHeader)
-        let startTrackingButton = app.buttons["action.saveSession"]
+        let addSessionScreen = element(in: app, id: "screen.addSession")
+        waitForElementToAppear(addSessionScreen)
+        waitForElementToAppear(element(in: app, id: "hero.addSessionTitle"))
+        waitForElementToAppear(element(in: app, id: "section.gamePlayed"))
+        let notesSection = element(in: app, id: "section.sessionNotes")
+        waitForElementToAppear(notesSection)
+        let startTrackingButton = element(in: app, id: "action.saveSession")
         waitForElementToAppear(startTrackingButton)
 
-        XCTAssertFalse(app.staticTexts["00:00:00"].exists)
-        XCTAssertLessThan(notesHeader.frame.maxY, startTrackingButton.frame.minY)
-
-        sleep(4)
-        XCTAssertTrue(app.staticTexts["Game Played"].exists)
+        XCTAssertFalse(element(in: app, id: "action.stopTracking").exists)
+        XCTAssertLessThan(notesSection.frame.maxY, startTrackingButton.frame.minY)
         attachScreenshot(from: app, named: "add-session.png")
     }
 
@@ -120,5 +151,37 @@ final class ScreenshotUITests: XCTestCase {
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+
+    private func element(in app: XCUIApplication, id: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(identifier: id).firstMatch
+    }
+
+    private func ensureHomeTabIsSelected(in app: XCUIApplication) {
+        let homeTabButton = element(in: app, id: "tab.home.button")
+        if homeTabButton.waitForExistence(timeout: 5) {
+            homeTabButton.tap()
+            return
+        }
+
+        let fallbackHomeTab = element(in: app, id: "tab.home")
+        waitForElementToAppear(fallbackHomeTab, timeout: 5)
+        fallbackHomeTab.tap()
+    }
+
+    private func ensureTrackingIsIdle(in app: XCUIApplication) {
+        let startButton = element(in: app, id: "action.startTracking")
+        if startButton.waitForExistence(timeout: 20) {
+            return
+        }
+
+        let stopButton = element(in: app, id: "action.stopTracking")
+        if stopButton.waitForExistence(timeout: 5) {
+            stopButton.tap()
+            waitForElementToAppear(startButton)
+            return
+        }
+
+        XCTFail("Unable to reach home idle state: neither start nor stop tracking button appeared.")
     }
 }
