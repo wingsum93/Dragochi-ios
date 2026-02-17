@@ -15,61 +15,13 @@ struct FriendSettingsView: View {
     }
 
     private let avatarColumns: [GridItem] = Array(repeating: GridItem(.flexible(), spacing: 12), count: 5)
+    private let emptyStateAnimationName = "no_data_found"
+    private let emptyStateAnimationSize: CGFloat = 180
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: DragonTheme.current.spacing(.md)) {
-                if store.state.isLoading {
-                    Spacer()
-                    ProgressView()
-                    Spacer()
-                } else if store.state.friends.isEmpty {
-                    Spacer()
-                    Text("No friends yet")
-                        .font(DragonTheme.current.font(.body))
-                        .foregroundStyle(DragonTheme.current.color(.textTertiary))
-                    Text("Tap + to add your first teammate.")
-                        .font(DragonTheme.current.font(.labelSmall))
-                        .foregroundStyle(DragonTheme.current.color(.textTertiary))
-                    Spacer()
-                } else {
-                    List {
-                        ForEach(store.state.friends) { friend in
-                            HStack(spacing: DragonTheme.current.spacing(.md)) {
-                                avatar(for: friend.avatarAssetName)
-
-                                Text(friend.name)
-                                    .font(DragonTheme.current.font(.body))
-                                    .foregroundStyle(DragonTheme.current.color(.textPrimary))
-
-                                Spacer()
-
-                                Button {
-                                    store.send(.editTapped(friend.id))
-                                } label: {
-                                    Image(systemName: "pencil")
-                                        .foregroundStyle(DragonTheme.current.color(.textTertiary))
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityIdentifier("action.editFriend.\(friend.id.uuidString)")
-
-                                Button(role: .destructive) {
-                                    store.send(.deleteTapped(friend.id))
-                                } label: {
-                                    Image(systemName: "trash")
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityIdentifier("action.deleteFriend.\(friend.id.uuidString)")
-                            }
-                            .padding(.vertical, 6)
-                            .accessibilityIdentifier("row.friend.\(friend.id.uuidString)")
-                            .listRowBackground(DragonTheme.current.color(.bgBase))
-                        }
-                    }
-                    .listStyle(.plain)
-                    .scrollContentBackground(.hidden)
-                }
-
+            VStack(spacing: 0) {
+                content
                 if let errorMessage = store.state.errorMessage {
                     Text(errorMessage)
                         .font(DragonTheme.current.font(.labelSmall))
@@ -78,6 +30,11 @@ struct FriendSettingsView: View {
                         .padding(.horizontal, DragonTheme.current.spacing(.lg))
                         .padding(.bottom, DragonTheme.current.spacing(.sm))
                 }
+            }
+            .overlay(alignment: .topLeading) {
+                Color.clear
+                    .frame(width: 1, height: 1)
+                    .accessibilityIdentifier("screen.friendSettings")
             }
             .background(DragonTheme.current.color(.bgBase).ignoresSafeArea())
             .navigationTitle("Friend List")
@@ -105,7 +62,6 @@ struct FriendSettingsView: View {
                 }
             }
         }
-        .accessibilityIdentifier("screen.friendSettings")
         .onAppear { store.send(.onAppear) }
         .sheet(isPresented: isShowingEditDialog) {
             editDialog
@@ -121,6 +77,95 @@ struct FriendSettingsView: View {
         } message: {
             Text("Are you sure you want to remove this friend?")
         }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if store.state.isLoading {
+            loadingView
+        } else if store.state.friends.isEmpty {
+            emptyStateView
+        } else {
+            friendsListView
+        }
+    }
+
+    private var loadingView: some View {
+        ProgressView()
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+    }
+
+    private var emptyStateView: some View {
+        VStack(spacing: DragonTheme.current.spacing(.md)) {
+            emptyStateAnimation
+                .frame(width: emptyStateAnimationSize, height: emptyStateAnimationSize)
+
+            VStack(spacing: DragonTheme.current.spacing(.sm)) {
+                Text("No friends yet")
+                    .font(DragonTheme.current.font(.body))
+                    .foregroundStyle(DragonTheme.current.color(.textTertiary))
+
+                Text("Tap + to add your first teammate.")
+                    .font(DragonTheme.current.font(.labelSmall))
+                    .foregroundStyle(DragonTheme.current.color(.textTertiary))
+            }
+            .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .padding(.horizontal, DragonTheme.current.spacing(.lg))
+    }
+
+    @ViewBuilder
+    private var emptyStateAnimation: some View {
+        if DragonLottieView.canLoadAnimation(named: emptyStateAnimationName) {
+            DragonLottieView(animationName: emptyStateAnimationName)
+        } else {
+            Circle()
+                .fill(DragonTheme.current.color(.surfaceCard))
+                .overlay {
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: 44, weight: .semibold))
+                        .foregroundStyle(DragonTheme.current.color(.textTertiary))
+                }
+        }
+    }
+
+    private var friendsListView: some View {
+        List {
+            ForEach(store.state.friends) { friend in
+                HStack(spacing: DragonTheme.current.spacing(.md)) {
+                    avatar(for: friend.avatarAssetName)
+
+                    Text(friend.name)
+                        .font(DragonTheme.current.font(.body))
+                        .foregroundStyle(DragonTheme.current.color(.textPrimary))
+
+                    Spacer()
+
+                    Button {
+                        store.send(.editTapped(friend.id))
+                    } label: {
+                        Image(systemName: "pencil")
+                            .foregroundStyle(DragonTheme.current.color(.textTertiary))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("action.editFriend.\(friend.id.uuidString)")
+
+                    Button(role: .destructive) {
+                        store.send(.deleteTapped(friend.id))
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("action.deleteFriend.\(friend.id.uuidString)")
+                }
+                .padding(.vertical, 6)
+                .accessibilityIdentifier("row.friend.\(friend.id.uuidString)")
+                .listRowBackground(DragonTheme.current.color(.bgBase))
+            }
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
     }
 
     private func avatar(for assetName: String?) -> some View {

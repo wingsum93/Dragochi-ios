@@ -15,7 +15,11 @@ import FirebaseCrashlytics
 
 @main
 struct DragochiApp: App {
-    private let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    private let isRunningTests: Bool = {
+        let processInfo = ProcessInfo.processInfo
+        return processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || processInfo.arguments.contains("-ui-testing")
+    }()
 
     init() {
         configureFirebaseIfPossible()
@@ -23,7 +27,9 @@ struct DragochiApp: App {
 
     var sharedModelContainer: ModelContainer = {
         do {
-            let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            let processInfo = ProcessInfo.processInfo
+            let isRunningTests = processInfo.environment["XCTestConfigurationFilePath"] != nil
+                || processInfo.arguments.contains("-ui-testing")
             return try SwiftDataStack.makeContainer(inMemory: isRunningTests)
         } catch {
             fatalError("Could not create ModelContainer: \(error)")

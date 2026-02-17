@@ -10,6 +10,8 @@ import SwiftData
 
 @MainActor
 struct AppRootView: View {
+    private static let uiTestFriendsJSONKey = "DRAGOCHI_UI_TEST_FRIENDS_JSON"
+
     private enum Tab: Hashable {
         case home
         case history
@@ -33,9 +35,13 @@ struct AppRootView: View {
     init(container: ModelContainer) {
         let modelContext = ModelContext(container)
         let dependencies = AppDependencies(modelContext: modelContext)
+        let processInfo = ProcessInfo.processInfo
 
         self.dependencies = dependencies
-        self.isUITesting = ProcessInfo.processInfo.arguments.contains("-ui-testing")
+        self.isUITesting = processInfo.arguments.contains("-ui-testing")
+        if self.isUITesting {
+            Self.seedUITestFriendsIfNeeded(dependencies: dependencies, processInfo: processInfo)
+        }
         _mainStore = StateObject(wrappedValue: MainStore(dependencies: dependencies))
         _historyStore = StateObject(wrappedValue: HistoryStore(dependencies: dependencies))
         _statsStore = StateObject(wrappedValue: StatsStore(dependencies: dependencies))
@@ -96,6 +102,7 @@ struct AppRootView: View {
                         isShowingGameSettings = true
                     },
                     onOpenFriendSettings: {
+                        addSessionDraft = nil
                         isShowingFriendSettings = true
                     },
                     onClose: { addSessionDraft = nil }
@@ -122,6 +129,35 @@ struct AppRootView: View {
             guard let draft else { return }
             addSessionDraft = draft
             mainStore.send(.clearPendingDraft)
+        }
+    }
+
+    private static func seedUITestFriendsIfNeeded(dependencies: AppDependencies, processInfo: ProcessInfo) {
+        guard let fixtureJSON = processInfo.environment[Self.uiTestFriendsJSONKey] else { return }
+        guard let data = fixtureJSON.data(using: .utf8) else { return }
+
+        do {
+            let fixtures = try JSONDecoder().decode([UITestFriendFixture].self, from: data)
+
+            // Make each launch deterministic for UI tests by replacing all friends with fixtures.
+            let existingFriends = try dependencies.friendRepository.fetchAll()
+            for friend in existingFriends {
+                try dependencies.friendRepository.delete(id: friend.id)
+            }
+
+            for fixture in fixtures {
+                let resolvedName = fixture.resolvedName
+                guard !resolvedName.isEmpty else { continue }
+
+                _ = try dependencies.friendRepository.create(
+                    name: resolvedName,
+                    handle: nil,
+                    avatarAssetName: fixture.resolvedAvatarAssetName,
+                    isActive: true
+                )
+            }
+        } catch {
+            assertionFailure("Failed to seed UI test friends: \(error)")
         }
     }
 }

@@ -8,6 +8,8 @@
 import XCTest
 
 final class ScreenshotUITests: XCTestCase {
+    private static let uiTestFriendsJSONKey = "DRAGOCHI_UI_TEST_FRIENDS_JSON"
+
     override func setUpWithError() throws {
         continueAfterFailure = false
     }
@@ -129,23 +131,50 @@ final class ScreenshotUITests: XCTestCase {
     }
 
     @MainActor
-    func testOpenFriendSettingsFromAddSession() throws {
-        let app = launchAppForScreenshots()
-        ensureTrackingIsIdle(in: app)
+    func testOpenFriendSettingsFromAddSession_NoFriend() throws {
+        let app = launchAppForScreenshots(friendFixtureJSON: "[]")
+        openFriendSettingsFromAddSession(in: app)
 
-        let startButton = element(in: app, id: "action.startTracking")
-        startButton.tap()
+        waitForElementToAppear(app.staticTexts["No friends yet"])
+        XCTAssertEqual(friendRowCount(in: app), 0)
+        attachScreenshot(from: app, named: "friend-settings-from-add-session-no-friend.png")
+    }
 
-        waitForElementToAppear(element(in: app, id: "screen.addSession"))
-        let addTeammateButton = element(in: app, id: "action.addTeammate")
-        waitForElementToAppear(addTeammateButton)
-        addTeammateButton.tap()
+    @MainActor
+    func testOpenFriendSettingsFromAddSession_OneFriend() throws {
+        let fixtureJSON = """
+        [{"name":"Ava","avatarAssetName":"F1"}]
+        """
+        let app = launchAppForScreenshots(friendFixtureJSON: fixtureJSON)
+        openFriendSettingsFromAddSession(in: app)
 
-        waitForElementToAppear(element(in: app, id: "screen.friendSettings"))
+        waitForElementToAppear(app.staticTexts["Ava"])
+        XCTAssertEqual(friendRowCount(in: app), 1)
+        attachScreenshot(from: app, named: "friend-settings-from-add-session-one-friend.png")
+    }
+
+    @MainActor
+    func testOpenFriendSettingsFromAddSession_ManyFriends() throws {
+        let fixtureJSON = """
+        [
+          {"name":"Ava","avatarAssetName":"F1"},
+          {"name":"Kai","avatarAssetName":"M2"},
+          {"name":"Noah","avatarAssetName":"M3"},
+          {"name":"Luna","avatarAssetName":"F4"},
+          {"name":"Jude","avatarAssetName":"M5"}
+        ]
+        """
+        let app = launchAppForScreenshots(friendFixtureJSON: fixtureJSON)
+        openFriendSettingsFromAddSession(in: app)
+
+        waitForElementToAppear(app.staticTexts["Ava"])
+        waitForElementToAppear(app.staticTexts["Kai"])
+        XCTAssertEqual(friendRowCount(in: app), 5)
+        attachScreenshot(from: app, named: "friend-settings-from-add-session-many-friends.png")
     }
 
     @discardableResult
-    private func launchAppForScreenshots() -> XCUIApplication {
+    private func launchAppForScreenshots(friendFixtureJSON: String? = nil) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments += [
             "-AppleLanguages",
@@ -158,6 +187,9 @@ final class ScreenshotUITests: XCTestCase {
         ]
         app.launchEnvironment["TZ"] = "UTC"
         app.launchEnvironment["UIViewAnimationDurationMultiplier"] = "0"
+        if let friendFixtureJSON {
+            app.launchEnvironment[Self.uiTestFriendsJSONKey] = friendFixtureJSON
+        }
         app.launch()
         return app
     }
@@ -197,5 +229,72 @@ final class ScreenshotUITests: XCTestCase {
         }
 
         XCTFail("Unable to reach home idle state: neither start nor stop tracking button appeared.")
+    }
+
+    private func openFriendSettingsFromAddSession(in app: XCUIApplication) {
+        if !element(in: app, id: "screen.addSession").exists {
+            if app.tabBars.buttons["Home"].waitForExistence(timeout: 5) {
+                app.tabBars.buttons["Home"].tap()
+            }
+
+            switch waitForAddSessionEntryState(in: app) {
+            case .addSession:
+                break
+            case .startTracking:
+                element(in: app, id: "action.startTracking").tap()
+                waitForElementToAppear(element(in: app, id: "screen.addSession"))
+            case .stopTracking:
+                element(in: app, id: "action.stopTracking").tap()
+                waitForElementToAppear(element(in: app, id: "action.startTracking"))
+                element(in: app, id: "action.startTracking").tap()
+                waitForElementToAppear(element(in: app, id: "screen.addSession"))
+            case nil:
+                XCTFail("Unable to open Add Session: no known entry state appeared.")
+                return
+            }
+        }
+
+        let addTeammateButton = element(in: app, id: "action.addTeammate")
+        waitForElementToAppear(addTeammateButton)
+        addTeammateButton.tap()
+
+        waitForElementToAppear(element(in: app, id: "screen.friendSettings"))
+    }
+
+    private func friendRowCount(in app: XCUIApplication) -> Int {
+        let rowQuery = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "row.friend.")
+        )
+        let uniqueRowIDs = Set(rowQuery.allElementsBoundByIndex.map(\.identifier))
+        return uniqueRowIDs.count
+    }
+
+    private enum AddSessionEntryState {
+        case addSession
+        case startTracking
+        case stopTracking
+    }
+
+    private func waitForAddSessionEntryState(in app: XCUIApplication, timeout: TimeInterval = 20) -> AddSessionEntryState? {
+        let addTeammate = element(in: app, id: "action.addTeammate")
+        let start = element(in: app, id: "action.startTracking")
+        let stop = element(in: app, id: "action.stopTracking")
+        let deadline = Date().addingTimeInterval(timeout)
+
+        while Date() < deadline {
+            if addTeammate.exists {
+                return .addSession
+            }
+            if start.exists {
+                return .startTracking
+            }
+            if stop.exists {
+                return .stopTracking
+            }
+
+            RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+        }
+
+        return nil
     }
 }
