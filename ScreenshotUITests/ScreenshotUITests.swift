@@ -23,7 +23,6 @@ final class ScreenshotUITests: XCTestCase {
     @MainActor
     func testScreenshotHomeStart() throws {
         let app = launchAppForScreenshots()
-        ensureHomeTabIsSelected(in: app)
         ensureTrackingIsIdle(in: app)
 
         let startButton = element(in: app, id: "action.startTracking")
@@ -98,7 +97,6 @@ final class ScreenshotUITests: XCTestCase {
     @MainActor
     func testScreenshotSessionSetup() throws {
         let app = launchAppForScreenshots()
-        ensureHomeTabIsSelected(in: app)
         ensureTrackingIsIdle(in: app)
 
         let startButton = element(in: app, id: "action.startTracking")
@@ -155,18 +153,6 @@ final class ScreenshotUITests: XCTestCase {
 
     private func element(in app: XCUIApplication, id: String) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: id).firstMatch
-    }
-
-    private func ensureHomeTabIsSelected(in app: XCUIApplication) {
-        let homeTabButton = element(in: app, id: "tab.home.button")
-        if homeTabButton.waitForExistence(timeout: 5) {
-            homeTabButton.tap()
-            return
-        }
-
-        let fallbackHomeTab = element(in: app, id: "tab.home")
-        waitForElementToAppear(fallbackHomeTab, timeout: 5)
-        fallbackHomeTab.tap()
     }
 
     private func ensureTrackingIsIdle(in app: XCUIApplication) {

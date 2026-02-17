@@ -23,6 +23,7 @@ mkdir -p "$OUTPUT_DIR"
 
 required_names=(
   "home.png"
+  "home_start.png"
   "history.png"
   "stats.png"
   "settings.png"

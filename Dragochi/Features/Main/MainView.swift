@@ -37,7 +37,6 @@ struct MainView: View {
                 .padding(.horizontal, DragonTheme.current.spacing(.lg))
                 .padding(.bottom, DragonTheme.current.spacing(.lg))
         }
-        .accessibilityIdentifier("screen.home")
         .onAppear {
             store.send(.onAppear)
             store.send(.restoreTrackingSnapshot(trackingSnapshotData))

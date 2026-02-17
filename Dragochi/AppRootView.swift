@@ -10,8 +10,16 @@ import SwiftData
 
 @MainActor
 struct AppRootView: View {
+    private enum Tab: Hashable {
+        case home
+        case history
+        case stats
+        case settings
+    }
+
     @State private var addSessionDraft: AddSessionDraft?
     @State private var isShowingGameSettings = false
+    @State private var selectedTab: Tab = .home
 
     @StateObject private var mainStore: MainStore
     @StateObject private var historyStore: HistoryStore
@@ -19,12 +27,14 @@ struct AppRootView: View {
     @StateObject private var settingsStore: SettingsStore
 
     private let dependencies: AppDependencies
+    private let isUITesting: Bool
 
     init(container: ModelContainer) {
         let modelContext = ModelContext(container)
         let dependencies = AppDependencies(modelContext: modelContext)
 
         self.dependencies = dependencies
+        self.isUITesting = ProcessInfo.processInfo.arguments.contains("-ui-testing")
         _mainStore = StateObject(wrappedValue: MainStore(dependencies: dependencies))
         _historyStore = StateObject(wrappedValue: HistoryStore(dependencies: dependencies))
         _statsStore = StateObject(wrappedValue: StatsStore(dependencies: dependencies))
@@ -32,27 +42,27 @@ struct AppRootView: View {
     }
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             MainView(store: mainStore)
                 .tabItem {
                     Label("Home", systemImage: "gamecontroller")
                         .accessibilityIdentifier("tab.home.button")
                 }
-                .accessibilityIdentifier("tab.home")
+                .tag(Tab.home)
 
             HistoryView(store: historyStore)
                 .tabItem {
                     Label("History", systemImage: "clock.arrow.circlepath")
                         .accessibilityIdentifier("tab.history.button")
                 }
-                .accessibilityIdentifier("tab.history")
+                .tag(Tab.history)
 
             StatsView(store: statsStore)
                 .tabItem {
                     Label("Stats", systemImage: "chart.bar")
                         .accessibilityIdentifier("tab.stats.button")
                 }
-                .accessibilityIdentifier("tab.stats")
+                .tag(Tab.stats)
 
             SettingsView(
                 store: settingsStore,
@@ -62,9 +72,14 @@ struct AppRootView: View {
                     Label("Settings", systemImage: "gearshape")
                         .accessibilityIdentifier("tab.settings.button")
                 }
-                .accessibilityIdentifier("tab.settings")
+                .tag(Tab.settings)
         }
         .tint(DragonTheme.current.color(.tabTintShine))
+        .onAppear {
+            if isUITesting {
+                selectedTab = .home
+            }
+        }
         
         .sheet(item: $addSessionDraft) { draft in
             AddSessionView(

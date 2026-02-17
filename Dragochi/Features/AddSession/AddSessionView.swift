@@ -26,6 +26,10 @@ struct AddSessionView: View {
             contentTopPadding: DragonTheme.current.spacing(.xs)
         ) {
             VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.xl)) {
+                Color.clear
+                    .frame(width: 1, height: 1)
+                    .accessibilityIdentifier("screen.addSession")
+
                 DragonSessionHero(
                     title: heroTitle,
                     durationText: heroDuration,
@@ -143,7 +147,6 @@ struct AddSessionView: View {
                 }
             }
         }
-        .accessibilityIdentifier("screen.addSession")
         .onAppear { store.send(.onAppear) }
     }
 
