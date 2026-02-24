@@ -1,123 +1,163 @@
-# Dragochi Screen Map
+# Dragochi Screen Map (Vision-first)
 
-This document lists all user-facing screens and major row/section labels to help new developers navigate the app UI quickly.
+This document maps user-facing screens with target diary voice while preserving current in-code labels for implementation clarity.
+
+Status tags:
+
+- `In code`: currently shown in runtime.
+- `Planned`: target copy/style not yet fully shipped.
+- `In transition`: both exist (target direction documented, runtime still older wording).
 
 ## Main App Tabs
 
-The app root uses a `TabView` with 4 tabs:
+Root uses a `TabView` with 4 tabs.
 
-1. **Home**
-2. **History**
-3. **Stats**
-4. **Settings**
+- Home
+- History
+- Stats
+- Settings
 
+Status: `In code`
 Source: `Dragochi/AppRootView.swift`
-
----
 
 ## Home Screen (`MainView`)
 
-Primary labels and sections:
+### Target copy (vision)
 
-- **Quick Track**
-- **PRODUCTIVITY MODE**
-- Timer status text:
-  - **KEEP GOING** (running)
-  - **READY TO GRIND** (idle)
-- **RESUME LAST SETUP**
-- Main CTA text:
-  - **START**
-  - **STOP**
+- "Moment Capture"
+- "Companion Journaling Mode"
+- Status text:
+  - "Ready for a gentle check-in"
+  - "You're in this moment"
+- Resume card language:
+  - "Continue your last vibe setup"
+- Main CTA:
+  - "Start Moment"
+  - "Finish Moment"
 
-Dynamic row/chip values:
+### Current in-code copy
 
-- Selected game name (if available)
-- Selected platform (uppercased)
+- "Quick Track"
+- "PRODUCTIVITY MODE"
+- Status text:
+  - "READY TO GRIND" (idle)
+  - "KEEP GOING" (running)
+- Resume card:
+  - "RESUME LAST SETUP"
+- Main CTA:
+  - "START"
+  - "STOP"
 
+Status: `In transition`
 Source: `Dragochi/Features/Main/MainView.swift`
-
----
 
 ## History Screen (`HistoryView`)
 
-Primary labels and sections:
+### Target copy (vision)
 
-- **History**
+- "Life Diary Timeline"
 - Filter chips:
-  - **All Time**
-  - **This Week**
-  - **Last Month**
-- **TOTAL PLAYTIME: ...**
-- Dynamic section headers by date (`section.title.uppercased()`)
+  - "All Moments"
+  - "This Week"
+  - "Last Month"
+- Header summary:
+  - "Total Recorded Moments"
 
-Row content per history item:
+### Current in-code copy
 
-- `gameTitle`
-- `subtitle` (platform)
-- `durationText`
-- `timeText`
+- "History"
+- Filter chips:
+  - "All Time"
+  - "This Week"
+  - "Last Month"
+- Header summary:
+  - "TOTAL PLAYTIME: ..."
 
+Status: `In transition`
 Sources:
 
 - `Dragochi/Features/History/HistoryView.swift`
-- `Dragochi/Features/History/HistoryStore.swift` (filter labels)
-
----
+- `Dragochi/Features/History/HistoryStore.swift`
 
 ## Stats Screen (`StatsView`)
 
-Primary labels and sections:
+### Target copy (vision)
 
-- **Stats**
-- **Total Playtime**
-- **MoM: ...** (shown when report data exists)
-- **Platform Breakdown**
+- "Reflection"
+- "Monthly Emotional + Play Pattern"
+- "Platform Story"
 
-Dynamic row content:
+### Current in-code copy
 
-- Platform labels from `item.platform.rawValue.uppercased()`
-- Duration per platform
+- "Stats"
+- "Total Playtime"
+- "MoM: ..."
+- "Platform Breakdown"
 
+Status: `In transition`
 Source: `Dragochi/Features/Stats/StatsView.swift`
-
----
 
 ## Settings Screen (`SettingsView`)
 
-Primary labels and sections:
+### Target copy (vision)
 
-- **Settings**
-- **iCloud Sync**
-- **Sync across devices (local-only toggle for now).**
-- **Backup**
-- Backup status text:
-  - **Last export: ...**
-  - **No backup created yet.**
-- Action buttons:
-  - **Export** / **Exporting...**
-  - **Import** / **Importing...**
+- "Settings"
+- "Sync & Memory Safety"
+- "Diary Backup"
+- Action labels remain direct and clear.
 
+### Current in-code copy
+
+- "Settings"
+- "iCloud Sync"
+- "Sync across devices (local-only toggle for now)."
+- "Backup"
+- Actions:
+  - "Export" / "Exporting..."
+  - "Import" / "Importing..."
+
+Status: `In transition`
 Source: `Dragochi/Features/Settings/SettingsView.swift`
-
----
 
 ## Add Session Sheet (`AddSessionView`)
 
-This is a presented sheet (not a tab), but includes important UI sections:
+### Target copy (vision)
 
-- **Session Complete**
-- **Game Played** (trailing: **See all**)
-- **Platform**
-- **Teammates** (trailing dynamic: `N selected`)
-- **Session Notes**
-- Notes placeholder: **Rank change, highlights, or mood...**
+- Title:
+  - "Moment Complete"
+  - "Session Setup" (pre-start)
+- Section labels:
+  - "Game"
+  - "Platform"
+  - "Companions"
+  - "How did this moment feel?"
+- Notes placeholder:
+  - "Capture highlights, feelings, or tiny memories..."
 - Footer actions:
-  - **Save Session**
-  - **Discard Entry**
+  - "Save Moment"
+  - "Discard"
 
-Dynamic/option labels:
+### Current in-code copy
 
-- Platform options: **PC**, **Console**, **Mobile**
-- Includes teammate chip labeled **Add**
+- Title:
+  - "Session Complete"
+  - "Session Setup"
+- Section labels:
+  - "Game Played"
+  - "Platform"
+  - "Teammates"
+  - "Session Notes"
+- Notes placeholder:
+  - "Rank change, highlights, or mood..."
+- Footer actions:
+  - "Save Session"
+  - "Discard Entry"
 
+Status: `In transition`
 Source: `Dragochi/Features/AddSession/AddSessionView.swift`
+
+## Copy Alignment Rules
+
+- Avoid productivity-grind wording in target copy.
+- Keep current in-code strings documented until runtime migration lands.
+- When target and runtime differ, always show both with explicit status.

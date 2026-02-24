@@ -1,44 +1,74 @@
-# Dragochi
+# Dragochi - Your Game Life Diary
 
-Dragochi 是一個遊戲時間追蹤 App，目標是先把 MVP 做到可用，再逐步增強體驗與分析能力。
+Dragochi is repositioning from a game time tracker to a companion-style **Game Life Diary / 遊戲生活日記**. It helps users capture feelings, game moments, and daily memories in one gentle flow.
 
-## Current status: planning stage
+## Product Positioning
 
-目前程式碼仍以 SwiftUI 模板為主（例如 `/Users/ericho/iosHub/Dragochi/Dragochi/ContentView.swift`、`/Users/ericho/iosHub/Dragochi/Dragochi/DragochiApp.swift`）。  
-以下功能屬於規劃中，尚未完整落地為可用產品流程。
+Dragochi is designed for emotional logging with game context:
 
-詳細規格請看：[doc/detail-function.md](doc/detail-function.md)
+- Record how you felt before, during, and after play.
+- Keep small daily memories, not only performance metrics.
+- Build a sense of companionship through reflective prompts and supportive tone.
 
-## MVP 功能一覽（Brief）
+## Audience
 
-- Quick Track：一鍵 Start/Stop、可快速套用上次設定（Resume last setup）。
-- History：回看每次 session，並可修正時間、teammates，支援合併/拆分 session。
-- Monthly Report：本月總時長、game/platform breakdown、月對月比較、6 個月趨勢、teammate 觀察。
+**Female-first, inclusive of all emotional loggers.**
 
-## iCloud Sync（Optional）
+Primary audience focus:
 
-- OFF：純 local store（SwiftData/Core Data local）。
-- ON：CloudKit sync（SwiftData/Core Data + CloudKit）。
+- Users who love aesthetic experiences.
+- Users who enjoy recording life details.
+- Users who share daily life moments in IG Story style.
+- Users who want an app that feels emotionally companionable, not judgmental.
 
-## 風險與 UX 保護（重點）
+## Product Pillars
 
-- 忘記 Stop 或中途離開 App：加入長時間 session 提醒與重開 App 恢復流程。
-- teammate 統計避免垃圾資訊：以「30/90 日 Rare teammates」取代單純 least teammates。
-- 月報比較公平化：加入 This month so far vs Last month same days。
+- **Mood-first journaling**
+- **Session-assisted memory capture**
+- **Companion reflection**
+- **Aesthetic daily storytelling**
 
-## 文件導覽
+## Current Build Reality
 
-- 詳細功能規格：`/Users/ericho/iosHub/Dragochi/doc/detail-function.md`
+This documentation is vision-first and uses status tags to clarify reality.
+
+### In code
+
+- Session tracking flow (start/stop, elapsed timer, setup context)
+- History view and session editing foundation
+- Stats view and monthly playtime summaries
+- Settings and backup/export/import surfaces
+- Screenshot test baseline workflow
+
+### Planned
+
+- Deeper emotional companion loops (reflection prompts, supportive summaries)
+- Full pastel-cute visual refresh replacing current neon-dark implementation theme
+- Expanded diary-first copy across all runtime screens
+
+## Documentation Map
+
+- Detailed functional specification: [doc/detail-function.md](doc/detail-function.md)
+- Target audience and writing guardrails: [doc/target-audience.md](doc/target-audience.md)
+- Vision-first screen map and copy alignment: [doc/screen.md](doc/screen.md)
+- Pastel cute cartoon design contract: [doc/dragonlet-ui-system.md](doc/dragonlet-ui-system.md)
+- Remote config technical runbook: [doc/get-remote-config.md](doc/get-remote-config.md)
+- Screenshot baseline notes: [screenshots/README.md](screenshots/README.md)
+
+## Terminology Contract (Documentation)
+
+- `time tracking` -> `game life diary`
+- `productivity mode` -> `companion journaling mode` (target wording)
 
 ## Release Bundle Identifier
 
-- Release bundle ID 固定為 `com.ericho.Dragochi`（App Store/TestFlight）。
-- Debug bundle ID 使用 `com.ericho.dragochi.dev`（本機開發）。
-- 僅大小寫變更不屬於可用的 App Store app identity migration path。
+- Release bundle ID: `com.ericho.Dragochi` (App Store / TestFlight)
+- Debug bundle ID: `com.ericho.dragochi.dev` (local development)
+- Case-only bundle ID changes are not a valid App Store app identity migration path.
 
 ## UI Screenshot Export Workflow
 
-`ScreenshotUITests` keeps screenshot artifacts as XCTest attachments (`home.png`, `home_start.png`, `history.png`, `stats.png`, `settings.png`, `add-session.png`, `friend-settings-no-friend.png`, `friend-settings-one-friend.png`, `friend-settings-many-friends.png`).
+`ScreenshotUITests` stores screenshot artifacts as XCTest attachments (`home.png`, `home_start.png`, `history.png`, `stats.png`, `settings.png`, `add-session.png`, `friend-settings-no-friend.png`, `friend-settings-one-friend.png`, `friend-settings-many-friends.png`).
 
 Run UI tests with a deterministic simulator destination and keep the result bundle:
 

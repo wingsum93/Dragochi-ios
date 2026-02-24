@@ -1,82 +1,97 @@
-# Dragonlet UI System（Neon Dark）
+# Dragonlet UI System (Pastel Cute Cartoon)
 
-本文件定義 Dragonlet 可重用 UI 設計契約，基準來源為 Figma `Dragonlet-draft` node `2001:111`（Session Details Summary）。
+This document defines the target reusable UI contract for Dragochi's Game Life Diary direction.
 
-## 1. Scope
+## 1. Scope and Status
 
-- 目標：建立可重用 component + token 系統，供後續頁面直接組裝。
-- 此文件聚焦 UI 層，不包含資料持久化、商業邏輯、同步流程。
-- 主題固定為單一 `Neon Dark`（本期不做 light/dark 雙軌）。
+- Goal: establish reusable tokens and components for a companion-style, emotional-safe, cute cartoon visual language.
+- Scope: UI system contract only.
+- Out of scope: persistence, sync internals, business logic.
 
-## 2. Theme Tokens
+Status:
+
+- `In code`: current runtime implementation baseline uses `DragonTheme.neonDark`.
+- `Planned`: pastel cute cartoon tokens and copy-forward visual behavior in this document.
+
+Migration note:
+
+- Current `DragonTheme.neonDark` is implementation baseline.
+- Pastel system in this document is the target contract.
+
+## 2. Theme Tokens (Target Contract)
 
 ### 2.1 Color Tokens
 
-| Token | Value |
-|---|---|
-| `bg.base` | `#102216` |
-| `surface.card` | `#152E1E` |
-| `accent.primary` | `#13EC5B` |
-| `accent.primaryDim` | `rgba(19,236,91,0.20)` |
-| `accent.primarySoft` | `rgba(19,236,91,0.10)` |
-| `text.primary` | `rgba(255,255,255,0.90)` |
-| `text.secondary` | `rgba(255,255,255,0.60)` |
-| `text.tertiary` | `rgba(255,255,255,0.40)` |
-| `text.placeholder` | `rgba(255,255,255,0.20)` |
-| `border.soft` | `rgba(255,255,255,0.10)` |
-| `border.neon` | `rgba(19,236,91,0.20)` |
-| `overlay.scrim` | `rgba(16,34,22,0.80)` |
+| Token | Value | Usage |
+|---|---|---|
+| `bg.base` | `#FFF7FB` | app background |
+| `bg.softGradientStart` | `#FFF1F8` | atmospheric gradient |
+| `bg.softGradientEnd` | `#F4FBFF` | atmospheric gradient |
+| `surface.card` | `#FFFFFF` | primary cards/sheets |
+| `surface.cardSoft` | `#FFF3FA` | secondary cards |
+| `accent.primary` | `#FF7FB8` | primary CTA |
+| `accent.secondary` | `#6ECBF5` | supportive highlights |
+| `accent.warm` | `#FFB58A` | emotional tags |
+| `text.primary` | `#4A3A48` | main text |
+| `text.secondary` | `#7C6D7A` | secondary text |
+| `text.placeholder` | `#B8AAB7` | input placeholder |
+| `border.soft` | `#F0DCE9` | soft outlines |
+| `overlay.scrim` | `rgba(74,58,72,0.22)` | modal dim |
 
 ### 2.2 Typography Tokens
 
 | Token | Spec |
 |---|---|
-| `display.timer` | `60 / Bold` |
-| `title.section` | `14 / Semibold` |
+| `display.timer` | `56 / Bold` |
+| `title.section` | `16 / Semibold` |
 | `label.small` | `12 / Medium` |
 | `body` | `14 / Regular` |
-| `cta` | `18 / Bold` |
+| `cta` | `17 / Semibold` |
 
-字體族：`Be Vietnam Pro`。  
-fallback：`SF Pro`（當自訂字體未打包）。
+Typeface direction:
 
-### 2.3 Radius and Effects
+- Primary: rounded friendly family (for example, `Baloo 2` / `Nunito`).
+- Fallback: `SF Pro`.
+
+### 2.3 Radius, Shadow, and Elevation
 
 | Token | Value |
 |---|---|
-| `radius.bottomSheetTop` | `48` |
-| `radius.card` | `32` |
+| `radius.bottomSheetTop` | `36` |
+| `radius.card` | `24` |
 | `radius.avatar` | `9999` |
 | `radius.pill` | `9999` |
 
-特效規範：
+Effects:
 
-- Selected card / primary CTA 使用 accent glow。
-- 背景模糊：`2`。
-- Bottom sheet 玻璃感 blur：`6`（視系統材質可微調）。
+- Gentle shadow for cards (`low blur, low opacity`).
+- Primary CTA can use soft glow in `accent.primary`.
+- Avoid high-contrast neon outlines in target style.
 
 ## 3. Component Catalog
 
-### 3.1 Atomic
+### 3.1 Atomic Components
 
 | Component | Purpose | States |
 |---|---|---|
-| `DragonSelectableGameCard` | Game 選擇卡 | `selected`, `unselected`, `add` |
-| `DragonPlatformPill` | Platform 切換 pill | `selected`, `unselected`, `disabled` |
-| `DragonTeammateAvatarChip` | Teammate 頭像 chip | `selected`, `unselected`, `add` |
-| `DragonPrimaryCTAButton` | 主要 CTA（Save Session） | `enabled`, `pressed`, `disabled`, `loading` |
-| `DragonTextButton` | 次要文字按鈕（Discard Entry） | `enabled`, `pressed`, `disabled` |
+| `DragonSelectableGameCard` | choose game context | `selected`, `unselected`, `add` |
+| `DragonPlatformPill` | choose platform | `selected`, `unselected`, `disabled` |
+| `DragonTeammateAvatarChip` | choose companions | `selected`, `unselected`, `add` |
+| `DragonPrimaryCTAButton` | primary action | `enabled`, `pressed`, `disabled`, `loading` |
+| `DragonTextButton` | secondary action | `enabled`, `pressed`, `disabled` |
 
-### 3.2 Composite
+### 3.2 Composite Components
 
 | Component | Purpose |
 |---|---|
-| `DragonSessionHero` | Session 標題 + Timer + Trend badge |
-| `DragonSectionHeader` | 區塊標題 + trailing text/action |
-| `DragonNotesInput` | 多行 notes 輸入 + quick actions |
-| `DragonBottomSheetContainer` | Session Summary 整體容器（含 drag handle + sticky footer） |
+| `DragonSessionHero` | moment title + timer + supportive trend message |
+| `DragonSectionHeader` | section title + optional action |
+| `DragonNotesInput` | emotional/life detail capture |
+| `DragonBottomSheetContainer` | session/moment flow container |
 
-## 4. SwiftUI Public Interfaces
+## 4. SwiftUI Public Interface Contract
+
+Status: `In code` names and signatures available; visual restyling is `Planned`.
 
 ```swift
 enum SelectionState { case selected, unselected, add }
@@ -101,31 +116,7 @@ DragonPrimaryCTAButton(title: String, icon: String?, state: ControlState, action
 DragonTextButton(title: String, state: ControlState, action: () -> Void)
 ```
 
-## 5. Figma to Code Mapping
-
-### 5.1 Figma Component Names
-
-- `Dragon/BottomSheet`
-- `Dragon/GameCard`
-- `Dragon/PlatformPill`
-- `Dragon/AvatarChip`
-- `Dragon/Button/Primary`
-- `Dragon/Button/Text`
-
-### 5.2 Figma Variables
-
-- `color/bg/base`
-- `color/accent/primary`
-- `text/primary`
-- `radius/card/32`
-- `space/24`
-
-規則：
-
-- Figma variant 名稱與 Swift enum case 一一對應。
-- 若需新增 UI state，先加 enum case，再補 Figma variant。
-
-## 6. State Matrix（驗收）
+## 5. State Matrix and Acceptance
 
 - `GameCard`: `selected` / `unselected` / `add`
 - `PlatformPill`: `selected` / `unselected` / `disabled`
@@ -133,34 +124,35 @@ DragonTextButton(title: String, state: ControlState, action: () -> Void)
 - `PrimaryCTA`: `enabled` / `pressed` / `disabled` / `loading`
 - `NotesInput`: `idle` / `focused` / `filled`
 
-實作檢查點：
+Implementation checks:
 
-- 小螢幕（iPhone）CTA 不截斷。
-- Dynamic Type 至少 Large 不破版。
-- token 調整可全域生效，不需逐元件改色值。
+- CTA labels do not truncate on iPhone sizes.
+- Dynamic Type up to at least Large keeps layout readable.
+- Token updates propagate globally without per-screen hardcoded color edits.
 
-## 7. Do / Don’t
+## 6. Do and Don't
 
 Do:
 
-- 只用 `DragonTheme` token 取色、字級、圓角、間距。
-- 新畫面優先由既有 component 組合。
-- 新增元件前先檢查是否能以 `SectionHeader + Atomic` 拼裝。
+- Use tokenized color/type/radius/spacing through `DragonTheme` contracts.
+- Keep surfaces emotionally calm and visually soft.
+- Favor companion cues over competitive visual emphasis.
 
-Don’t:
+Don't:
 
-- 不直接 hardcode 新色、字級、shadow 到業務頁。
-- 不建立語義重複的按鈕元件（例如另一個 PrimaryButton）。
-- 不在未更新 token 契約下私自改動設計語言。
+- Hardcode neon/high-contrast colors into feature screens.
+- Introduce duplicate button primitives with overlapping semantics.
+- Ship target-style claims without status labels when runtime still differs.
 
-## 8. File References
+## 7. File References
 
 - UI system contract: `/Users/ericho/iosHub/Dragochi/doc/dragonlet-ui-system.md`
-- Theme:
+- Current theme baseline:
   - `/Users/ericho/iosHub/Dragochi/Dragochi/Theme/DragonTheme.swift`
   - `/Users/ericho/iosHub/Dragochi/Dragochi/Theme/DragonColor.swift`
   - `/Users/ericho/iosHub/Dragochi/Dragochi/Theme/DragonTypography.swift`
   - `/Users/ericho/iosHub/Dragochi/Dragochi/Theme/DragonRadius.swift`
   - `/Users/ericho/iosHub/Dragochi/Dragochi/Theme/DragonSpacing.swift`
-- Components: `/Users/ericho/iosHub/Dragochi/Dragochi/DesignSystem/`
-- State previews: `/Users/ericho/iosHub/Dragochi/Dragochi/DesignSystem/DragonComponentPreviews.swift`
+- Components:
+  - `/Users/ericho/iosHub/Dragochi/Dragochi/DesignSystem/`
+  - `/Users/ericho/iosHub/Dragochi/Dragochi/DesignSystem/DragonComponentPreviews.swift`
