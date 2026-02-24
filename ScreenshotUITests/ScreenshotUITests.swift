@@ -97,6 +97,22 @@ final class ScreenshotUITests: XCTestCase {
     }
 
     @MainActor
+    func testLanguageSectionOpensPerAppLanguageSettings() throws {
+        let app = launchAppForScreenshots()
+
+        let settingsTab = app.tabBars.buttons["Settings"]
+        waitForElementToAppear(settingsTab)
+        settingsTab.tap()
+        waitForElementToAppear(app.staticTexts["iCloud Sync"])
+
+        let openPerAppLanguageButton = app.buttons["Per-App Language"]
+        scrollToElementIfNeeded(openPerAppLanguageButton, in: app)
+        waitForElementToAppear(openPerAppLanguageButton)
+        XCTAssertTrue(openPerAppLanguageButton.isHittable)
+        openPerAppLanguageButton.tap()
+    }
+
+    @MainActor
     func testScreenshotSessionSetup() throws {
         let app = launchAppForScreenshots()
         ensureTrackingIsIdle(in: app)
@@ -202,6 +218,17 @@ final class ScreenshotUITests: XCTestCase {
 
     private func element(in app: XCUIApplication, id: String) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: id).firstMatch
+    }
+
+    private func scrollToElementIfNeeded(_ element: XCUIElement, in app: XCUIApplication, maxSwipes: Int = 6) {
+        guard !element.exists else { return }
+
+        for _ in 0..<maxSwipes {
+            app.swipeUp()
+            if element.exists {
+                return
+            }
+        }
     }
 
     private func ensureTrackingIsIdle(in app: XCUIApplication) {

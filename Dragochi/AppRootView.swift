@@ -52,21 +52,21 @@ struct AppRootView: View {
         TabView(selection: $selectedTab) {
             MainView(store: mainStore)
                 .tabItem {
-                    Label("Home", systemImage: "gamecontroller")
+                    Label("title_tab_home", systemImage: "gamecontroller")
                         .accessibilityIdentifier("tab.home.button")
                 }
                 .tag(Tab.home)
 
             HistoryView(store: historyStore)
                 .tabItem {
-                    Label("History", systemImage: "clock.arrow.circlepath")
+                    Label("title_tab_history", systemImage: "clock.arrow.circlepath")
                         .accessibilityIdentifier("tab.history.button")
                 }
                 .tag(Tab.history)
 
             StatsView(store: statsStore)
                 .tabItem {
-                    Label("Stats", systemImage: "chart.bar")
+                    Label("title_tab_stats", systemImage: "chart.bar")
                         .accessibilityIdentifier("tab.stats.button")
                 }
                 .tag(Tab.stats)
@@ -77,7 +77,7 @@ struct AppRootView: View {
                 onOpenFriendSettings: { isShowingFriendSettings = true }
             )
                 .tabItem {
-                    Label("Settings", systemImage: "gearshape")
+                    Label("title_tab_settings", systemImage: "gearshape")
                         .accessibilityIdentifier("tab.settings.button")
                 }
                 .tag(Tab.settings)

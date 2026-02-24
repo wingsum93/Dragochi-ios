@@ -16,7 +16,7 @@ struct DragonResumeLastSetupCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
             HStack {
-                Text("Resume Last Setup")
+                Text("title_resume_last_setup")
                     .font(DragonTheme.current.font(.labelSmall))
                     .foregroundStyle(DragonTheme.current.color(.textTertiary))
                     .tracking(0.8)

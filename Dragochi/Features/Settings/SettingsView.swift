@@ -6,12 +6,14 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct SettingsView: View {
     @ObservedObject var store: SettingsStore
     let onOpenGameSettings: () -> Void
     let onOpenFriendSettings: () -> Void
     @Environment(\.openURL) private var openURL
+    @Environment(\.locale) private var locale
     @State private var isShowingOpenSourceLicenses = false
 
     init(
@@ -45,13 +47,13 @@ struct SettingsView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.lg)) {
-                    Text("Settings")
+                    Text("title_settings")
                         .font(DragonTheme.current.font(.titleSection))
                         .foregroundStyle(DragonTheme.current.color(.textPrimary))
 
                     VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.md)) {
                         HStack {
-                            Text("iCloud Sync")
+                            Text("title_icloud_sync")
                                 .font(DragonTheme.current.font(.titleSection))
                                 .foregroundStyle(DragonTheme.current.color(.textPrimary))
                             Spacer()
@@ -66,7 +68,7 @@ struct SettingsView: View {
                             .tint(DragonTheme.current.color(.accentPrimary))
                         }
 
-                        Text("Sync across devices (local-only toggle for now).")
+                        Text("text_icloud_sync_description")
                             .font(DragonTheme.current.font(.labelSmall))
                             .foregroundStyle(DragonTheme.current.color(.textTertiary))
                     }
@@ -75,16 +77,16 @@ struct SettingsView: View {
                     .clipShape(RoundedRectangle(cornerRadius: DragonTheme.current.radius(.card), style: .continuous))
 
                     VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
-                        Text("Backup")
+                        Text("title_backup")
                             .font(DragonTheme.current.font(.titleSection))
                             .foregroundStyle(DragonTheme.current.color(.textPrimary))
 
                         if let date = store.state.lastBackupDate {
-                            Text("Last export: \(formatDate(date))")
+                            Text(L10n.format("text_backup_last_export_format", locale: locale, formatDate(date)))
                                 .font(DragonTheme.current.font(.labelSmall))
                                 .foregroundStyle(DragonTheme.current.color(.textTertiary))
                         } else {
-                            Text("No backup created yet.")
+                            Text("text_no_backup_yet")
                                 .font(DragonTheme.current.font(.labelSmall))
                                 .foregroundStyle(DragonTheme.current.color(.textTertiary))
                         }
@@ -93,7 +95,12 @@ struct SettingsView: View {
                             Button {
                                 store.send(.exportTapped)
                             } label: {
-                                Text(store.state.isExporting ? "Exporting..." : "Export")
+                                Text(
+                                    L10n.string(
+                                        store.state.isExporting ? "button_exporting" : "button_export",
+                                        locale: locale
+                                    )
+                                )
                                     .font(DragonTheme.current.font(.labelSmall))
                                     .foregroundStyle(.black)
                                     .padding(.horizontal, 16)
@@ -107,7 +114,12 @@ struct SettingsView: View {
                             Button {
                                 store.send(.importTapped)
                             } label: {
-                                Text(store.state.isImporting ? "Importing..." : "Import")
+                                Text(
+                                    L10n.string(
+                                        store.state.isImporting ? "button_importing" : "button_import",
+                                        locale: locale
+                                    )
+                                )
                                     .font(DragonTheme.current.font(.labelSmall))
                                     .foregroundStyle(DragonTheme.current.color(.textPrimary))
                                     .padding(.horizontal, 16)
@@ -124,7 +136,44 @@ struct SettingsView: View {
                     .clipShape(RoundedRectangle(cornerRadius: DragonTheme.current.radius(.card), style: .continuous))
 
                     VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
-                        Text("Game")
+                        Text("title_language")
+                            .font(DragonTheme.current.font(.titleSection))
+                            .foregroundStyle(DragonTheme.current.color(.textPrimary))
+
+                        Text("text_per_app_language_description")
+                            .font(DragonTheme.current.font(.labelSmall))
+                            .foregroundStyle(DragonTheme.current.color(.textTertiary))
+
+                        Button {
+                            guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
+                            openURL(settingsURL)
+                        } label: {
+                            HStack {
+                                Text("title_per_app_language")
+                                    .font(DragonTheme.current.font(.labelSmall))
+                                    .foregroundStyle(DragonTheme.current.color(.textPrimary))
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(DragonTheme.current.color(.textTertiary))
+                            }
+                            .padding(.vertical, 6)
+                            .contentShape(Rectangle())
+                            .accessibilityElement(children: .combine)
+                            .accessibilityIdentifier("action.openPerAppLanguageSettings")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("action.openPerAppLanguageSettings")
+                    }
+                    .padding(DragonTheme.current.spacing(.md))
+                    .background(DragonTheme.current.color(.surfaceCard))
+                    .clipShape(RoundedRectangle(cornerRadius: DragonTheme.current.radius(.card), style: .continuous))
+                    .accessibilityIdentifier("section.settingsLanguage")
+
+                    VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
+                        Text("title_game")
                             .font(DragonTheme.current.font(.titleSection))
                             .foregroundStyle(DragonTheme.current.color(.textPrimary))
 
@@ -132,7 +181,7 @@ struct SettingsView: View {
                             onOpenGameSettings()
                         } label: {
                             HStack {
-                                Text("Game Settings (Temp)")
+                                Text("title_game_settings_temp")
                                     .font(DragonTheme.current.font(.labelSmall))
                                     .foregroundStyle(DragonTheme.current.color(.textPrimary))
 
@@ -152,7 +201,7 @@ struct SettingsView: View {
                     .clipShape(RoundedRectangle(cornerRadius: DragonTheme.current.radius(.card), style: .continuous))
 
                     VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
-                        Text("Friend")
+                        Text("title_friend")
                             .font(DragonTheme.current.font(.titleSection))
                             .foregroundStyle(DragonTheme.current.color(.textPrimary))
 
@@ -160,7 +209,7 @@ struct SettingsView: View {
                             onOpenFriendSettings()
                         } label: {
                             HStack {
-                                Text("Friend List")
+                                Text("title_friend_list")
                                     .font(DragonTheme.current.font(.labelSmall))
                                     .foregroundStyle(DragonTheme.current.color(.textPrimary))
 
@@ -180,7 +229,7 @@ struct SettingsView: View {
                     .clipShape(RoundedRectangle(cornerRadius: DragonTheme.current.radius(.card), style: .continuous))
 
                     VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
-                        Text("About")
+                        Text("title_about")
                             .font(DragonTheme.current.font(.titleSection))
                             .foregroundStyle(DragonTheme.current.color(.textPrimary))
 
@@ -191,7 +240,7 @@ struct SettingsView: View {
                                 Image(systemName: "doc.text")
                                     .foregroundStyle(DragonTheme.current.color(.textPrimary))
 
-                                Text("Open Source License")
+                                Text("title_open_source_license")
                                     .font(DragonTheme.current.font(.labelSmall))
                                     .foregroundStyle(DragonTheme.current.color(.textPrimary))
 
@@ -243,7 +292,7 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.plain)
                 }
-                .navigationTitle("Open Source License")
+                .navigationTitle("title_open_source_license")
                 .navigationBarTitleDisplayMode(.inline)
             }
             .presentationDetents([.medium, .large])
@@ -252,6 +301,7 @@ struct SettingsView: View {
 
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
+        formatter.locale = locale
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter.string(from: date)

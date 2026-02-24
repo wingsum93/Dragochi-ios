@@ -24,6 +24,7 @@ final class FriendSettingsStore: ObservableObject {
         var editingName = ""
         var editingAvatarAssetName = FriendAvatarOptions.defaultAssetName
         var editValidationMessage: String?
+        var editValidationMessageKey: String?
 
         var pendingDeleteFriend: FriendEntity?
         var isShowingDeleteDialog = false
@@ -87,8 +88,8 @@ final class FriendSettingsStore: ObservableObject {
         }
     }
 
-    var dialogTitle: String {
-        state.editingFriendID == nil ? "Add Friend" : "Edit Friend"
+    var dialogTitleKey: String {
+        state.editingFriendID == nil ? "title_add_friend" : "title_edit_friend"
     }
 
     private func loadFriends() {
@@ -108,6 +109,7 @@ final class FriendSettingsStore: ObservableObject {
         state.editingName = ""
         state.editingAvatarAssetName = FriendAvatarOptions.defaultAssetName
         state.editValidationMessage = nil
+        state.editValidationMessageKey = nil
         state.isShowingEditDialog = true
     }
 
@@ -119,13 +121,15 @@ final class FriendSettingsStore: ObservableObject {
             ? (friend.avatarAssetName ?? FriendAvatarOptions.defaultAssetName)
             : FriendAvatarOptions.defaultAssetName
         state.editValidationMessage = nil
+        state.editValidationMessageKey = nil
         state.isShowingEditDialog = true
     }
 
     private func saveEditing() {
         let trimmedName = state.editingName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else {
-            state.editValidationMessage = "Name is required."
+            state.editValidationMessage = nil
+            state.editValidationMessageKey = "text_name_required"
             return
         }
 
@@ -137,7 +141,8 @@ final class FriendSettingsStore: ObservableObject {
             return friend.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalizedName
         }
         guard !hasDuplicate else {
-            state.editValidationMessage = "A friend with this name already exists."
+            state.editValidationMessage = nil
+            state.editValidationMessageKey = "text_friend_name_already_exists"
             return
         }
 
@@ -168,14 +173,18 @@ final class FriendSettingsStore: ObservableObject {
             state.friends = try fetchActiveFriends()
             notifyFriendsDidChange()
             state.errorMessage = nil
+            state.editValidationMessage = nil
+            state.editValidationMessageKey = nil
         } catch {
             state.editValidationMessage = error.localizedDescription
+            state.editValidationMessageKey = nil
         }
     }
 
     private func dismissEditDialog() {
         state.isShowingEditDialog = false
         state.editValidationMessage = nil
+        state.editValidationMessageKey = nil
     }
 
     private func requestDelete(friendID: UUID) {

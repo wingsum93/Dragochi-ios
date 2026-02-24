@@ -9,6 +9,7 @@ import SwiftUI
 
 struct StatsView: View {
     @ObservedObject var store: StatsStore
+    @Environment(\.locale) private var locale
 
     var body: some View {
         ZStack {
@@ -32,7 +33,7 @@ struct StatsView: View {
     }
 
     private var header: some View {
-        Text("Stats")
+        Text("title_stats")
             .font(DragonTheme.current.font(.titleSection))
             .foregroundStyle(DragonTheme.current.color(.textPrimary))
     }
@@ -72,7 +73,7 @@ struct StatsView: View {
 
     private var reportSummary: some View {
         VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
-            Text("Total Playtime")
+            Text("title_total_playtime")
                 .font(DragonTheme.current.font(.labelSmall))
                 .foregroundStyle(DragonTheme.current.color(.textTertiary))
 
@@ -81,7 +82,7 @@ struct StatsView: View {
                 .foregroundStyle(DragonTheme.current.color(.accentPrimary))
 
             if let mom = store.state.report?.mom {
-                Text("MoM: \(formatPercentage(mom.percentageChange))")
+                Text(L10n.format("text_mom_format", locale: locale, formatPercentage(mom.percentageChange)))
                     .font(DragonTheme.current.font(.labelSmall))
                     .foregroundStyle(DragonTheme.current.color(.textSecondary))
             }
@@ -93,13 +94,13 @@ struct StatsView: View {
 
     private var platformBreakdown: some View {
         VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
-            Text("Platform Breakdown")
+            Text("title_platform_breakdown")
                 .font(DragonTheme.current.font(.labelSmall))
                 .foregroundStyle(DragonTheme.current.color(.textTertiary))
 
             ForEach(store.state.report?.byPlatform ?? [], id: \.platform) { item in
                 HStack {
-                    Text(item.platform.rawValue.uppercased())
+                    Text(L10n.string(item.platform.titleKey, locale: locale))
                         .font(DragonTheme.current.font(.labelSmall))
                         .foregroundStyle(DragonTheme.current.color(.textPrimary))
                     Spacer()
@@ -117,13 +118,13 @@ struct StatsView: View {
 
     private var gameBreakdown: some View {
         VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
-            Text("Game Breakdown")
+            Text("title_game_breakdown")
                 .font(DragonTheme.current.font(.labelSmall))
                 .foregroundStyle(DragonTheme.current.color(.textTertiary))
 
             ForEach(Array((store.state.report?.byGame ?? []).enumerated()), id: \.offset) { _, item in
                 HStack {
-                    Text(store.gameName(for: item.gameID).uppercased())
+                    Text((store.gameName(for: item.gameID) ?? L10n.string("text_unknown_game", locale: locale)).uppercased())
                         .font(DragonTheme.current.font(.labelSmall))
                         .foregroundStyle(DragonTheme.current.color(.textPrimary))
                     Spacer()
@@ -141,18 +142,19 @@ struct StatsView: View {
 
     private func monthTitle(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
+        formatter.locale = locale
+        formatter.setLocalizedDateFormatFromTemplate("MMMM yyyy")
         return formatter.string(from: date)
     }
 
     private func formatDuration(_ seconds: Int) -> String {
         let hours = seconds / 3600
         let minutes = (seconds % 3600) / 60
-        return "\(hours)h \(minutes)m"
+        return L10n.format("text_duration_hours_minutes_short", locale: locale, hours, minutes)
     }
 
     private func formatPercentage(_ value: Double?) -> String {
-        guard let value else { return "N/A" }
+        guard let value else { return L10n.string("text_na", locale: locale) }
         return String(format: "%.1f%%", value)
     }
 }

@@ -49,6 +49,7 @@ final class AddSessionStore: ObservableObject {
         var teammateChips: [TeammateChipModel] = []
         var isSaving: Bool = false
         var errorMessage: String?
+        var errorMessageKey: String?
     }
 
     enum Action {
@@ -144,6 +145,7 @@ final class AddSessionStore: ObservableObject {
             state.gameCards = makeGameCards(from: games, enabledRemoteIDs: enabledRemoteIDs)
             state.teammateChips = makeTeammateChips(from: friends)
             state.errorMessage = nil
+            state.errorMessageKey = nil
 
             if !ProcessInfo.processInfo.arguments.contains("-ui-testing") {
                 Task { [weak self] in
@@ -152,6 +154,7 @@ final class AddSessionStore: ObservableObject {
             }
         } catch {
             state.errorMessage = error.localizedDescription
+            state.errorMessageKey = nil
         }
     }
 
@@ -164,13 +167,15 @@ final class AddSessionStore: ObservableObject {
             state.gameCards = makeGameCards(from: refreshedGames, enabledRemoteIDs: refreshedEnabled)
         } catch {
             state.errorMessage = error.localizedDescription
+            state.errorMessageKey = nil
         }
     }
 
     private func saveSession() {
         if state.mode == .preStartSetup {
             guard let selectedGameID = state.selectedGameID else {
-                state.errorMessage = "Please select a game before starting."
+                state.errorMessage = nil
+                state.errorMessageKey = "text_select_game_before_starting"
                 return
             }
 
@@ -215,9 +220,12 @@ final class AddSessionStore: ObservableObject {
             } else {
                 _ = try sessionRepository.update(session)
             }
+            state.errorMessage = nil
+            state.errorMessageKey = nil
             onClose()
         } catch {
             state.errorMessage = error.localizedDescription
+            state.errorMessageKey = nil
         }
     }
 
@@ -239,10 +247,10 @@ final class AddSessionStore: ObservableObject {
         }
 
         if cards.isEmpty {
-            return [GameCardModel(id: "add", title: "Add", imageAssetName: nil)]
+            return [GameCardModel(id: "add", title: "", imageAssetName: nil)]
         }
 
-        return cards + [GameCardModel(id: "add", title: "Add", imageAssetName: nil)]
+        return cards + [GameCardModel(id: "add", title: "", imageAssetName: nil)]
     }
 
     private func makeTeammateChips(from friends: [FriendEntity]) -> [TeammateChipModel] {

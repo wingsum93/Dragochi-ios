@@ -12,6 +12,7 @@ struct MainView: View {
     @ObservedObject var store: MainStore
     @SceneStorage("home.trackingSnapshotData") private var trackingSnapshotData: Data?
     @State private var isResumeLastSetupEnabled = true
+    @Environment(\.locale) private var locale
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -55,11 +56,11 @@ struct MainView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Quick Track")
+                Text("title_home_quick_track")
                     .font(DragonTheme.current.font(.titleSection))
                     .foregroundStyle(DragonTheme.current.color(.textPrimary))
                     .accessibilityIdentifier("screen.home")
-                Text("PRODUCTIVITY MODE")
+                Text("text_home_productivity_mode")
                     .font(DragonTheme.current.font(.labelSmall))
                     .foregroundStyle(DragonTheme.current.color(.textTertiary))
             }
@@ -87,7 +88,7 @@ struct MainView: View {
     private var sessionDetailSection: some View {
         VStack(spacing: DragonTheme.current.spacing(.sm)) {
             if let startAt = store.state.trackingStartAt {
-                Text("STARTED \(formatTime(startAt))")
+                Text(L10n.format("text_home_started_at_format", locale: locale, formatTime(startAt)))
                     .font(DragonTheme.current.font(.labelSmall))
                     .foregroundStyle(DragonTheme.current.color(.textTertiary))
                     .tracking(1)
@@ -96,8 +97,8 @@ struct MainView: View {
             if let setup = store.state.activeSetup {
                 HStack(spacing: DragonTheme.current.spacing(.sm)) {
                     chip(title: selectedGameTitle(setup.selectedGameID), icon: "gamecontroller")
-                    chip(title: setup.selectedPlatform.rawValue.uppercased(), icon: "desktopcomputer")
-                    chip(title: "\(setup.selectedFriendIDs.count) PERSON", icon: "person.2")
+                    chip(title: L10n.string(setup.selectedPlatform.titleKey, locale: locale), icon: "desktopcomputer")
+                    chip(title: L10n.format("text_home_person_count_format", locale: locale, setup.selectedFriendIDs.count), icon: "person.2")
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
             }
@@ -145,7 +146,7 @@ struct MainView: View {
                     .fill(DragonTheme.current.color(.surfaceCard))
                     .frame(width: 120, height: 120)
 
-                Text("START")
+                Text("button_start")
                     .font(DragonTheme.current.font(.titleSection))
                     .foregroundStyle(DragonTheme.current.color(.textPrimary))
                     .accessibilityIdentifier("action.startTracking")
@@ -169,7 +170,7 @@ struct MainView: View {
                     .fill(DragonTheme.current.color(.surfaceCard))
                     .frame(width: 132, height: 132)
 
-                Text("STOP")
+                Text("button_stop")
                     .font(DragonTheme.current.font(.titleSection))
                     .foregroundStyle(DragonTheme.current.color(.textPrimary))
                     .accessibilityIdentifier("action.stopTracking")
@@ -183,7 +184,12 @@ struct MainView: View {
         Button {
             store.send(.pauseResumeTapped)
         } label: {
-            Text(store.state.trackingStatus == .paused ? "RESUME" : "PAUSE")
+            Text(
+                L10n.string(
+                    store.state.trackingStatus == .paused ? "button_resume" : "button_pause",
+                    locale: locale
+                )
+            )
                 .font(DragonTheme.current.font(.labelSmall))
                 .foregroundStyle(DragonTheme.current.color(.textTertiary))
                 .padding(.horizontal, 18)
@@ -198,11 +204,11 @@ struct MainView: View {
     private var statusText: String {
         switch store.state.trackingStatus {
         case .idle:
-            return "READY TO GRIND"
+            return L10n.string("text_home_status_idle", locale: locale)
         case .running:
-            return "KEEP GOING"
+            return L10n.string("text_home_status_running", locale: locale)
         case .paused:
-            return "PAUSED"
+            return L10n.string("text_home_status_paused", locale: locale)
         }
     }
 
@@ -230,7 +236,7 @@ struct MainView: View {
     }
 
     private func selectedGameTitle(_ id: UUID) -> String {
-        store.state.games.first(where: { $0.id == id })?.name ?? "Unknown Game"
+        store.state.games.first(where: { $0.id == id })?.name ?? L10n.string("text_unknown_game", locale: locale)
     }
 
     private var resumeLastSetupModel: DragonResumeLastSetupModel? {
@@ -241,9 +247,9 @@ struct MainView: View {
 
         return DragonResumeLastSetupModel(
             id: session.id,
-            gameTitle: selectedGame?.name ?? "Unknown Game",
+            gameTitle: selectedGame?.name ?? L10n.string("text_unknown_game", locale: locale),
             gameImageAssetName: selectedGame?.imageAssetName,
-            platformLabel: session.platform.rawValue.uppercased(),
+            platformLabel: L10n.string(session.platform.titleKey, locale: locale),
             teammatesLabel: teammatesLabel(for: session.friendIDs)
         )
     }
@@ -254,17 +260,19 @@ struct MainView: View {
         }
 
         guard !names.isEmpty else {
-            return friendIDs.isEmpty ? "Solo" : "\(friendIDs.count) teammates"
+            return friendIDs.isEmpty
+                ? L10n.string("text_teammates_solo", locale: locale)
+                : L10n.format("text_teammates_count", locale: locale, friendIDs.count)
         }
 
         if names.count == 1 {
-            return "w/ \(names[0])"
+            return L10n.format("text_teammates_with_one", locale: locale, names[0])
         }
         if names.count == 2 {
-            return "w/ \(names[0]) & \(names[1])"
+            return L10n.format("text_teammates_with_two", locale: locale, names[0], names[1])
         }
 
-        return "w/ \(names[0]), \(names[1]) +\(names.count - 2)"
+        return L10n.format("text_teammates_with_many", locale: locale, names[0], names[1], names.count - 2)
     }
 
     private func formatDuration(_ seconds: Int) -> String {
@@ -276,7 +284,9 @@ struct MainView: View {
 
     private func formatTime(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
+        formatter.locale = locale
+        formatter.timeStyle = .short
+        formatter.dateStyle = .none
         return formatter.string(from: date)
     }
 }

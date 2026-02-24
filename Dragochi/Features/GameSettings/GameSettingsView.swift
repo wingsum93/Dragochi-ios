@@ -9,6 +9,7 @@ import SwiftUI
 
 struct GameSettingsView: View {
     @StateObject private var store: GameSettingsStore
+    @Environment(\.locale) private var locale
     private let searchContentSpacing: CGFloat = 8
     private let searchIconWidth: CGFloat = 16
     private let searchTrailingIconWidth: CGFloat = 16
@@ -26,7 +27,7 @@ struct GameSettingsView: View {
 
                 if store.filteredCatalog.isEmpty {
                     Spacer()
-                    Text("No games found")
+                    Text("title_no_games_found")
                         .font(DragonTheme.current.font(.body))
                         .foregroundStyle(DragonTheme.current.color(.textTertiary))
                     Spacer()
@@ -84,7 +85,7 @@ struct GameSettingsView: View {
             }
             .padding(.top, DragonTheme.current.spacing(.sm))
             .background(DragonTheme.current.color(.bgBase).ignoresSafeArea())
-            .navigationTitle("Game Settings")
+            .navigationTitle("title_game_settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(DragonTheme.current.color(.bgBase), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
@@ -100,7 +101,7 @@ struct GameSettingsView: View {
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
+                    Button("button_done") {
                         store.send(.doneTapped)
                     }
                     .accessibilityIdentifier("action.closeGameSettings")
@@ -109,15 +110,15 @@ struct GameSettingsView: View {
         }
         .accessibilityIdentifier("screen.gameSettings")
         .onAppear { store.send(.onAppear) }
-        .alert("Confirm Change", isPresented: isShowingConfirmChangesDialog) {
-            Button("No", role: .cancel) {
+        .alert("title_confirm_change", isPresented: isShowingConfirmChangesDialog) {
+            Button("button_no", role: .cancel) {
                 store.send(.cancelSaveChanges)
             }
-            Button("Yes") {
+            Button("button_yes") {
                 store.send(.confirmSaveChanges)
             }
         } message: {
-            Text("Apply changes to selected games?")
+            Text("text_apply_changes_selected_games")
         }
     }
 
@@ -128,7 +129,7 @@ struct GameSettingsView: View {
                 .frame(width: searchIconWidth)
 
             TextField(
-                "search game name",
+                L10n.string("text_search_game_name", locale: locale),
                 text: Binding(
                     get: { store.state.query },
                     set: { store.send(.updateQuery($0)) }

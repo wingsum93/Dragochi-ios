@@ -10,23 +10,23 @@ import Combine
 
 @MainActor
 final class HistoryStore: ObservableObject {
-    enum HistoryFilter: String, CaseIterable {
-        case allTime = "All Time"
-        case thisWeek = "This Week"
-        case lastMonth = "Last Month"
+    enum HistoryFilter: CaseIterable {
+        case allTime
+        case thisWeek
+        case lastMonth
     }
 
     struct HistoryRow: Identifiable, Equatable {
         let id: UUID
         let gameTitle: String
         let platform: Platform
-        let durationText: String
-        let timeText: String
+        let durationSeconds: Int
+        let endAt: Date
     }
 
     struct HistorySection: Identifiable, Equatable {
         let id: Date
-        let title: String
+        let day: Date
         let rows: [HistoryRow]
     }
 
@@ -76,13 +76,13 @@ final class HistoryStore: ObservableObject {
 
             let rows = sessions.compactMap { session -> HistoryRow? in
                 guard let endAt = session.endAt else { return nil }
-                let title = session.gameID.flatMap { gameMap[$0] } ?? "Unknown Game"
+                let title = session.gameID.flatMap { gameMap[$0] } ?? ""
                 return HistoryRow(
                     id: session.id,
                     gameTitle: title,
                     platform: session.platform,
-                    durationText: formatDurationShort(session.durationSeconds ?? 0),
-                    timeText: formatTime(endAt)
+                    durationSeconds: session.durationSeconds ?? 0,
+                    endAt: endAt
                 )
             }
 
@@ -134,34 +134,9 @@ final class HistoryStore: ObservableObject {
         return sortedDays.map { day in
             HistorySection(
                 id: day,
-                title: sectionTitle(for: day),
+                day: day,
                 rows: grouped[day] ?? []
             )
         }
-    }
-
-    private func sectionTitle(for day: Date) -> String {
-        let calendar = Calendar.current
-        if calendar.isDateInToday(day) { return "Today" }
-        if calendar.isDateInYesterday(day) { return "Yesterday" }
-
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d, yyyy"
-        return formatter.string(from: day)
-    }
-
-    private func formatDurationShort(_ seconds: Int) -> String {
-        let hours = seconds / 3600
-        let minutes = (seconds % 3600) / 60
-        if hours > 0 {
-            return "\(hours)h \(minutes)m"
-        }
-        return "\(minutes)m"
-    }
-
-    private func formatTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
-        return formatter.string(from: date)
     }
 }

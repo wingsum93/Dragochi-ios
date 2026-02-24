@@ -9,6 +9,7 @@ import SwiftUI
 
 struct FriendSettingsView: View {
     @StateObject private var store: FriendSettingsStore
+    @Environment(\.locale) private var locale
 
     init(store: FriendSettingsStore) {
         _store = StateObject(wrappedValue: store)
@@ -37,7 +38,7 @@ struct FriendSettingsView: View {
                     .accessibilityIdentifier("screen.friendSettings")
             }
             .background(DragonTheme.current.color(.bgBase).ignoresSafeArea())
-            .navigationTitle("Friend List")
+            .navigationTitle("title_friend_list")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(DragonTheme.current.color(.bgBase), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
@@ -67,15 +68,15 @@ struct FriendSettingsView: View {
             editDialog
                 .presentationDetents([.medium, .large])
         }
-        .alert("Delete Friend", isPresented: isShowingDeleteDialog) {
-            Button("Cancel", role: .cancel) {
+        .alert("title_delete_friend", isPresented: isShowingDeleteDialog) {
+            Button("button_cancel", role: .cancel) {
                 store.send(.cancelDeleteTapped)
             }
-            Button("Delete", role: .destructive) {
+            Button("button_delete", role: .destructive) {
                 store.send(.confirmDeleteTapped)
             }
         } message: {
-            Text("Are you sure you want to remove this friend?")
+            Text("text_confirm_remove_friend")
         }
     }
 
@@ -101,11 +102,11 @@ struct FriendSettingsView: View {
                 .frame(width: emptyStateAnimationSize, height: emptyStateAnimationSize)
 
             VStack(spacing: DragonTheme.current.spacing(.sm)) {
-                Text("No friends yet")
+                Text("title_no_friends_yet")
                     .font(DragonTheme.current.font(.body))
                     .foregroundStyle(DragonTheme.current.color(.textTertiary))
 
-                Text("Tap + to add your first teammate.")
+                Text("text_tap_add_first_teammate")
                     .font(DragonTheme.current.font(.labelSmall))
                     .foregroundStyle(DragonTheme.current.color(.textTertiary))
             }
@@ -192,12 +193,12 @@ struct FriendSettingsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.md)) {
                     VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
-                        Text("Name")
+                        Text("title_name")
                             .font(DragonTheme.current.font(.labelSmall))
                             .foregroundStyle(DragonTheme.current.color(.textTertiary))
 
                         TextField(
-                            "Enter friend name",
+                            L10n.string("text_enter_friend_name", locale: locale),
                             text: Binding(
                                 get: { store.state.editingName },
                                 set: { store.send(.updateEditingName($0)) }
@@ -217,7 +218,7 @@ struct FriendSettingsView: View {
                     }
 
                     VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
-                        Text("Icon")
+                        Text("title_icon")
                             .font(DragonTheme.current.font(.labelSmall))
                             .foregroundStyle(DragonTheme.current.color(.textTertiary))
 
@@ -249,7 +250,11 @@ struct FriendSettingsView: View {
                         }
                     }
 
-                    if let validationMessage = store.state.editValidationMessage {
+                    if let validationMessageKey = store.state.editValidationMessageKey {
+                        Text(L10n.string(validationMessageKey, locale: locale))
+                            .font(DragonTheme.current.font(.labelSmall))
+                            .foregroundStyle(.red)
+                    } else if let validationMessage = store.state.editValidationMessage {
                         Text(validationMessage)
                             .font(DragonTheme.current.font(.labelSmall))
                             .foregroundStyle(.red)
@@ -258,16 +263,16 @@ struct FriendSettingsView: View {
                 .padding(DragonTheme.current.spacing(.lg))
             }
             .background(DragonTheme.current.color(.bgBase).ignoresSafeArea())
-            .navigationTitle(store.dialogTitle)
+            .navigationTitle(L10n.string(store.dialogTitleKey, locale: locale))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") {
+                    Button("button_cancel") {
                         store.send(.cancelEditingTapped)
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Save") {
+                    Button("button_save") {
                         store.send(.saveEditingTapped)
                     }
                     .accessibilityIdentifier("action.saveFriend")

@@ -276,7 +276,7 @@ struct MVIStoresTests {
             store.send(.addTapped)
             store.send(.updateEditingName("  mason  "))
             store.send(.saveEditingTapped)
-            #expect(store.state.editValidationMessage != nil)
+            #expect(store.state.editValidationMessage != nil || store.state.editValidationMessageKey != nil)
 
             store.send(.updateEditingName("Ava"))
             store.send(.selectEditingAvatar("F4"))

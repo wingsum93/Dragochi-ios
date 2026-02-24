@@ -142,13 +142,13 @@ final class StatsStore: ObservableObject {
         calendar.dateInterval(of: .month, for: date)?.start ?? date
     }
 
-    func gameName(for gameID: UUID?) -> String {
+    func gameName(for gameID: UUID?) -> String? {
         guard
             let gameID,
             let name = state.gameNameByID[gameID],
             !name.isEmpty
         else {
-            return "Unknown Game"
+            return nil
         }
         return name
     }

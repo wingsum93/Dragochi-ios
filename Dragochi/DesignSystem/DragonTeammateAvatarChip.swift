@@ -31,7 +31,7 @@ struct DragonTeammateAvatarChip: View {
                     }
                 }
 
-                Text(state == .add ? "Add" : model.name)
+                Text(model.name)
                     .font(DragonTheme.current.font(.labelSmall))
                     .foregroundStyle(labelColor)
                     .lineLimit(1)
