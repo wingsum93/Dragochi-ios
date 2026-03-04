@@ -110,6 +110,16 @@ final class ScreenshotUITests: XCTestCase {
         waitForElementToAppear(openPerAppLanguageButton)
         XCTAssertTrue(openPerAppLanguageButton.isHittable)
         openPerAppLanguageButton.tap()
+
+        let preferencesApp = XCUIApplication(bundleIdentifier: "com.apple.Preferences")
+        XCTAssertTrue(
+            preferencesApp.wait(for: .runningForeground, timeout: 10),
+            "Expected Settings app to open from Per-App Language action."
+        )
+        XCTAssertTrue(
+            waitForDragochiContext(from: app, in: preferencesApp, timeout: 10),
+            "Expected Settings app to show Dragochi-specific context instead of generic General settings."
+        )
     }
 
     @MainActor
@@ -312,5 +322,24 @@ final class ScreenshotUITests: XCTestCase {
         }
 
         return nil
+    }
+
+    private func waitForDragochiContext(from app: XCUIApplication, in settingsApp: XCUIApplication, timeout: TimeInterval) -> Bool {
+        let dragochiLabelPredicate = NSPredicate(format: "label CONTAINS[c] %@", "Dragochi")
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            let hasAppLabelContext = settingsApp.descendants(matching: .any).matching(dragochiLabelPredicate).count > 0
+            let appMovedToBackground = app.state == .runningBackground || app.state == .runningBackgroundSuspended
+            let settingsLoadedContent = settingsApp.tables.firstMatch.exists
+                || settingsApp.collectionViews.firstMatch.exists
+                || settingsApp.scrollViews.firstMatch.exists
+            let hasAppContext = hasAppLabelContext || (appMovedToBackground && settingsLoadedContent)
+            if hasAppContext {
+                return true
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+        }
+
+        return false
     }
 }

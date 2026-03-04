@@ -145,8 +145,7 @@ struct SettingsView: View {
                             .foregroundStyle(DragonTheme.current.color(.textTertiary))
 
                         Button {
-                            guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
-                            openURL(settingsURL)
+                            openPerAppLanguageSettings()
                         } label: {
                             HStack {
                                 Text("title_per_app_language")
@@ -296,6 +295,35 @@ struct SettingsView: View {
                 .navigationBarTitleDisplayMode(.inline)
             }
             .presentationDetents([.medium, .large])
+        }
+    }
+
+    private func openPerAppLanguageSettings() {
+        guard let fallbackSettingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
+
+        var candidateURLs: [URL] = []
+        if let bundleIdentifier = Bundle.main.bundleIdentifier {
+            if let languageURL = URL(string: "App-prefs:root=\(bundleIdentifier)&path=LANGUAGE") {
+                candidateURLs.append(languageURL)
+                print("er url: \(languageURL)")
+            }
+            if let appSettingsURL = URL(string: "App-prefs:root=\(bundleIdentifier)") {
+                print("er url: \(appSettingsURL)")
+                candidateURLs.append(appSettingsURL)
+            }
+        }
+        candidateURLs.append(fallbackSettingsURL)
+
+        openSettingsURL(candidateURLs, at: 0)
+    }
+
+    private func openSettingsURL(_ urls: [URL], at index: Int) {
+        guard index < urls.count else { return }
+
+        UIApplication.shared.open(urls[index], options: [:]) { didOpen in
+            if !didOpen {
+                self.openSettingsURL(urls, at: index + 1)
+            }
         }
     }
 
