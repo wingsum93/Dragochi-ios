@@ -25,8 +25,9 @@ fi
 mkdir -p "$OUTPUT_DIR"
 
 required_names=(
-  "home.png"
-  "home_start.png"
+  "home_idle_no_resume.png"
+  "home_idle_resume.png"
+  "home_running.png"
   "history.png"
   "stats.png"
   "settings.png"

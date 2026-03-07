@@ -15,43 +15,39 @@ final class ScreenshotUITests: XCTestCase {
     }
 
     @MainActor
-    func testScreenshotHome() throws {
+    func testScreenshotHomeIdleNoResume() throws {
         let app = launchAppForScreenshots()
 
-        waitForElementToAppear(app.staticTexts["Quick Track"])
-        attachScreenshot(from: app, named: "home.png")
+        waitForElementToAppear(element(in: app, id: "action.startTracking"))
+        XCTAssertFalse(element(in: app, id: "card.resumeLastSetup").exists)
+        attachScreenshot(from: app, named: "home_idle_no_resume.png")
     }
 
     @MainActor
-    func testScreenshotHomeStart() throws {
+    func testScreenshotHomeIdleResume() throws {
         let app = launchAppForScreenshots()
-        ensureTrackingIsIdle(in: app)
 
-        let startButton = element(in: app, id: "action.startTracking")
-        startButton.tap()
+        startTrackingFromHome(in: app)
+        stopTracking(in: app)
 
-        let addSessionScreen = element(in: app, id: "screen.addSession")
-        waitForElementToAppear(addSessionScreen)
-        waitForElementToAppear(element(in: app, id: "hero.addSessionTitle"))
-        waitForElementToAppear(element(in: app, id: "section.gamePlayed"))
+        let resumeCard = element(in: app, id: "card.resumeLastSetup")
+        waitForElementToAppear(resumeCard)
+        attachScreenshot(from: app, named: "home_idle_resume.png")
+    }
 
-        let selectableGameButtons = app.descendants(matching: .any).matching(
-            NSPredicate(format: "identifier BEGINSWITH %@", "action.selectGame.")
-        )
-        let firstSelectableGameButton = selectableGameButtons.firstMatch
-        waitForElementToAppear(firstSelectableGameButton)
-        firstSelectableGameButton.tap()
+    @MainActor
+    func testScreenshotHomeRunning() throws {
+        let app = launchAppForScreenshots()
 
-        let saveButton = element(in: app, id: "action.saveSession")
-        waitForElementToAppear(saveButton)
-        saveButton.tap()
+        startTrackingFromHome(in: app)
 
         let stopButton = element(in: app, id: "action.stopTracking")
+        let pauseResumeButton = element(in: app, id: "action.pauseResumeTracking")
         waitForElementToAppear(stopButton)
-        attachScreenshot(from: app, named: "home_start.png")
-
-        stopButton.tap()
-        waitForElementToAppear(element(in: app, id: "action.startTracking"))
+        waitForElementToAppear(pauseResumeButton)
+        waitForElementToAppear(app.staticTexts["KEEP GOING"])
+        XCTAssertFalse(element(in: app, id: "card.resumeLastSetup").exists)
+        attachScreenshot(from: app, named: "home_running.png")
     }
 
     @MainActor
@@ -125,15 +121,8 @@ final class ScreenshotUITests: XCTestCase {
     @MainActor
     func testScreenshotSessionSetup() throws {
         let app = launchAppForScreenshots()
-        ensureTrackingIsIdle(in: app)
+        openPreStartSetupFromHome(in: app)
 
-        let startButton = element(in: app, id: "action.startTracking")
-        startButton.tap()
-
-        let addSessionScreen = element(in: app, id: "screen.addSession")
-        waitForElementToAppear(addSessionScreen)
-        waitForElementToAppear(element(in: app, id: "hero.addSessionTitle"))
-        waitForElementToAppear(element(in: app, id: "section.gamePlayed"))
         let notesSection = element(in: app, id: "section.sessionNotes")
         waitForElementToAppear(notesSection)
         let startTrackingButton = element(in: app, id: "action.saveSession")
@@ -255,6 +244,41 @@ final class ScreenshotUITests: XCTestCase {
         }
 
         XCTFail("Unable to reach home idle state: neither start nor stop tracking button appeared.")
+    }
+
+    private func openPreStartSetupFromHome(in app: XCUIApplication) {
+        ensureTrackingIsIdle(in: app)
+        let startButton = element(in: app, id: "action.startTracking")
+        waitForElementToAppear(startButton)
+        startButton.tap()
+
+        waitForElementToAppear(element(in: app, id: "screen.addSession"))
+        waitForElementToAppear(element(in: app, id: "hero.addSessionTitle"))
+        waitForElementToAppear(element(in: app, id: "section.gamePlayed"))
+    }
+
+    private func startTrackingFromHome(in app: XCUIApplication) {
+        openPreStartSetupFromHome(in: app)
+
+        let selectableGameButtons = app.descendants(matching: .button).matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "action.selectGame.")
+        )
+        let firstSelectableGameButton = selectableGameButtons.firstMatch
+        waitForElementToAppear(firstSelectableGameButton)
+        firstSelectableGameButton.tap()
+
+        let saveButton = element(in: app, id: "action.saveSession")
+        waitForElementToAppear(saveButton)
+        saveButton.tap()
+
+        waitForElementToAppear(element(in: app, id: "action.stopTracking"))
+    }
+
+    private func stopTracking(in app: XCUIApplication) {
+        let stopButton = element(in: app, id: "action.stopTracking")
+        waitForElementToAppear(stopButton)
+        stopButton.tap()
+        waitForElementToAppear(element(in: app, id: "action.startTracking"))
     }
 
     private func openFriendSettingsFromAddSession(in app: XCUIApplication) {

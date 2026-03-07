@@ -41,7 +41,10 @@ struct AppDependencies {
     }
 
     private static func makeCatalogDefaults() -> UserDefaults {
-        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+        let processInfo = ProcessInfo.processInfo
+        let isRunningTests = processInfo.environment["XCTestConfigurationFilePath"] != nil
+        let isUITesting = processInfo.arguments.contains("-ui-testing")
+        if isRunningTests || isUITesting {
             return UserDefaults(suiteName: "dragochi.catalog.defaults.\(UUID().uuidString)") ?? .standard
         }
         return .standard

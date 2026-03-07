@@ -120,7 +120,7 @@ struct MainView: View {
 
     @ViewBuilder
     private var resumeLastSetupSection: some View {
-        if store.state.trackingStatus == .idle, let model = resumeLastSetupModel {
+        if shouldShowResumeLastSetup, let model = resumeLastSetupModel {
             DragonResumeLastSetupCard(
                 model: model,
                 isResumeEnabled: isResumeLastSetupEnabled,
@@ -237,6 +237,13 @@ struct MainView: View {
 
     private func selectedGameTitle(_ id: UUID) -> String {
         store.state.games.first(where: { $0.id == id })?.name ?? L10n.string("text_unknown_game", locale: locale)
+    }
+
+    private var shouldShowResumeLastSetup: Bool {
+        store.state.trackingStatus == .idle
+            && store.state.currentSessionID == nil
+            && store.state.trackingStartAt == nil
+            && store.state.activeSetup == nil
     }
 
     private var resumeLastSetupModel: DragonResumeLastSetupModel? {
