@@ -43,7 +43,7 @@ final class MainStore: ObservableObject {
 
     enum Action {
         case onAppear
-        case startTapped
+        case startTapped(resumeLastSetupEnabled: Bool)
         case preStartSetupConfirmed(SessionSetupInput)
         case pauseResumeTapped
         case stopTapped
@@ -76,20 +76,8 @@ final class MainStore: ObservableObject {
         switch action {
         case .onAppear:
             loadInitialData()
-        case .startTapped:
-            guard state.trackingStatus == .idle else { return }
-            let draftDate = now()
-            state.pendingAddSessionDraft = AddSessionDraft(
-                id: UUID(),
-                mode: .preStartSetup,
-                sessionID: nil,
-                startAt: draftDate,
-                endAt: draftDate,
-                selectedGameID: nil,
-                selectedPlatform: .pc,
-                selectedFriendIDs: [],
-                note: ""
-            )
+        case .startTapped(let resumeLastSetupEnabled):
+            handleStartTapped(resumeLastSetupEnabled: resumeLastSetupEnabled)
         case .preStartSetupConfirmed(let setup):
             startTracking(with: setup)
         case .pauseResumeTapped:
@@ -103,6 +91,28 @@ final class MainStore: ObservableObject {
         case .clearPendingDraft:
             state.pendingAddSessionDraft = nil
         }
+    }
+
+    private func handleStartTapped(resumeLastSetupEnabled: Bool) {
+        guard state.trackingStatus == .idle else { return }
+
+        if resumeLastSetupEnabled, let setup = latestSetupFromEndedSession() {
+            startTracking(with: setup)
+            return
+        }
+
+        let draftDate = now()
+        state.pendingAddSessionDraft = AddSessionDraft(
+            id: UUID(),
+            mode: .preStartSetup,
+            sessionID: nil,
+            startAt: draftDate,
+            endAt: draftDate,
+            selectedGameID: nil,
+            selectedPlatform: .pc,
+            selectedFriendIDs: [],
+            note: ""
+        )
     }
 
     private func loadInitialData() {
@@ -299,6 +309,29 @@ final class MainStore: ObservableObject {
             .sorted { lhs, rhs in
                 lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
             }
+    }
+
+    private func latestSetupFromEndedSession() -> SessionSetupInput? {
+        guard
+            let latestEndedSession = state.latestEndedSession,
+            let selectedGameID = latestEndedSession.gameID
+        else {
+            return nil
+        }
+
+        let activeFriendIDs = Set(state.friends.map(\.id))
+        let selectedFriendIDs = latestEndedSession.friendIDs.reduce(into: [UUID]()) { selected, friendID in
+            guard activeFriendIDs.contains(friendID) else { return }
+            guard !selected.contains(friendID) else { return }
+            selected.append(friendID)
+        }
+
+        return SessionSetupInput(
+            selectedGameID: selectedGameID,
+            selectedPlatform: latestEndedSession.platform,
+            selectedFriendIDs: selectedFriendIDs,
+            note: ""
+        )
     }
 
 }

@@ -72,7 +72,7 @@ struct MVIStoresTests {
             let gameAssets = Set(store.state.games.compactMap(\.imageAssetName))
             #expect(gameAssets.isSuperset(of: ["apex", "lol", "wwz", "clash_royale", "volarant"]))
 
-            store.send(.startTapped)
+            store.send(.startTapped(resumeLastSetupEnabled: false))
             #expect(store.state.pendingAddSessionDraft?.mode == .preStartSetup)
 
             guard let selectedGameID = store.state.games.first?.id else {
@@ -161,6 +161,89 @@ struct MVIStoresTests {
             )
             #expect(!sessions.isEmpty)
             #expect(didClose)
+        }
+    }
+
+    @Test
+    func mainStore_startTappedWithResumeEnabledStartsTrackingFromLatestSession() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            var current = Date(timeIntervalSince1970: 1_700_000_000)
+
+            let game = try dependencies.gameRepository.create(name: "Apex Legends", imageAssetName: "apex", remoteID: nil)
+            let activeFriend = try dependencies.friendRepository.create(
+                name: "Aiden",
+                handle: nil,
+                avatarAssetName: nil,
+                isActive: true
+            )
+            let inactiveFriend = try dependencies.friendRepository.create(
+                name: "Kai",
+                handle: nil,
+                avatarAssetName: nil,
+                isActive: false
+            )
+
+            _ = try dependencies.sessionRepository.create(
+                startAt: current.addingTimeInterval(-400),
+                endAt: current.addingTimeInterval(-100),
+                platform: .console,
+                gameID: game.id,
+                durationSeconds: nil,
+                note: "old note",
+                friendIDs: [activeFriend.id, inactiveFriend.id]
+            )
+
+            let store = MainStore(dependencies: dependencies, now: { current })
+            store.send(.onAppear)
+            store.send(.startTapped(resumeLastSetupEnabled: true))
+
+            #expect(store.state.trackingStatus == .running)
+            #expect(store.state.pendingAddSessionDraft == nil)
+            #expect(store.state.activeSetup?.selectedGameID == game.id)
+            #expect(store.state.activeSetup?.selectedPlatform == .console)
+            #expect(store.state.activeSetup?.selectedFriendIDs == [activeFriend.id])
+            #expect(store.state.activeSetup?.note == "")
+
+            guard let currentSessionID = store.state.currentSessionID else {
+                Issue.record("Expected active session ID after quick start.")
+                return
+            }
+
+            let runningSession = try dependencies.sessionRepository.fetch(id: currentSessionID)
+            #expect(runningSession?.gameID == game.id)
+            #expect(runningSession?.platform == .console)
+            #expect(runningSession?.friendIDs == [activeFriend.id])
+            #expect(runningSession?.endAt == nil)
+            #expect(runningSession?.note == nil)
+        }
+    }
+
+    @Test
+    func mainStore_startTappedWithResumeEnabledFallsBackToNormalFlowWhenNoGame() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let current = Date(timeIntervalSince1970: 1_700_000_000)
+
+            _ = try dependencies.sessionRepository.create(
+                startAt: current.addingTimeInterval(-400),
+                endAt: current.addingTimeInterval(-100),
+                platform: .pc,
+                gameID: nil,
+                durationSeconds: nil,
+                note: nil,
+                friendIDs: []
+            )
+
+            let store = MainStore(dependencies: dependencies, now: { current })
+            store.send(.onAppear)
+            store.send(.startTapped(resumeLastSetupEnabled: true))
+
+            #expect(store.state.trackingStatus == .idle)
+            #expect(store.state.currentSessionID == nil)
+            #expect(store.state.pendingAddSessionDraft?.mode == .preStartSetup)
         }
     }
 

@@ -134,7 +134,7 @@ struct MainView: View {
 
     private var startButton: some View {
         Button {
-            store.send(.startTapped)
+            store.send(.startTapped(resumeLastSetupEnabled: isResumeLastSetupEnabled))
         } label: {
             ZStack {
                 Circle()
