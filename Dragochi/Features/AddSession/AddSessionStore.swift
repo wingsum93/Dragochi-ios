@@ -71,6 +71,7 @@ final class AddSessionStore: ObservableObject {
     private let enabledGameSelectionRepository: EnabledGameSelectionRepository
     private let friendRepository: FriendRepository
     private let gameArranger: GameArranger
+    private let friendListArrangeManager: FriendListArrangeManager
     private let gameCatalogSyncService: GameCatalogSyncService
     private let onSetupConfirmed: ((SessionSetupInput) -> Void)?
     private let onOpenGameSettings: () -> Void
@@ -90,6 +91,7 @@ final class AddSessionStore: ObservableObject {
         self.enabledGameSelectionRepository = dependencies.enabledGameSelectionRepository
         self.friendRepository = dependencies.friendRepository
         self.gameArranger = dependencies.gameArranger
+        self.friendListArrangeManager = dependencies.friendListArrangeManager
         self.gameCatalogSyncService = dependencies.gameCatalogSyncService
         self.onSetupConfirmed = onSetupConfirmed
         self.onOpenGameSettings = onOpenGameSettings
@@ -265,11 +267,7 @@ final class AddSessionStore: ObservableObject {
     }
 
     private func makeTeammateChips(from friends: [FriendEntity]) -> [TeammateChipModel] {
-        return friends
-            .sorted { lhs, rhs in
-                lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
-            }
-            .map { friend in
+        return friends.map { friend in
             return TeammateChipModel(
                 id: friend.id.uuidString,
                 name: friend.name,
@@ -279,8 +277,6 @@ final class AddSessionStore: ObservableObject {
     }
 
     private func activeFriends() throws -> [FriendEntity] {
-        try friendRepository.fetchActive().sorted { lhs, rhs in
-            lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
-        }
+        try friendListArrangeManager.getFriendList()
     }
 }

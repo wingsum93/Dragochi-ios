@@ -341,6 +341,62 @@ struct MVIStoresTests {
     }
 
     @Test
+    func addSessionStore_ordersTeammateChipsByHistoricalPlaytime() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let alex = try dependencies.friendRepository.create(
+                name: "Alex",
+                handle: nil,
+                avatarAssetName: nil,
+                isActive: true
+            )
+            let baby = try dependencies.friendRepository.create(
+                name: "Baby",
+                handle: nil,
+                avatarAssetName: nil,
+                isActive: true
+            )
+
+            _ = try dependencies.sessionRepository.create(
+                startAt: Date(timeIntervalSince1970: 1_700_000_000),
+                endAt: Date(timeIntervalSince1970: 1_700_003_600),
+                platform: .pc,
+                gameID: nil,
+                durationSeconds: nil,
+                note: nil,
+                friendIDs: [baby.id]
+            )
+            _ = try dependencies.sessionRepository.create(
+                startAt: Date(timeIntervalSince1970: 1_700_004_000),
+                endAt: Date(timeIntervalSince1970: 1_700_004_600),
+                platform: .pc,
+                gameID: nil,
+                durationSeconds: nil,
+                note: nil,
+                friendIDs: [alex.id]
+            )
+
+            let draft = AddSessionDraft(
+                id: UUID(),
+                mode: .manualEntry,
+                sessionID: nil,
+                startAt: Date(),
+                endAt: Date(),
+                selectedGameID: nil,
+                selectedPlatform: .pc,
+                selectedFriendIDs: [],
+                note: ""
+            )
+            let store = AddSessionStore(dependencies: dependencies, draft: draft)
+
+            store.send(.onAppear)
+
+            #expect(store.state.teammateChips.map(\.name) == ["Baby", "Alex"])
+        }
+    }
+
+    @Test
     func friendSettingsStore_addEditDeleteAndValidation() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()

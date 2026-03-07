@@ -15,6 +15,7 @@ struct AppDependencies {
     let enabledGameSelectionRepository: EnabledGameSelectionRepository
     let friendRepository: FriendRepository
     let gameArranger: GameArranger
+    let friendListArrangeManager: FriendListArrangeManager
     let analyticsService: AnalyticsService
     let backupService: BackupService
     let gameCatalogService: GameCatalogService
@@ -26,6 +27,10 @@ struct AppDependencies {
         self.enabledGameSelectionRepository = SwiftDataEnabledGameSelectionRepository(modelContext: modelContext)
         self.friendRepository = SwiftDataFriendRepository(modelContext: modelContext)
         self.gameArranger = GameArranger(sessionRepository: sessionRepository)
+        self.friendListArrangeManager = FriendListArrangeManager(
+            sessionRepository: sessionRepository,
+            friendRepository: friendRepository
+        )
         self.analyticsService = SwiftDataAnalyticsService(sessionRepository: sessionRepository)
         self.backupService = StubBackupService(
             sessionRepository: sessionRepository,
