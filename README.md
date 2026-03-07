@@ -1,76 +1,142 @@
-# Dragochi - Your Game Life Diary
+# Dragochi
 
-Dragochi is repositioning from a game time tracker to a companion-style **Game Life Diary / 遊戲生活日記**. It helps users capture feelings, game moments, and daily memories in one gentle flow.
+Dragochi is an iOS app for logging game sessions as a lightweight game-life diary.
 
-## Product Positioning
+Current runtime includes:
+- Session tracking (start, pause/resume, stop)
+- Session setup (game, platform, teammates, notes)
+- History timeline with filters
+- Monthly stats (total, platform/game breakdown, MoM)
+- Game catalog management (Firebase Remote Config + local fallback)
+- Friend management with avatar selection
+- Backup export surface (stub implementation)
+- UI screenshot test/export workflow
 
-Dragochi is designed for emotional logging with game context:
+## Product Status
 
-- Record how you felt before, during, and after play.
-- Keep small daily memories, not only performance metrics.
-- Build a sense of companionship through reflective prompts and supportive tone.
+This repository contains both:
+- Runtime implementation (tracking-first workflow)
+- Vision docs for a broader companion-style diary direction
 
-## Audience
+See [doc/detail-function.md](doc/detail-function.md) and [doc/screen.md](doc/screen.md) for in-code vs planned wording/behavior mapping.
 
-**Female-first, inclusive of all emotional loggers.**
+## App Structure
 
-Primary audience focus:
+Root tabs (`AppRootView`):
+- Home (`MainView` + `MainStore`)
+- History (`HistoryView` + `HistoryStore`)
+- Stats (`StatsView` + `StatsStore`)
+- Settings (`SettingsView` + `SettingsStore`)
 
-- Users who love aesthetic experiences.
-- Users who enjoy recording life details.
-- Users who share daily life moments in IG Story style.
-- Users who want an app that feels emotionally companionable, not judgmental.
+Modal flows:
+- Add Session (`AddSessionView` + `AddSessionStore`)
+- Game Settings (`GameSettingsView` + `GameSettingsStore`)
+- Friend Settings (`FriendSettingsView` + `FriendSettingsStore`)
 
-## Product Pillars
+Architecture layers:
+- `Features/*`: SwiftUI views + MVI-style stores
+- `Domain/*`: repository/service protocols and core models
+- `Data/*`: SwiftData repositories, models, and concrete services
 
-- **Mood-first journaling**
-- **Session-assisted memory capture**
-- **Companion reflection**
-- **Aesthetic daily storytelling**
+Dependency wiring happens in `AppDependencies`.
 
-## Current Build Reality
+## Data & Services
 
-This documentation is vision-first and uses status tags to clarify reality.
+Persistence:
+- SwiftData schema includes `GameRecord`, `EnabledGameSelectionRecord`, `FriendRecord`, `SessionRecord`, `SessionFriendRecord`.
 
-### In code
+Catalog sync:
+- `GameCatalogSyncService` seeds from fallback and refreshes from remote.
+- `FirebaseRemoteConfigGameCatalogService` fetches `game_catalog_json` and falls back safely when unavailable/invalid.
+- Sample payload: `config/game_setting.json`.
 
-- Session tracking flow (start/stop, elapsed timer, setup context)
-- History view and session editing foundation
-- Stats view and monthly playtime summaries
-- Settings and backup/export/import surfaces
-- Screenshot test baseline workflow
+Analytics:
+- `SwiftDataAnalyticsService` builds `MonthlyReport` from ended sessions.
 
-### Planned
+Backup:
+- `StubBackupService` exports current local data payload.
+- Import path is currently stubbed (no restore behavior yet).
 
-- Deeper emotional companion loops (reflection prompts, supportive summaries)
-- Full pastel-cute visual refresh replacing current neon-dark implementation theme
-- Expanded diary-first copy across all runtime screens
+## Tech Stack
 
-## Documentation Map
+- Swift 5
+- SwiftUI
+- SwiftData
+- Swift Testing (`import Testing`) for logic/data tests
+- XCTest UI tests (`ScreenshotUITests`)
+- Firebase (Core, Remote Config, Crashlytics)
+- Lottie (`lottie-ios`)
 
-- Detailed functional specification: [doc/detail-function.md](doc/detail-function.md)
-- Target audience and writing guardrails: [doc/target-audience.md](doc/target-audience.md)
-- Vision-first screen map and copy alignment: [doc/screen.md](doc/screen.md)
-- Pastel cute cartoon design contract: [doc/dragonlet-ui-system.md](doc/dragonlet-ui-system.md)
-- Remote config technical runbook: [doc/get-remote-config.md](doc/get-remote-config.md)
-- Screenshot baseline notes: [screenshots/README.md](screenshots/README.md)
+SPM dependencies are pinned in:
+- `Dragochi.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`
 
-## Terminology Contract (Documentation)
+## Build Targets & IDs
 
-- `time tracking` -> `game life diary`
-- `productivity mode` -> `companion journaling mode` (target wording)
+Primary app target:
+- Debug bundle ID: `com.ericho.dragochi.dev`
+- Release bundle ID: `com.ericho.Dragochi`
 
-## Release Bundle Identifier
+Test targets:
+- `DragochiTests`
+- `ScreenshotUITests`
 
-- Release bundle ID: `com.ericho.Dragochi` (App Store / TestFlight)
-- Debug bundle ID: `com.ericho.dragochi.dev` (local development)
-- Case-only bundle ID changes are not a valid App Store app identity migration path.
+Project settings currently use:
+- Deployment target: iOS 26.0 (app), iOS 26.2 (tests)
 
-## UI Screenshot Export Workflow
+## Setup
 
-`ScreenshotUITests` stores screenshot artifacts as XCTest attachments (`home.png`, `home_start.png`, `history.png`, `stats.png`, `settings.png`, `add-session.png`, `friend-settings-no-friend.png`, `friend-settings-one-friend.png`, `friend-settings-many-friends.png`).
+1. Open `Dragochi.xcodeproj` in Xcode.
+2. Ensure Firebase plist files exist:
+   - `firebase/dev/GoogleService-Info.plist`
+   - `firebase/prod/GoogleService-Info.plist`
+3. Build and run the `Dragochi` scheme.
 
-Run UI tests with a deterministic simulator destination and keep the result bundle:
+Notes:
+- A build phase script copies the correct Firebase plist based on bundle identifier/configuration.
+- Firebase init is skipped in test mode and when plist is unavailable.
+
+## Build & Test (CLI)
+
+Build:
+
+```bash
+xcodebuild build \
+  -scheme Dragochi \
+  -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest'
+```
+
+Run all tests in scheme:
+
+```bash
+xcodebuild test \
+  -scheme Dragochi \
+  -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+  -maximum-concurrent-test-simulator-destinations 1
+```
+
+Run logic/data tests only:
+
+```bash
+xcodebuild test \
+  -scheme Dragochi \
+  -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+  -only-testing:DragochiTests
+```
+
+## UI Screenshot Baseline Workflow
+
+`ScreenshotUITests` captures named XCTest attachments:
+- `home.png`
+- `home_start.png`
+- `history.png`
+- `stats.png`
+- `settings.png`
+- `add-session.png`
+- `friend-settings-no-friend.png`
+- `friend-settings-one-friend.png`
+- `friend-settings-many-friends.png`
+
+Generate screenshots:
 
 ```bash
 xcodebuild test \
@@ -78,12 +144,34 @@ xcodebuild test \
   -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
   -maximum-concurrent-test-simulator-destinations 1 \
   -resultBundlePath build/ScreenshotUITests.xcresult
-```
 
-Export attachment PNG files into the tracked baseline folder (`/Users/ericho/iosHub/Dragochi/screenshots` by default):
-
-```bash
 scripts/export_ui_screenshots.sh build/ScreenshotUITests.xcresult
 ```
 
-You can also provide a custom output path as the second argument.
+More details: `screenshots/README.md`.
+
+## Localization
+
+Localizations are managed in `Dragochi/Localizable.xcstrings`.
+Current locales include:
+- `en`
+- `zh-Hans`
+- `zh-Hant`
+
+The Settings screen includes a "Per-App Language" shortcut that opens iOS Settings.
+
+## Documentation Map
+
+- Functional spec: [doc/detail-function.md](doc/detail-function.md)
+- Screen map and copy status: [doc/screen.md](doc/screen.md)
+- Target audience: [doc/target-audience.md](doc/target-audience.md)
+- UI system contract: [doc/dragonlet-ui-system.md](doc/dragonlet-ui-system.md)
+- Remote Config runbook: [doc/get-remote-config.md](doc/get-remote-config.md)
+- Screenshot baseline notes: [screenshots/README.md](screenshots/README.md)
+
+## Known Gaps
+
+Current code has a few intentional placeholders/stubs:
+- iCloud sync toggle is local UI state only.
+- Backup import path is stubbed and does not restore payload data.
+- Some product copy in runtime still reflects the earlier tracking-first wording while docs define the diary-first target direction.
