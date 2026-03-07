@@ -518,6 +518,20 @@ struct MVIStoresTests {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
 
+            let alexID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+            let benID = UUID(uuidString: "00000000-0000-0000-0000-000000000002")!
+            let caraID = UUID(uuidString: "00000000-0000-0000-0000-000000000003")!
+
+            _ = try dependencies.friendRepository.upsert(
+                FriendEntity(id: alexID, name: "Alex", handle: nil, avatarAssetName: nil, isActive: true)
+            )
+            _ = try dependencies.friendRepository.upsert(
+                FriendEntity(id: benID, name: "Ben", handle: nil, avatarAssetName: nil, isActive: true)
+            )
+            _ = try dependencies.friendRepository.upsert(
+                FriendEntity(id: caraID, name: "Cara", handle: nil, avatarAssetName: nil, isActive: true)
+            )
+
             _ = try dependencies.sessionRepository.create(
                 startAt: Date(timeIntervalSince1970: 1_700_000_000),
                 endAt: Date(timeIntervalSince1970: 1_700_000_600),
@@ -527,11 +541,50 @@ struct MVIStoresTests {
                 note: nil,
                 friendIDs: []
             )
+            _ = try dependencies.sessionRepository.create(
+                startAt: Date(timeIntervalSince1970: 1_700_001_000),
+                endAt: Date(timeIntervalSince1970: 1_700_001_900),
+                platform: .pc,
+                gameID: nil,
+                durationSeconds: nil,
+                note: nil,
+                friendIDs: [alexID]
+            )
+            _ = try dependencies.sessionRepository.create(
+                startAt: Date(timeIntervalSince1970: 1_700_002_000),
+                endAt: Date(timeIntervalSince1970: 1_700_003_200),
+                platform: .pc,
+                gameID: nil,
+                durationSeconds: nil,
+                note: nil,
+                friendIDs: [alexID, benID]
+            )
+            _ = try dependencies.sessionRepository.create(
+                startAt: Date(timeIntervalSince1970: 1_700_004_000),
+                endAt: Date(timeIntervalSince1970: 1_700_005_500),
+                platform: .pc,
+                gameID: nil,
+                durationSeconds: nil,
+                note: nil,
+                friendIDs: [alexID, benID, caraID]
+            )
 
             let store = HistoryStore(dependencies: dependencies)
             store.send(.onAppear)
             #expect(!store.state.sections.isEmpty)
             #expect(store.state.totalPlaytimeSeconds > 0)
+
+            let rows = store.state.sections.flatMap(\.rows)
+            #expect(rows.count == 4)
+
+            let locale = Locale.current
+            let expectedSoloText = L10n.string("text_teammates_solo", locale: locale)
+            let expectedThreeFriendsText = L10n.format("text_history_friend_count_format", locale: locale, 3)
+
+            #expect(rows.first(where: { $0.durationSeconds == 600 })?.friendInfoText == expectedSoloText)
+            #expect(rows.first(where: { $0.durationSeconds == 900 })?.friendInfoText == "Alex")
+            #expect(rows.first(where: { $0.durationSeconds == 1200 })?.friendInfoText == "Alex, Ben")
+            #expect(rows.first(where: { $0.durationSeconds == 1500 })?.friendInfoText == expectedThreeFriendsText)
         }
     }
 

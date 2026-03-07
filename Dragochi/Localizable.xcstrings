@@ -600,6 +600,29 @@
         }
       }
     },
+    "text_history_friend_count_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d friends"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 位好友"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 位好友"
+          }
+        }
+      }
+    },
     "text_home_person_count_format" : {
       "extractionState" : "stale",
       "localizations" : {

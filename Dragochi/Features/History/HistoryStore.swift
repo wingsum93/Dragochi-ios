@@ -22,6 +22,7 @@ final class HistoryStore: ObservableObject {
         let platform: Platform
         let durationSeconds: Int
         let endAt: Date
+        let friendInfoText: String
     }
 
     struct HistorySection: Identifiable, Equatable {
@@ -48,10 +49,12 @@ final class HistoryStore: ObservableObject {
 
     private let sessionRepository: SessionRepository
     private let gameRepository: GameRepository
+    private let friendRepository: FriendRepository
 
     init(dependencies: AppDependencies) {
         self.sessionRepository = dependencies.sessionRepository
         self.gameRepository = dependencies.gameRepository
+        self.friendRepository = dependencies.friendRepository
     }
 
     func send(_ action: Action) {
@@ -70,9 +73,12 @@ final class HistoryStore: ObservableObject {
 
         do {
             let games = try gameRepository.fetchAll()
+            let friends = try friendRepository.fetchAll()
             let gameMap = Dictionary(uniqueKeysWithValues: games.map { ($0.id, $0.name) })
+            let friendNameMap = Dictionary(uniqueKeysWithValues: friends.map { ($0.id, $0.name) })
             let interval = dateInterval(for: state.filter)
             let sessions = try sessionRepository.fetchEnded(between: interval.start, and: interval.end)
+            let locale = Locale.current
 
             let rows = sessions.compactMap { session -> HistoryRow? in
                 guard let endAt = session.endAt else { return nil }
@@ -82,7 +88,12 @@ final class HistoryStore: ObservableObject {
                     gameTitle: title,
                     platform: session.platform,
                     durationSeconds: session.durationSeconds ?? 0,
-                    endAt: endAt
+                    endAt: endAt,
+                    friendInfoText: friendInfoText(
+                        for: session.friendIDs,
+                        friendNameMap: friendNameMap,
+                        locale: locale
+                    )
                 )
             }
 
@@ -138,5 +149,22 @@ final class HistoryStore: ObservableObject {
                 rows: grouped[day] ?? []
             )
         }
+    }
+
+    private func friendInfoText(for friendIDs: [UUID], friendNameMap: [UUID: String], locale: Locale) -> String {
+        guard !friendIDs.isEmpty else {
+            return L10n.string("text_teammates_solo", locale: locale)
+        }
+
+        if friendIDs.count >= 3 {
+            return L10n.format("text_history_friend_count_format", locale: locale, friendIDs.count)
+        }
+
+        let names = friendIDs.compactMap { friendNameMap[$0] }
+        guard names.count == friendIDs.count else {
+            return L10n.format("text_history_friend_count_format", locale: locale, friendIDs.count)
+        }
+
+        return names.joined(separator: ", ")
     }
 }
