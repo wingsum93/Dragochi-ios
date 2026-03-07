@@ -70,6 +70,7 @@ final class AddSessionStore: ObservableObject {
     private let gameRepository: GameRepository
     private let enabledGameSelectionRepository: EnabledGameSelectionRepository
     private let friendRepository: FriendRepository
+    private let gameArranger: GameArranger
     private let gameCatalogSyncService: GameCatalogSyncService
     private let onSetupConfirmed: ((SessionSetupInput) -> Void)?
     private let onOpenGameSettings: () -> Void
@@ -88,6 +89,7 @@ final class AddSessionStore: ObservableObject {
         self.gameRepository = dependencies.gameRepository
         self.enabledGameSelectionRepository = dependencies.enabledGameSelectionRepository
         self.friendRepository = dependencies.friendRepository
+        self.gameArranger = dependencies.gameArranger
         self.gameCatalogSyncService = dependencies.gameCatalogSyncService
         self.onSetupConfirmed = onSetupConfirmed
         self.onOpenGameSettings = onOpenGameSettings
@@ -230,15 +232,24 @@ final class AddSessionStore: ObservableObject {
     }
 
     private func makeGameCards(from games: [GameEntity], enabledRemoteIDs: Set<String>) -> [GameCardModel] {
-        let cards = games
+        let filteredGames = games
             .filter { game in
                 guard let remoteID = game.remoteID else { return false }
                 return enabledRemoteIDs.contains(remoteID)
             }
-            .sorted { lhs, rhs in
+
+        let orderedGames: [GameEntity]
+        do {
+            orderedGames = try gameArranger.getWeightedGameList(from: filteredGames)
+        } catch {
+            state.errorMessage = error.localizedDescription
+            state.errorMessageKey = nil
+            orderedGames = filteredGames.sorted { lhs, rhs in
                 lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
             }
-            .map { game in
+        }
+
+        let cards = orderedGames.map { game in
             GameCardModel(
                 id: game.id.uuidString,
                 title: game.name,
