@@ -1,5 +1,5 @@
 //
-//  GameArrangerTests.swift
+//  GameArrangeManagerTests.swift
 //  DragochiTests
 //
 //  Created by Codex on 8/3/2026.
@@ -9,12 +9,12 @@ import Foundation
 import Testing
 @testable import Dragochi
 
-struct GameArrangerTests {
+struct GameArrangeManagerTests {
     @Test
     @MainActor
     func getWeightedGameList_returnsAlphabeticalOrderWhenNoSessions() throws {
         let games = makeGames()
-        let arranger = GameArranger(sessionRepository: StubSessionRepository(endedSessions: []))
+        let arranger = GameArrangeManager(sessionRepository: StubSessionRepository(endedSessions: []))
 
         let orderedGames = try arranger.getWeightedGameList(from: games)
 
@@ -26,7 +26,7 @@ struct GameArrangerTests {
     func getWeightedGameList_placesSinglePlayedGameFirst() throws {
         let games = makeGames()
         let lol = games.first { $0.name == "LOL" }!
-        let arranger = GameArranger(
+        let arranger = GameArrangeManager(
             sessionRepository: StubSessionRepository(
                 endedSessions: [
                     makeSession(
@@ -51,7 +51,7 @@ struct GameArrangerTests {
         let lol = games.first { $0.name == "LOL" }!
         let valorant = games.first { $0.name == "Valorant" }!
 
-        let arranger = GameArranger(
+        let arranger = GameArrangeManager(
             sessionRepository: StubSessionRepository(
                 endedSessions: [
                     makeSession(
@@ -101,15 +101,15 @@ private final class StubSessionRepository: SessionRepository {
         note: String?,
         friendIDs: [UUID]
     ) throws -> SessionEntity {
-        fatalError("Unused in GameArrangerTests")
+        fatalError("Unused in GameArrangeManagerTests")
     }
 
     func update(_ session: SessionEntity) throws -> SessionEntity {
-        fatalError("Unused in GameArrangerTests")
+        fatalError("Unused in GameArrangeManagerTests")
     }
 
     func fetch(id: UUID) throws -> SessionEntity? {
-        fatalError("Unused in GameArrangerTests")
+        fatalError("Unused in GameArrangeManagerTests")
     }
 
     func fetchEnded(between start: Date, and end: Date) throws -> [SessionEntity] {
@@ -120,7 +120,7 @@ private final class StubSessionRepository: SessionRepository {
     }
 
     func delete(id: UUID) throws {
-        fatalError("Unused in GameArrangerTests")
+        fatalError("Unused in GameArrangeManagerTests")
     }
 }
 

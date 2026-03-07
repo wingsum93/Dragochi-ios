@@ -1,5 +1,5 @@
 //
-//  GameArranger.swift
+//  GameArrangeManager.swift
 //  Dragochi
 //
 //  Created by Codex on 8/3/2026.
@@ -8,7 +8,7 @@
 import Foundation
 
 @MainActor
-final class GameArranger {
+final class GameArrangeManager {
     private let sessionRepository: SessionRepository
 
     init(sessionRepository: SessionRepository) {

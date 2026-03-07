@@ -70,7 +70,7 @@ final class AddSessionStore: ObservableObject {
     private let gameRepository: GameRepository
     private let enabledGameSelectionRepository: EnabledGameSelectionRepository
     private let friendRepository: FriendRepository
-    private let gameArranger: GameArranger
+    private let gameArrangeManager: GameArrangeManager
     private let friendListArrangeManager: FriendListArrangeManager
     private let gameCatalogSyncService: GameCatalogSyncService
     private let onSetupConfirmed: ((SessionSetupInput) -> Void)?
@@ -90,7 +90,7 @@ final class AddSessionStore: ObservableObject {
         self.gameRepository = dependencies.gameRepository
         self.enabledGameSelectionRepository = dependencies.enabledGameSelectionRepository
         self.friendRepository = dependencies.friendRepository
-        self.gameArranger = dependencies.gameArranger
+        self.gameArrangeManager = dependencies.gameArrangeManager
         self.friendListArrangeManager = dependencies.friendListArrangeManager
         self.gameCatalogSyncService = dependencies.gameCatalogSyncService
         self.onSetupConfirmed = onSetupConfirmed
@@ -242,7 +242,7 @@ final class AddSessionStore: ObservableObject {
 
         let orderedGames: [GameEntity]
         do {
-            orderedGames = try gameArranger.getWeightedGameList(from: filteredGames)
+            orderedGames = try gameArrangeManager.getWeightedGameList(from: filteredGames)
         } catch {
             state.errorMessage = error.localizedDescription
             state.errorMessageKey = nil
