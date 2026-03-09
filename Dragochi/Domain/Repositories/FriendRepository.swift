@@ -13,7 +13,9 @@ protocol FriendRepository {
         name: String,
         handle: String?,
         avatarAssetName: String?,
-        isActive: Bool
+        isActive: Bool,
+        order: Int,
+        note: String?
     ) throws -> FriendEntity
     func upsert(_ friend: FriendEntity) throws -> FriendEntity
     func fetch(id: UUID) throws -> FriendEntity?
@@ -23,7 +25,26 @@ protocol FriendRepository {
 }
 
 extension FriendRepository {
+    func create(
+        name: String,
+        handle: String?,
+        avatarAssetName: String?,
+        isActive: Bool
+    ) throws -> FriendEntity {
+        try create(name: name, handle: handle, avatarAssetName: avatarAssetName, isActive: isActive, order: 0, note: nil)
+    }
+
+    func create(
+        name: String,
+        handle: String?,
+        avatarAssetName: String?,
+        isActive: Bool,
+        note: String?
+    ) throws -> FriendEntity {
+        try create(name: name, handle: handle, avatarAssetName: avatarAssetName, isActive: isActive, order: 0, note: note)
+    }
+
     func create(name: String, handle: String?) throws -> FriendEntity {
-        try create(name: name, handle: handle, avatarAssetName: nil, isActive: true)
+        try create(name: name, handle: handle, avatarAssetName: nil, isActive: true, order: 0, note: nil)
     }
 }

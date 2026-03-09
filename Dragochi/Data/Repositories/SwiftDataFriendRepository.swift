@@ -20,13 +20,17 @@ final class SwiftDataFriendRepository: FriendRepository {
         name: String,
         handle: String?,
         avatarAssetName: String? = nil,
-        isActive: Bool = true
+        isActive: Bool = true,
+        order: Int = 0,
+        note: String? = nil
     ) throws -> FriendEntity {
         let record = FriendRecord(
             name: name,
             handle: handle,
             avatarAssetName: avatarAssetName,
-            isActive: isActive
+            isActive: isActive,
+            order: order,
+            note: note
         )
         modelContext.insert(record)
         try modelContext.save()
@@ -39,6 +43,8 @@ final class SwiftDataFriendRepository: FriendRepository {
             existing.handle = friend.handle
             existing.avatarAssetName = friend.avatarAssetName
             existing.isActive = friend.isActive
+            existing.order = friend.order
+            existing.note = friend.note
             try modelContext.save()
             return existing.toEntity()
         }
@@ -48,7 +54,9 @@ final class SwiftDataFriendRepository: FriendRepository {
             name: friend.name,
             handle: friend.handle,
             avatarAssetName: friend.avatarAssetName,
-            isActive: friend.isActive
+            isActive: friend.isActive,
+            order: friend.order,
+            note: friend.note
         )
         modelContext.insert(record)
         try modelContext.save()

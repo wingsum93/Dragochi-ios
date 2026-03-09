@@ -55,11 +55,26 @@ struct FriendSettingsView: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        store.send(.addTapped)
+                        store.send(.toggleReorderMode)
                     } label: {
-                        Image(systemName: "plus")
+                        if store.state.isReorderMode {
+                            Text("button_done")
+                        } else {
+                            Text("Reorder")
+                        }
                     }
-                    .accessibilityIdentifier("action.addFriend")
+                    .accessibilityIdentifier("action.toggleFriendReorder")
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    if !store.state.isReorderMode {
+                        Button {
+                            store.send(.addTapped)
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                        .accessibilityIdentifier("action.addFriend")
+                    }
                 }
             }
         }
@@ -143,28 +158,35 @@ struct FriendSettingsView: View {
 
                     Spacer()
 
-                    Button {
-                        store.send(.editTapped(friend.id))
-                    } label: {
-                        Image(systemName: "pencil")
-                            .foregroundStyle(DragonTheme.current.color(.textTertiary))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("action.editFriend.\(friend.id.uuidString)")
+                    if !store.state.isReorderMode {
+                        Button {
+                            store.send(.editTapped(friend.id))
+                        } label: {
+                            Image(systemName: "pencil")
+                                .foregroundStyle(DragonTheme.current.color(.textTertiary))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("action.editFriend.\(friend.id.uuidString)")
 
-                    Button(role: .destructive) {
-                        store.send(.deleteTapped(friend.id))
-                    } label: {
-                        Image(systemName: "trash")
+                        Button(role: .destructive) {
+                            store.send(.deleteTapped(friend.id))
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("action.deleteFriend.\(friend.id.uuidString)")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("action.deleteFriend.\(friend.id.uuidString)")
                 }
                 .padding(.vertical, 6)
                 .accessibilityIdentifier("row.friend.\(friend.id.uuidString)")
                 .listRowBackground(DragonTheme.current.color(.bgBase))
             }
+            .onMove { source, destination in
+                store.send(.moveFriends(source, destination))
+            }
+            .moveDisabled(!store.state.isReorderMode)
         }
+        .environment(\.editMode, .constant(store.state.isReorderMode ? .active : .inactive))
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
     }
@@ -248,6 +270,28 @@ struct FriendSettingsView: View {
                                 .accessibilityIdentifier("action.selectFriendAvatar.\(assetName)")
                             }
                         }
+                    }
+
+                    VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
+                        Text("Note")
+                            .font(DragonTheme.current.font(.labelSmall))
+                            .foregroundStyle(DragonTheme.current.color(.textTertiary))
+
+                        FriendNoteTextView(
+                            text: Binding(
+                                get: { store.state.editingNote },
+                                set: { store.send(.updateEditingNote($0)) }
+                            )
+                        )
+                        .frame(height: 120)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                        .background(DragonTheme.current.color(.surfaceCard))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DragonTheme.current.radius(.card), style: .continuous)
+                                .stroke(DragonTheme.current.color(.borderSoft), lineWidth: 1)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: DragonTheme.current.radius(.card), style: .continuous))
                     }
 
                     if let validationMessageKey = store.state.editValidationMessageKey {

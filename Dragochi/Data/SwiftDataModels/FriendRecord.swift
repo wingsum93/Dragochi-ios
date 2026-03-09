@@ -15,6 +15,8 @@ final class FriendRecord {
     var handle: String?
     var avatarAssetName: String?
     var isActive: Bool
+    var order: Int
+    var note: String?
 
     @Relationship(deleteRule: .cascade, inverse: \SessionFriendRecord.friend)
     var sessionFriends: [SessionFriendRecord] = []
@@ -24,13 +26,17 @@ final class FriendRecord {
         name: String,
         handle: String? = nil,
         avatarAssetName: String? = nil,
-        isActive: Bool = true
+        isActive: Bool = true,
+        order: Int = 0,
+        note: String? = nil
     ) {
         self.id = id
         self.name = name
         self.handle = handle
         self.avatarAssetName = avatarAssetName
         self.isActive = isActive
+        self.order = order
+        self.note = note
     }
 }
 
@@ -41,7 +47,9 @@ extension FriendRecord {
             name: name,
             handle: handle,
             avatarAssetName: avatarAssetName,
-            isActive: isActive
+            isActive: isActive,
+            order: order,
+            note: note
         )
     }
 }

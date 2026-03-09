@@ -18,11 +18,13 @@ final class FriendSettingsStore: ObservableObject {
         var friends: [FriendEntity] = []
         var isLoading = false
         var errorMessage: String?
+        var isReorderMode = false
 
         var isShowingEditDialog = false
         var editingFriendID: UUID?
         var editingName = ""
         var editingAvatarAssetName = FriendAvatarOptions.defaultAssetName
+        var editingNote = ""
         var editValidationMessage: String?
         var editValidationMessageKey: String?
 
@@ -35,8 +37,11 @@ final class FriendSettingsStore: ObservableObject {
         case backTapped
 
         case addTapped
+        case toggleReorderMode
+        case moveFriends(IndexSet, Int)
         case editTapped(UUID)
         case updateEditingName(String)
+        case updateEditingNote(String)
         case selectEditingAvatar(String)
         case saveEditingTapped
         case cancelEditingTapped
@@ -65,10 +70,17 @@ final class FriendSettingsStore: ObservableObject {
 
         case .addTapped:
             presentAddDialog()
+        case .toggleReorderMode:
+            state.isReorderMode.toggle()
+        case .moveFriends(let source, let destination):
+            moveFriends(from: source, to: destination)
         case .editTapped(let friendID):
             presentEditDialog(friendID: friendID)
         case .updateEditingName(let name):
             state.editingName = name
+            state.editValidationMessage = nil
+        case .updateEditingNote(let note):
+            state.editingNote = note
             state.editValidationMessage = nil
         case .selectEditingAvatar(let assetName):
             guard FriendAvatarOptions.isValid(assetName: assetName) else { return }
@@ -97,8 +109,11 @@ final class FriendSettingsStore: ObservableObject {
         defer { state.isLoading = false }
 
         do {
-            state.friends = try fetchActiveFriends()
+            state.friends = try fetchAndNormalizeActiveFriends()
             state.errorMessage = nil
+            if state.friends.isEmpty {
+                state.isReorderMode = false
+            }
         } catch {
             state.errorMessage = error.localizedDescription
         }
@@ -108,6 +123,7 @@ final class FriendSettingsStore: ObservableObject {
         state.editingFriendID = nil
         state.editingName = ""
         state.editingAvatarAssetName = FriendAvatarOptions.defaultAssetName
+        state.editingNote = ""
         state.editValidationMessage = nil
         state.editValidationMessageKey = nil
         state.isShowingEditDialog = true
@@ -120,6 +136,7 @@ final class FriendSettingsStore: ObservableObject {
         state.editingAvatarAssetName = FriendAvatarOptions.isValid(assetName: friend.avatarAssetName)
             ? (friend.avatarAssetName ?? FriendAvatarOptions.defaultAssetName)
             : FriendAvatarOptions.defaultAssetName
+        state.editingNote = friend.note ?? ""
         state.editValidationMessage = nil
         state.editValidationMessageKey = nil
         state.isShowingEditDialog = true
@@ -149,6 +166,7 @@ final class FriendSettingsStore: ObservableObject {
         let avatarAssetName = FriendAvatarOptions.isValid(assetName: state.editingAvatarAssetName)
             ? state.editingAvatarAssetName
             : FriendAvatarOptions.defaultAssetName
+        let note = state.editingNote.isEmpty ? nil : state.editingNote
 
         do {
             if let editingID = state.editingFriendID {
@@ -159,18 +177,21 @@ final class FriendSettingsStore: ObservableObject {
                 updated.name = trimmedName
                 updated.avatarAssetName = avatarAssetName
                 updated.isActive = true
+                updated.note = note
                 _ = try friendRepository.upsert(updated)
             } else {
                 _ = try friendRepository.create(
                     name: trimmedName,
                     handle: nil,
                     avatarAssetName: avatarAssetName,
-                    isActive: true
+                    isActive: true,
+                    order: nextOrderIndex(),
+                    note: note
                 )
             }
 
             dismissEditDialog()
-            state.friends = try fetchActiveFriends()
+            state.friends = try fetchAndNormalizeActiveFriends()
             notifyFriendsDidChange()
             state.errorMessage = nil
             state.editValidationMessage = nil
@@ -205,7 +226,10 @@ final class FriendSettingsStore: ObservableObject {
             updated.isActive = false
             _ = try friendRepository.upsert(updated)
             dismissDeleteDialog()
-            state.friends = try fetchActiveFriends()
+            state.friends = try fetchAndNormalizeActiveFriends()
+            if state.friends.isEmpty {
+                state.isReorderMode = false
+            }
             notifyFriendsDidChange()
             state.errorMessage = nil
         } catch {
@@ -219,10 +243,70 @@ final class FriendSettingsStore: ObservableObject {
         state.isShowingDeleteDialog = false
     }
 
-    private func fetchActiveFriends() throws -> [FriendEntity] {
-        try friendRepository.fetchActive().sorted { lhs, rhs in
-            lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+    private func sortByDisplayOrder(_ friends: [FriendEntity]) -> [FriendEntity] {
+        friends.sorted { lhs, rhs in
+            if lhs.order != rhs.order {
+                return lhs.order < rhs.order
+            }
+            return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
         }
+    }
+
+    private func fetchAndNormalizeActiveFriends() throws -> [FriendEntity] {
+        let orderedFriends = sortByDisplayOrder(try friendRepository.fetchActive())
+        return try normalizeOrdersIfNeeded(orderedFriends)
+    }
+
+    private func normalizeOrdersIfNeeded(_ friends: [FriendEntity]) throws -> [FriendEntity] {
+        var normalized = friends
+        var changedFriends: [FriendEntity] = []
+
+        for index in normalized.indices {
+            guard normalized[index].order != index else { continue }
+            normalized[index].order = index
+            changedFriends.append(normalized[index])
+        }
+
+        for friend in changedFriends {
+            _ = try friendRepository.upsert(friend)
+        }
+
+        return normalized
+    }
+
+    private func nextOrderIndex() -> Int {
+        (state.friends.map(\.order).max() ?? -1) + 1
+    }
+
+    private func moveFriends(from source: IndexSet, to destination: Int) {
+        guard state.isReorderMode else { return }
+
+        var reordered = applyMove(from: source, to: destination, in: state.friends)
+
+        do {
+            reordered = try normalizeOrdersIfNeeded(reordered)
+            state.friends = reordered
+            state.errorMessage = nil
+            notifyFriendsDidChange()
+        } catch {
+            state.errorMessage = error.localizedDescription
+            do {
+                state.friends = try fetchAndNormalizeActiveFriends()
+            } catch {
+                state.errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func applyMove(from source: IndexSet, to destination: Int, in friends: [FriendEntity]) -> [FriendEntity] {
+        let moving = source.map { friends[$0] }
+        var remaining = friends.enumerated().compactMap { index, friend in
+            source.contains(index) ? nil : friend
+        }
+        let sourceBeforeDestinationCount = source.filter { $0 < destination }.count
+        let adjustedDestination = max(0, min(destination - sourceBeforeDestinationCount, remaining.count))
+        remaining.insert(contentsOf: moving, at: adjustedDestination)
+        return remaining
     }
 
     private func notifyFriendsDidChange() {

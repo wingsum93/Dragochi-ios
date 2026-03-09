@@ -45,24 +45,34 @@ struct SwiftDataRepositoriesTests {
                 name: "Mason",
                 handle: "@mason",
                 avatarAssetName: "M1",
-                isActive: true
+                isActive: true,
+                order: 3,
+                note: "Best tank player"
             )
             #expect(created.name == "Mason")
             #expect(created.avatarAssetName == "M1")
             #expect(created.isActive)
+            #expect(created.order == 3)
+            #expect(created.note == "Best tank player")
 
             let fetched = try repository.fetch(id: created.id)
             #expect(fetched?.handle == "@mason")
             #expect(fetched?.avatarAssetName == "M1")
+            #expect(fetched?.order == 3)
+            #expect(fetched?.note == "Best tank player")
 
             var updated = created
             updated.name = "Mason Updated"
             updated.avatarAssetName = "F3"
             updated.isActive = false
+            updated.order = 8
+            updated.note = "Now flex role"
             let upserted = try repository.upsert(updated)
             #expect(upserted.name == "Mason Updated")
             #expect(upserted.avatarAssetName == "F3")
             #expect(!upserted.isActive)
+            #expect(upserted.order == 8)
+            #expect(upserted.note == "Now flex role")
 
             let active = try repository.fetchActive()
             #expect(active.isEmpty)

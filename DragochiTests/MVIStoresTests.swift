@@ -405,7 +405,8 @@ struct MVIStoresTests {
                 name: "Mason",
                 handle: nil,
                 avatarAssetName: "M1",
-                isActive: true
+                isActive: true,
+                note: "Original note"
             )
             let store = FriendSettingsStore(dependencies: dependencies)
 
@@ -419,6 +420,7 @@ struct MVIStoresTests {
 
             store.send(.updateEditingName("Ava"))
             store.send(.selectEditingAvatar("F4"))
+            store.send(.updateEditingNote("Ava note"))
             store.send(.saveEditingTapped)
             #expect(store.state.friends.count == 2)
 
@@ -428,13 +430,23 @@ struct MVIStoresTests {
             }
             #expect(addedFriend.avatarAssetName == "F4")
             #expect(addedFriend.isActive)
+            #expect(addedFriend.order == 1)
+            #expect(addedFriend.note == "Ava note")
 
             store.send(.editTapped(existing.id))
+            #expect(store.state.editingNote == "Original note")
             store.send(.updateEditingName("Mason Prime"))
             store.send(.selectEditingAvatar("M2"))
+            store.send(.updateEditingNote("Updated note"))
             store.send(.saveEditingTapped)
             #expect(store.state.friends.first(where: { $0.id == existing.id })?.name == "Mason Prime")
             #expect(store.state.friends.first(where: { $0.id == existing.id })?.avatarAssetName == "M2")
+            #expect(store.state.friends.first(where: { $0.id == existing.id })?.order == 0)
+            #expect(store.state.friends.first(where: { $0.id == existing.id })?.note == "Updated note")
+
+            store.send(.editTapped(existing.id))
+            #expect(store.state.editingNote == "Updated note")
+            store.send(.cancelEditingTapped)
 
             store.send(.deleteTapped(existing.id))
             #expect(store.state.isShowingDeleteDialog)
@@ -443,6 +455,134 @@ struct MVIStoresTests {
 
             let persisted = try dependencies.friendRepository.fetch(id: existing.id)
             #expect(persisted?.isActive == false)
+        }
+    }
+
+    @Test
+    func friendSettingsStore_normalizesNonContiguousOrdersOnAppear() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            _ = try dependencies.friendRepository.create(
+                name: "Cara",
+                handle: nil,
+                avatarAssetName: nil,
+                isActive: true,
+                order: 10,
+                note: nil
+            )
+            _ = try dependencies.friendRepository.create(
+                name: "Alex",
+                handle: nil,
+                avatarAssetName: nil,
+                isActive: true,
+                order: 10,
+                note: nil
+            )
+            _ = try dependencies.friendRepository.create(
+                name: "Ben",
+                handle: nil,
+                avatarAssetName: nil,
+                isActive: true,
+                order: 2,
+                note: nil
+            )
+            let store = FriendSettingsStore(dependencies: dependencies)
+
+            store.send(.onAppear)
+
+            #expect(store.state.friends.map(\.name) == ["Ben", "Alex", "Cara"])
+            #expect(store.state.friends.map(\.order) == [0, 1, 2])
+
+            let persisted = try dependencies.friendRepository.fetchActive().sorted {
+                if $0.order != $1.order { return $0.order < $1.order }
+                return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+            #expect(persisted.map(\.order) == [0, 1, 2])
+        }
+    }
+
+    @Test
+    func friendSettingsStore_moveFriendsPersistsContiguousOrder() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            _ = try dependencies.friendRepository.create(
+                name: "Alex",
+                handle: nil,
+                avatarAssetName: nil,
+                isActive: true,
+                order: 0,
+                note: nil
+            )
+            _ = try dependencies.friendRepository.create(
+                name: "Ben",
+                handle: nil,
+                avatarAssetName: nil,
+                isActive: true,
+                order: 1,
+                note: nil
+            )
+            _ = try dependencies.friendRepository.create(
+                name: "Cara",
+                handle: nil,
+                avatarAssetName: nil,
+                isActive: true,
+                order: 2,
+                note: nil
+            )
+            let store = FriendSettingsStore(dependencies: dependencies)
+
+            store.send(.onAppear)
+            store.send(.toggleReorderMode)
+            store.send(.moveFriends(IndexSet(integer: 0), 3))
+
+            #expect(store.state.friends.map(\.name) == ["Ben", "Cara", "Alex"])
+            #expect(store.state.friends.map(\.order) == [0, 1, 2])
+
+            let persisted = try dependencies.friendRepository.fetchActive().sorted {
+                if $0.order != $1.order { return $0.order < $1.order }
+                return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+            #expect(persisted.map(\.name) == ["Ben", "Cara", "Alex"])
+            #expect(persisted.map(\.order) == [0, 1, 2])
+        }
+    }
+
+    @Test
+    func friendSettingsStore_newFriendAppendsToEndAfterCustomOrder() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            _ = try dependencies.friendRepository.create(
+                name: "Alex",
+                handle: nil,
+                avatarAssetName: nil,
+                isActive: true,
+                order: 0,
+                note: nil
+            )
+            _ = try dependencies.friendRepository.create(
+                name: "Ben",
+                handle: nil,
+                avatarAssetName: nil,
+                isActive: true,
+                order: 1,
+                note: nil
+            )
+            let store = FriendSettingsStore(dependencies: dependencies)
+
+            store.send(.onAppear)
+            store.send(.toggleReorderMode)
+            store.send(.moveFriends(IndexSet(integer: 0), 2))
+            store.send(.toggleReorderMode)
+
+            store.send(.addTapped)
+            store.send(.updateEditingName("Cara"))
+            store.send(.saveEditingTapped)
+
+            #expect(store.state.friends.map(\.name) == ["Ben", "Alex", "Cara"])
+            #expect(store.state.friends.map(\.order) == [0, 1, 2])
         }
     }
 

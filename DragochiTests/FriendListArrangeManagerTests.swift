@@ -100,7 +100,9 @@ private final class StubFriendRepository: FriendRepository {
         name: String,
         handle: String?,
         avatarAssetName: String?,
-        isActive: Bool
+        isActive: Bool,
+        order: Int,
+        note: String?
     ) throws -> FriendEntity {
         fatalError("Unused in FriendListArrangeManagerTests")
     }
