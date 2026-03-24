@@ -22,6 +22,7 @@ struct AppRootView: View {
     @State private var addSessionDraft: AddSessionDraft?
     @State private var isShowingGameSettings = false
     @State private var isShowingFriendSettings = false
+    @State private var isShowingAppleFriendImport = false
     @State private var selectedTab: Tab = .home
 
     @StateObject private var mainStore: MainStore
@@ -74,7 +75,8 @@ struct AppRootView: View {
             SettingsView(
                 store: settingsStore,
                 onOpenGameSettings: { isShowingGameSettings = true },
-                onOpenFriendSettings: { isShowingFriendSettings = true }
+                onOpenFriendSettings: { isShowingFriendSettings = true },
+                onOpenAppleFriendImport: { isShowingAppleFriendImport = true }
             )
                 .tabItem {
                     Label("title_tab_settings", systemImage: "gearshape")
@@ -122,6 +124,14 @@ struct AppRootView: View {
                 store: FriendSettingsStore(
                     dependencies: dependencies,
                     onClose: { isShowingFriendSettings = false }
+                )
+            )
+        }
+        .fullScreenCover(isPresented: $isShowingAppleFriendImport) {
+            AppleFriendImportView(
+                store: AppleFriendImportStore(
+                    dependencies: dependencies,
+                    onClose: { isShowingAppleFriendImport = false }
                 )
             )
         }

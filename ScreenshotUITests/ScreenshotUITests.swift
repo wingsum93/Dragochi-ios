@@ -93,6 +93,83 @@ final class ScreenshotUITests: XCTestCase {
     }
 
     @MainActor
+    func testSettingsReportIssueShowsMailUnavailableFallbackActions() throws {
+        let app = launchAppForScreenshots()
+
+        app.tabBars.buttons["Settings"].tap()
+        waitForElementToAppear(app.staticTexts["iCloud Sync"])
+
+        let reportIssueButton = element(in: app, id: "action.reportIssueToDeveloper")
+        scrollToElementIfNeeded(reportIssueButton, in: app)
+        waitForElementToAppear(reportIssueButton)
+        reportIssueButton.tap()
+
+        waitForElementToAppear(app.staticTexts["Mail Not Available"])
+        let copyEmailButton = app.buttons["Copy Developer Email"]
+        waitForElementToAppear(copyEmailButton)
+        waitForElementToAppear(app.buttons["Open Mail App"])
+
+        // Verify fallback action is callable.
+        copyEmailButton.tap()
+    }
+
+    @MainActor
+    func testSettingsFriendImportSheetShowsAppleAndGoogleActions() throws {
+        let app = launchAppForScreenshots()
+
+        app.tabBars.buttons["Settings"].tap()
+        waitForElementToAppear(app.staticTexts["iCloud Sync"])
+
+        let importFriendsButton = element(in: app, id: "action.openFriendImportOptionsFromSettings")
+        scrollToElementIfNeeded(importFriendsButton, in: app)
+        waitForElementToAppear(importFriendsButton)
+        importFriendsButton.tap()
+
+        waitForElementToAppear(element(in: app, id: "sheet.friendImportOptions"))
+        waitForElementToAppear(element(in: app, id: "action.importFromAppleInSheet"))
+        waitForElementToAppear(element(in: app, id: "action.importFromGoogleInSheet"))
+    }
+
+    @MainActor
+    func testSettingsGoogleImportShowsComingSoonAlert() throws {
+        let app = launchAppForScreenshots()
+
+        app.tabBars.buttons["Settings"].tap()
+        waitForElementToAppear(app.staticTexts["iCloud Sync"])
+
+        let importFriendsButton = element(in: app, id: "action.openFriendImportOptionsFromSettings")
+        scrollToElementIfNeeded(importFriendsButton, in: app)
+        waitForElementToAppear(importFriendsButton)
+        importFriendsButton.tap()
+
+        let importGoogleButton = element(in: app, id: "action.importFromGoogleInSheet")
+        waitForElementToAppear(importGoogleButton)
+        importGoogleButton.tap()
+
+        waitForElementToAppear(app.staticTexts["Google import is coming soon."])
+    }
+
+    @MainActor
+    func testSettingsAppleImportOpensFullScreenImportPage() throws {
+        let app = launchAppForScreenshots()
+
+        app.tabBars.buttons["Settings"].tap()
+        waitForElementToAppear(app.staticTexts["iCloud Sync"])
+
+        let importFriendsButton = element(in: app, id: "action.openFriendImportOptionsFromSettings")
+        scrollToElementIfNeeded(importFriendsButton, in: app)
+        waitForElementToAppear(importFriendsButton)
+        importFriendsButton.tap()
+
+        let importAppleButton = element(in: app, id: "action.importFromAppleInSheet")
+        waitForElementToAppear(importAppleButton)
+        importAppleButton.tap()
+
+        waitForElementToAppear(element(in: app, id: "screen.appleFriendImport"))
+        waitForElementToAppear(element(in: app, id: "action.importFromAppleInImportScreen"))
+    }
+
+    @MainActor
     func testLanguageSectionOpensPerAppLanguageSettings() throws {
         let app = launchAppForScreenshots()
 

@@ -73,6 +73,7 @@ final class AddSessionStore: ObservableObject {
     private let gameArrangeManager: GameArrangeManager
     private let friendListArrangeManager: FriendListArrangeManager
     private let gameCatalogSyncService: GameCatalogSyncService
+    private let auditLogger: AuditLogging
     private let onSetupConfirmed: ((SessionSetupInput) -> Void)?
     private let onOpenGameSettings: () -> Void
     private let onOpenFriendSettings: () -> Void
@@ -93,6 +94,7 @@ final class AddSessionStore: ObservableObject {
         self.gameArrangeManager = dependencies.gameArrangeManager
         self.friendListArrangeManager = dependencies.friendListArrangeManager
         self.gameCatalogSyncService = dependencies.gameCatalogSyncService
+        self.auditLogger = dependencies.auditLogger
         self.onSetupConfirmed = onSetupConfirmed
         self.onOpenGameSettings = onOpenGameSettings
         self.onOpenFriendSettings = onOpenFriendSettings
@@ -180,6 +182,15 @@ final class AddSessionStore: ObservableObject {
             guard let selectedGameID = state.selectedGameID else {
                 state.errorMessage = nil
                 state.errorMessageKey = "text_select_game_before_starting"
+                auditLogger.log(
+                    action: .addSessionPreStartConfirmed,
+                    outcome: .failure,
+                    metadata: [
+                        "reason": "missing_game",
+                        "platform": state.selectedPlatform.rawValue,
+                        "friend_count": String(state.selectedFriendIDs.count)
+                    ]
+                )
                 return
             }
 
@@ -188,6 +199,15 @@ final class AddSessionStore: ObservableObject {
                 selectedPlatform: state.selectedPlatform,
                 selectedFriendIDs: Array(state.selectedFriendIDs),
                 note: state.note
+            )
+            auditLogger.log(
+                action: .addSessionPreStartConfirmed,
+                outcome: .success,
+                metadata: [
+                    "game_id": selectedGameID.uuidString,
+                    "platform": state.selectedPlatform.rawValue,
+                    "friend_count": String(state.selectedFriendIDs.count)
+                ]
             )
             onSetupConfirmed?(setup)
             onClose()
@@ -211,8 +231,11 @@ final class AddSessionStore: ObservableObject {
         )
 
         do {
+            let operation: String
+            let savedSession: SessionEntity
             if state.sessionID == nil {
-                _ = try sessionRepository.create(
+                operation = "create"
+                savedSession = try sessionRepository.create(
                     startAt: session.startAt,
                     endAt: session.endAt,
                     platform: session.platform,
@@ -222,14 +245,41 @@ final class AddSessionStore: ObservableObject {
                     friendIDs: session.friendIDs
                 )
             } else {
-                _ = try sessionRepository.update(session)
+                operation = "update"
+                savedSession = try sessionRepository.update(session)
             }
             state.errorMessage = nil
             state.errorMessageKey = nil
+            auditLogger.log(
+                action: .addSessionManualSaved,
+                outcome: .success,
+                metadata: [
+                    "operation": operation,
+                    "session_id": savedSession.id.uuidString,
+                    "platform": session.platform.rawValue,
+                    "friend_count": String(session.friendIDs.count),
+                    "has_game_id": AuditMetadata.bool(session.gameID != nil),
+                    "has_note": AuditMetadata.bool(session.note != nil)
+                ]
+            )
             onClose()
         } catch {
             state.errorMessage = error.localizedDescription
             state.errorMessageKey = nil
+            auditLogger.log(
+                action: .addSessionManualSaved,
+                outcome: .failure,
+                metadata: AuditMetadata.withError(
+                    [
+                        "operation": state.sessionID == nil ? "create" : "update",
+                        "platform": session.platform.rawValue,
+                        "friend_count": String(session.friendIDs.count),
+                        "has_game_id": AuditMetadata.bool(session.gameID != nil),
+                        "has_note": AuditMetadata.bool(session.note != nil)
+                    ],
+                    error: error
+                )
+            )
         }
     }
 

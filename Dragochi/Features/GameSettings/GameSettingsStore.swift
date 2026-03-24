@@ -36,6 +36,7 @@ final class GameSettingsStore: ObservableObject {
     private let gameRepository: GameRepository
     private let enabledSelectionRepository: EnabledGameSelectionRepository
     private let gameCatalogSyncService: GameCatalogSyncService
+    private let auditLogger: AuditLogging
     private let isUITesting: Bool
     private let onClose: () -> Void
 
@@ -47,6 +48,7 @@ final class GameSettingsStore: ObservableObject {
         self.gameRepository = dependencies.gameRepository
         self.enabledSelectionRepository = dependencies.enabledGameSelectionRepository
         self.gameCatalogSyncService = dependencies.gameCatalogSyncService
+        self.auditLogger = dependencies.auditLogger
         self.isUITesting = isUITesting
         self.onClose = onClose
     }
@@ -150,27 +152,54 @@ final class GameSettingsStore: ObservableObject {
     }
 
     private func confirmSaveChanges() {
-        do {
-            let toEnable = state.draftEnabledRemoteIDs.subtracting(state.originalEnabledRemoteIDs).sorted()
-            let toDisable = state.originalEnabledRemoteIDs.subtracting(state.draftEnabledRemoteIDs).sorted()
+        let toEnable = state.draftEnabledRemoteIDs.subtracting(state.originalEnabledRemoteIDs).sorted()
+        let toDisable = state.originalEnabledRemoteIDs.subtracting(state.draftEnabledRemoteIDs).sorted()
+        var enabledAppliedCount = 0
+        var disabledAppliedCount = 0
 
+        do {
             for remoteID in toEnable {
                 try enabledSelectionRepository.enable(remoteID: remoteID)
                 try upsertEnabledGame(remoteID: remoteID)
+                enabledAppliedCount += 1
             }
 
             for remoteID in toDisable {
                 try enabledSelectionRepository.disable(remoteID: remoteID)
                 try deleteUnreferencedGame(remoteID: remoteID)
+                disabledAppliedCount += 1
             }
 
             state.originalEnabledRemoteIDs = state.draftEnabledRemoteIDs
             state.isShowingConfirmChangesDialog = false
             state.errorMessage = nil
+            auditLogger.log(
+                action: .gameSettingsChangesSaved,
+                outcome: .success,
+                metadata: [
+                    "enable_count": String(toEnable.count),
+                    "disable_count": String(toDisable.count),
+                    "enabled_applied_count": String(enabledAppliedCount),
+                    "disabled_applied_count": String(disabledAppliedCount)
+                ]
+            )
             onClose()
         } catch {
             state.isShowingConfirmChangesDialog = false
             state.errorMessage = error.localizedDescription
+            auditLogger.log(
+                action: .gameSettingsChangesSaved,
+                outcome: .failure,
+                metadata: AuditMetadata.withError(
+                    [
+                        "enable_count": String(toEnable.count),
+                        "disable_count": String(toDisable.count),
+                        "enabled_applied_count": String(enabledAppliedCount),
+                        "disabled_applied_count": String(disabledAppliedCount)
+                    ],
+                    error: error
+                )
+            )
         }
     }
 

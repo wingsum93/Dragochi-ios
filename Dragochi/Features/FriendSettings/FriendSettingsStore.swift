@@ -54,10 +54,12 @@ final class FriendSettingsStore: ObservableObject {
     @Published private(set) var state = State()
 
     private let friendRepository: FriendRepository
+    private let auditLogger: AuditLogging
     private let onClose: () -> Void
 
     init(dependencies: AppDependencies, onClose: @escaping () -> Void = {}) {
         self.friendRepository = dependencies.friendRepository
+        self.auditLogger = dependencies.auditLogger
         self.onClose = onClose
     }
 
@@ -143,10 +145,18 @@ final class FriendSettingsStore: ObservableObject {
     }
 
     private func saveEditing() {
+        let auditAction: AuditAction = state.editingFriendID == nil ? .friendAdded : .friendEdited
         let trimmedName = state.editingName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else {
             state.editValidationMessage = nil
             state.editValidationMessageKey = "text_name_required"
+            auditLogger.log(
+                action: auditAction,
+                outcome: .failure,
+                metadata: [
+                    "reason": "validation_name_required"
+                ]
+            )
             return
         }
 
@@ -160,6 +170,13 @@ final class FriendSettingsStore: ObservableObject {
         guard !hasDuplicate else {
             state.editValidationMessage = nil
             state.editValidationMessageKey = "text_friend_name_already_exists"
+            auditLogger.log(
+                action: auditAction,
+                outcome: .failure,
+                metadata: [
+                    "reason": "validation_duplicate_name"
+                ]
+            )
             return
         }
 
@@ -169,6 +186,7 @@ final class FriendSettingsStore: ObservableObject {
         let note = state.editingNote.isEmpty ? nil : state.editingNote
 
         do {
+            let savedFriendID: UUID
             if let editingID = state.editingFriendID {
                 guard let existing = state.friends.first(where: { $0.id == editingID }) else {
                     throw RepositoryError.notFound
@@ -178,9 +196,10 @@ final class FriendSettingsStore: ObservableObject {
                 updated.avatarAssetName = avatarAssetName
                 updated.isActive = true
                 updated.note = note
-                _ = try friendRepository.upsert(updated)
+                let saved = try friendRepository.upsert(updated)
+                savedFriendID = saved.id
             } else {
-                _ = try friendRepository.create(
+                let saved = try friendRepository.create(
                     name: trimmedName,
                     handle: nil,
                     avatarAssetName: avatarAssetName,
@@ -188,6 +207,7 @@ final class FriendSettingsStore: ObservableObject {
                     order: nextOrderIndex(),
                     note: note
                 )
+                savedFriendID = saved.id
             }
 
             dismissEditDialog()
@@ -196,9 +216,29 @@ final class FriendSettingsStore: ObservableObject {
             state.errorMessage = nil
             state.editValidationMessage = nil
             state.editValidationMessageKey = nil
+            auditLogger.log(
+                action: auditAction,
+                outcome: .success,
+                metadata: [
+                    "friend_id": savedFriendID.uuidString,
+                    "avatar_asset_name": avatarAssetName,
+                    "has_note": AuditMetadata.bool(note != nil)
+                ]
+            )
         } catch {
             state.editValidationMessage = error.localizedDescription
             state.editValidationMessageKey = nil
+            auditLogger.log(
+                action: auditAction,
+                outcome: .failure,
+                metadata: AuditMetadata.withError(
+                    [
+                        "avatar_asset_name": avatarAssetName,
+                        "has_note": AuditMetadata.bool(note != nil)
+                    ],
+                    error: error
+                )
+            )
         }
     }
 
@@ -232,9 +272,26 @@ final class FriendSettingsStore: ObservableObject {
             }
             notifyFriendsDidChange()
             state.errorMessage = nil
+            auditLogger.log(
+                action: .friendDeleted,
+                outcome: .success,
+                metadata: [
+                    "friend_id": pending.id.uuidString
+                ]
+            )
         } catch {
             state.errorMessage = error.localizedDescription
             dismissDeleteDialog()
+            auditLogger.log(
+                action: .friendDeleted,
+                outcome: .failure,
+                metadata: AuditMetadata.withError(
+                    [
+                        "friend_id": pending.id.uuidString
+                    ],
+                    error: error
+                )
+            )
         }
     }
 
@@ -288,6 +345,15 @@ final class FriendSettingsStore: ObservableObject {
             state.friends = reordered
             state.errorMessage = nil
             notifyFriendsDidChange()
+            auditLogger.log(
+                action: .friendReordered,
+                outcome: .success,
+                metadata: [
+                    "moved_count": String(source.count),
+                    "destination": String(destination),
+                    "total_friends": String(reordered.count)
+                ]
+            )
         } catch {
             state.errorMessage = error.localizedDescription
             do {
@@ -295,6 +361,18 @@ final class FriendSettingsStore: ObservableObject {
             } catch {
                 state.errorMessage = error.localizedDescription
             }
+            auditLogger.log(
+                action: .friendReordered,
+                outcome: .failure,
+                metadata: AuditMetadata.withError(
+                    [
+                        "moved_count": String(source.count),
+                        "destination": String(destination),
+                        "total_friends": String(state.friends.count)
+                    ],
+                    error: error
+                )
+            )
         }
     }
 

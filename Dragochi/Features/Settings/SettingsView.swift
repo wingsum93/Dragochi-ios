@@ -7,23 +7,29 @@
 
 import SwiftUI
 import UIKit
+import MessageUI
 
 struct SettingsView: View {
     @ObservedObject var store: SettingsStore
     let onOpenGameSettings: () -> Void
     let onOpenFriendSettings: () -> Void
+    let onOpenAppleFriendImport: () -> Void
     @Environment(\.openURL) private var openURL
     @Environment(\.locale) private var locale
     @State private var isShowingOpenSourceLicenses = false
+    @State private var isShowingFriendImportOptions = false
+    @State private var isShowingGoogleImportComingSoon = false
 
     init(
         store: SettingsStore,
         onOpenGameSettings: @escaping () -> Void = {},
-        onOpenFriendSettings: @escaping () -> Void = {}
+        onOpenFriendSettings: @escaping () -> Void = {},
+        onOpenAppleFriendImport: @escaping () -> Void = {}
     ) {
         self.store = store
         self.onOpenGameSettings = onOpenGameSettings
         self.onOpenFriendSettings = onOpenFriendSettings
+        self.onOpenAppleFriendImport = onOpenAppleFriendImport
     }
 
     private let openSourceLicenses: [OpenSourceLicenseItem] = [
@@ -222,6 +228,25 @@ struct SettingsView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("action.openFriendSettingsFromSettings")
+
+                        Button {
+                            isShowingFriendImportOptions = true
+                        } label: {
+                            HStack {
+                                Text("button_import_friends")
+                                    .font(DragonTheme.current.font(.labelSmall))
+                                    .foregroundStyle(DragonTheme.current.color(.textPrimary))
+
+                                Spacer()
+
+                                Image(systemName: "square.and.arrow.down")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(DragonTheme.current.color(.textTertiary))
+                            }
+                            .padding(.vertical, 6)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("action.openFriendImportOptionsFromSettings")
                     }
                     .padding(DragonTheme.current.spacing(.md))
                     .background(DragonTheme.current.color(.surfaceCard))
@@ -252,6 +277,28 @@ struct SettingsView: View {
                             .padding(.vertical, 6)
                         }
                         .buttonStyle(.plain)
+
+                        Button {
+                            store.send(.reportIssueTapped(canSendMail: MFMailComposeViewController.canSendMail()))
+                        } label: {
+                            HStack {
+                                Image(systemName: "exclamationmark.bubble")
+                                    .foregroundStyle(DragonTheme.current.color(.textPrimary))
+
+                                Text("button_report_issue_to_developer")
+                                    .font(DragonTheme.current.font(.labelSmall))
+                                    .foregroundStyle(DragonTheme.current.color(.textPrimary))
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(DragonTheme.current.color(.textTertiary))
+                            }
+                            .padding(.vertical, 6)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("action.reportIssueToDeveloper")
                     }
                     .padding(DragonTheme.current.spacing(.md))
                     .background(DragonTheme.current.color(.surfaceCard))
@@ -296,6 +343,55 @@ struct SettingsView: View {
             }
             .presentationDetents([.medium, .large])
         }
+        .sheet(
+            item: Binding(
+                get: { store.state.issueReportDraft },
+                set: { newValue in
+                    if newValue == nil {
+                        store.send(.clearIssueReportDraft)
+                    }
+                }
+            )
+        ) { draft in
+            ReportIssueMailComposeView(
+                draft: draft,
+                onFinish: {
+                    store.send(.clearIssueReportDraft)
+                }
+            )
+        }
+        .sheet(isPresented: $isShowingFriendImportOptions) {
+            friendImportOptionsSheet
+                .presentationDetents([.height(220)])
+        }
+        .alert("title_import_friends", isPresented: $isShowingGoogleImportComingSoon) {
+            Button("button_done", role: .cancel) {}
+        } message: {
+            Text("text_google_import_coming_soon")
+        }
+        .alert(
+            "title_mail_not_available",
+            isPresented: Binding(
+                get: { store.state.isShowingMailUnavailableAlert },
+                set: { isPresented in
+                    if !isPresented {
+                        store.send(.dismissMailUnavailableAlert)
+                    }
+                }
+            )
+        ) {
+            Button("button_copy_developer_email") {
+                UIPasteboard.general.string = SettingsStore.reportIssueRecipientEmail
+            }
+            Button("button_open_mail_app") {
+                openSupportMailto()
+            }
+            Button("button_cancel", role: .cancel) {
+                store.send(.dismissMailUnavailableAlert)
+            }
+        } message: {
+            Text("text_mail_not_available")
+        }
     }
 
     private func openPerAppLanguageSettings() {
@@ -333,6 +429,69 @@ struct SettingsView: View {
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter.string(from: date)
+    }
+
+    private func openSupportMailto() {
+        guard let url = URL(string: "mailto:\(SettingsStore.reportIssueRecipientEmail)") else { return }
+        openURL(url)
+    }
+
+    private var friendImportOptionsSheet: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
+                Button {
+                    isShowingFriendImportOptions = false
+                    DispatchQueue.main.async {
+                        onOpenAppleFriendImport()
+                    }
+                } label: {
+                    HStack {
+                        Text("button_import_from_apple")
+                            .font(DragonTheme.current.font(.labelSmall))
+                            .foregroundStyle(DragonTheme.current.color(.textPrimary))
+                        Spacer()
+                    }
+                    .padding(.vertical, 8)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("action.importFromAppleInSheet")
+
+                Button {
+                    isShowingFriendImportOptions = false
+                    DispatchQueue.main.async {
+                        isShowingGoogleImportComingSoon = true
+                    }
+                } label: {
+                    HStack {
+                        Text("button_import_from_google")
+                            .font(DragonTheme.current.font(.labelSmall))
+                            .foregroundStyle(DragonTheme.current.color(.textPrimary))
+                        Spacer()
+                    }
+                    .padding(.vertical, 8)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("action.importFromGoogleInSheet")
+
+                Spacer()
+            }
+            .padding(DragonTheme.current.spacing(.lg))
+            .overlay(alignment: .topLeading) {
+                Color.clear
+                    .frame(width: 1, height: 1)
+                    .accessibilityIdentifier("sheet.friendImportOptions")
+            }
+            .navigationTitle("title_import_friends")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("button_cancel") {
+                        isShowingFriendImportOptions = false
+                    }
+                }
+            }
+            .background(DragonTheme.current.color(.bgBase).ignoresSafeArea())
+        }
     }
 }
 

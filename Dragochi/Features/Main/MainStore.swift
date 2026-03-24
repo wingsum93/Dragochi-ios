@@ -58,6 +58,7 @@ final class MainStore: ObservableObject {
     private let gameRepository: GameRepository
     private let friendRepository: FriendRepository
     private let gameCatalogSyncService: GameCatalogSyncService
+    private let auditLogger: AuditLogging
     private let now: () -> Date
     private let isUITesting: Bool
     private let encoder = JSONEncoder()
@@ -68,6 +69,7 @@ final class MainStore: ObservableObject {
         self.gameRepository = dependencies.gameRepository
         self.friendRepository = dependencies.friendRepository
         self.gameCatalogSyncService = dependencies.gameCatalogSyncService
+        self.auditLogger = dependencies.auditLogger
         self.now = now
         self.isUITesting = ProcessInfo.processInfo.arguments.contains("-ui-testing")
     }
@@ -135,6 +137,11 @@ final class MainStore: ObservableObject {
         guard state.trackingStatus == .idle else { return }
 
         let startAt = now()
+        let baseMetadata: [String: String] = [
+            "platform": setup.selectedPlatform.rawValue,
+            "game_id": setup.selectedGameID.uuidString,
+            "friend_count": String(setup.selectedFriendIDs.count)
+        ]
         do {
             let created = try sessionRepository.create(
                 startAt: startAt,
@@ -154,8 +161,18 @@ final class MainStore: ObservableObject {
             state.activeSetup = setup
             state.trackingStatus = .running
             syncTrackingSnapshotData()
+            auditLogger.log(
+                action: .mainTrackingStarted,
+                outcome: .success,
+                metadata: baseMetadata.merging(["session_id": created.id.uuidString], uniquingKeysWith: { _, new in new })
+            )
         } catch {
             state.errorMessage = error.localizedDescription
+            auditLogger.log(
+                action: .mainTrackingStarted,
+                outcome: .failure,
+                metadata: AuditMetadata.withError(baseMetadata, error: error)
+            )
         }
     }
 
@@ -171,10 +188,26 @@ final class MainStore: ObservableObject {
             state.trackingStatus = .paused
             state.elapsedSeconds = state.accumulatedActiveSeconds
             syncTrackingSnapshotData()
+            auditLogger.log(
+                action: .mainTrackingPaused,
+                outcome: .success,
+                metadata: [
+                    "session_id": state.currentSessionID?.uuidString ?? "",
+                    "elapsed_seconds": String(state.elapsedSeconds)
+                ]
+            )
         case .paused:
             state.activeSegmentStartedAt = now()
             state.trackingStatus = .running
             syncTrackingSnapshotData()
+            auditLogger.log(
+                action: .mainTrackingResumed,
+                outcome: .success,
+                metadata: [
+                    "session_id": state.currentSessionID?.uuidString ?? "",
+                    "elapsed_seconds": String(state.elapsedSeconds)
+                ]
+            )
         }
     }
 
@@ -205,8 +238,31 @@ final class MainStore: ObservableObject {
             state.latestEndedSession = session
             state.elapsedSeconds = durationSeconds
             clearTrackingState(resetElapsed: false)
+            auditLogger.log(
+                action: .mainTrackingStopped,
+                outcome: .success,
+                metadata: [
+                    "session_id": sessionID.uuidString,
+                    "duration_seconds": String(durationSeconds),
+                    "platform": setup.selectedPlatform.rawValue,
+                    "friend_count": String(setup.selectedFriendIDs.count)
+                ]
+            )
         } catch {
             state.errorMessage = error.localizedDescription
+            auditLogger.log(
+                action: .mainTrackingStopped,
+                outcome: .failure,
+                metadata: AuditMetadata.withError(
+                    [
+                        "session_id": sessionID.uuidString,
+                        "duration_seconds": String(durationSeconds),
+                        "platform": setup.selectedPlatform.rawValue,
+                        "friend_count": String(setup.selectedFriendIDs.count)
+                    ],
+                    error: error
+                )
+            )
         }
     }
 
@@ -229,6 +285,16 @@ final class MainStore: ObservableObject {
         } catch {
             state.errorMessage = error.localizedDescription
             state.trackingSnapshotData = nil
+            auditLogger.log(
+                action: .mainTrackingSnapshotRestored,
+                outcome: .failure,
+                metadata: AuditMetadata.withError(
+                    [
+                        "has_snapshot_data": AuditMetadata.bool(true)
+                    ],
+                    error: error
+                )
+            )
         }
     }
 

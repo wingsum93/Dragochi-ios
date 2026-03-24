@@ -587,6 +587,132 @@ struct MVIStoresTests {
     }
 
     @Test
+    func appleFriendImportStore_selectingContactsStoresUniqueSelection() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let store = AppleFriendImportStore(dependencies: dependencies)
+
+            store.send(
+                .contactsSelected([
+                    ImportedAppleContact(id: "C1", fullName: "Ava", email: "ava@example.com", phone: "111"),
+                    ImportedAppleContact(id: "C1", fullName: "Ava Duplicate", email: nil, phone: nil),
+                    ImportedAppleContact(id: "C2", fullName: "Ben", email: "ben@example.com", phone: "222")
+                ])
+            )
+
+            #expect(store.state.selectedContacts.count == 2)
+            #expect(store.state.selectedContacts.map(\.id) == ["C1", "C2"])
+        }
+    }
+
+    @Test
+    func appleFriendImportStore_confirmWithoutDuplicatesImportsAndAppendsOrder() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            _ = try dependencies.friendRepository.create(
+                name: "Existing",
+                handle: nil,
+                avatarAssetName: nil,
+                isActive: true,
+                order: 0,
+                note: nil
+            )
+            var didClose = false
+            let store = AppleFriendImportStore(
+                dependencies: dependencies,
+                onClose: { didClose = true }
+            )
+
+            store.send(
+                .contactsSelected([
+                    ImportedAppleContact(id: "C1", fullName: "Ben", email: "ben@example.com", phone: "111"),
+                    ImportedAppleContact(id: "C2", fullName: "Cara", email: nil, phone: "222")
+                ])
+            )
+            store.send(.confirmImportTapped)
+
+            #expect(didClose)
+            let persisted = try dependencies.friendRepository.fetchActive().sorted { $0.order < $1.order }
+            #expect(persisted.map(\.name) == ["Existing", "Ben", "Cara"])
+            #expect(persisted.map(\.order) == [0, 1, 2])
+        }
+    }
+
+    @Test
+    func appleFriendImportStore_duplicateNameShowsConfirmThenImportsWhenConfirmed() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            _ = try dependencies.friendRepository.create(
+                name: "Ava",
+                handle: nil,
+                avatarAssetName: nil,
+                isActive: true,
+                order: 0,
+                note: nil
+            )
+            var didClose = false
+            let store = AppleFriendImportStore(
+                dependencies: dependencies,
+                onClose: { didClose = true }
+            )
+
+            store.send(
+                .contactsSelected([
+                    ImportedAppleContact(id: "C1", fullName: "Ava", email: "ava@example.com", phone: nil),
+                    ImportedAppleContact(id: "C2", fullName: "Ben", email: nil, phone: nil)
+                ])
+            )
+            store.send(.confirmImportTapped)
+
+            #expect(store.state.isShowingDuplicateAlert)
+            #expect(store.state.duplicateCount == 1)
+            #expect(!didClose)
+
+            store.send(.confirmDuplicateImportTapped)
+            #expect(didClose)
+
+            let persisted = try dependencies.friendRepository.fetchActive()
+            #expect(persisted.count == 3)
+            #expect(persisted.filter { $0.name == "Ava" }.count == 2)
+            #expect(persisted.contains(where: { $0.name == "Ben" }))
+        }
+    }
+
+    @Test
+    func appleFriendImportStore_persistsNameOnlyForImportedContacts() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            var didClose = false
+            let store = AppleFriendImportStore(
+                dependencies: dependencies,
+                onClose: { didClose = true }
+            )
+
+            store.send(
+                .contactsSelected([
+                    ImportedAppleContact(id: "C1", fullName: "Luna", email: "luna@example.com", phone: "333")
+                ])
+            )
+            store.send(.confirmImportTapped)
+
+            #expect(didClose)
+            guard let persisted = try dependencies.friendRepository.fetchActive().first(where: { $0.name == "Luna" }) else {
+                Issue.record("Expected imported friend named Luna.")
+                return
+            }
+
+            #expect(persisted.handle == nil)
+            #expect(persisted.avatarAssetName == nil)
+            #expect(persisted.note == nil)
+            #expect(persisted.isActive)
+        }
+    }
+
+    @Test
     func gameSettingsStore_doneTappedWithoutChangesClosesImmediately() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
@@ -888,6 +1014,51 @@ struct MVIStoresTests {
 
             store.send(.exportTapped)
             #expect(store.state.lastBackupDate != nil)
+        }
+    }
+
+    @Test
+    func settingsStore_reportIssueCreatesDraftWithAttachmentAndTemplateBody() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let store = SettingsStore(dependencies: dependencies)
+
+            store.send(.reportIssueTapped(canSendMail: true))
+
+            guard let draft = store.state.issueReportDraft else {
+                Issue.record("Expected issue report draft when Mail is available.")
+                return
+            }
+
+            #expect(draft.recipient == "wingsum.developer@gmail.com")
+            #expect(draft.subject == "Dragochi Issue Report")
+            #expect(draft.body.contains("Issue Summary:"))
+            #expect(draft.body.contains("--- Environment ---"))
+            #expect(draft.body.contains("App Version:"))
+            #expect(draft.body.contains("OS:"))
+            #expect(draft.body.contains("Device:"))
+            #expect(draft.body.contains("Timestamp:"))
+
+            guard let attachmentURL = draft.attachmentURL else {
+                Issue.record("Expected non-nil audit attachment URL in issue draft.")
+                return
+            }
+            #expect(FileManager.default.fileExists(atPath: attachmentURL.path))
+        }
+    }
+
+    @Test
+    func settingsStore_reportIssueWhenMailUnavailableShowsFallbackAlert() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let store = SettingsStore(dependencies: dependencies)
+
+            store.send(.reportIssueTapped(canSendMail: false))
+
+            #expect(store.state.issueReportDraft == nil)
+            #expect(store.state.isShowingMailUnavailableAlert)
         }
     }
 }
