@@ -11,25 +11,26 @@ import MessageUI
 
 struct SettingsView: View {
     @ObservedObject var store: SettingsStore
+    let dependencies: AppDependencies
     let onOpenGameSettings: () -> Void
     let onOpenFriendSettings: () -> Void
-    let onOpenAppleFriendImport: () -> Void
     @Environment(\.openURL) private var openURL
     @Environment(\.locale) private var locale
     @State private var isShowingOpenSourceLicenses = false
     @State private var isShowingFriendImportOptions = false
     @State private var isShowingGoogleImportComingSoon = false
+    @State private var isShowingAppleFriendImport = false
 
     init(
         store: SettingsStore,
+        dependencies: AppDependencies,
         onOpenGameSettings: @escaping () -> Void = {},
-        onOpenFriendSettings: @escaping () -> Void = {},
-        onOpenAppleFriendImport: @escaping () -> Void = {}
+        onOpenFriendSettings: @escaping () -> Void = {}
     ) {
         self.store = store
+        self.dependencies = dependencies
         self.onOpenGameSettings = onOpenGameSettings
         self.onOpenFriendSettings = onOpenFriendSettings
-        self.onOpenAppleFriendImport = onOpenAppleFriendImport
     }
 
     private let openSourceLicenses: [OpenSourceLicenseItem] = [
@@ -364,6 +365,14 @@ struct SettingsView: View {
             friendImportOptionsSheet
                 .presentationDetents([.height(220)])
         }
+        .fullScreenCover(isPresented: $isShowingAppleFriendImport) {
+            AppleFriendImportView(
+                store: AppleFriendImportStore(
+                    dependencies: dependencies,
+                    onClose: { isShowingAppleFriendImport = false }
+                )
+            )
+        }
         .alert("title_import_friends", isPresented: $isShowingGoogleImportComingSoon) {
             Button("button_done", role: .cancel) {}
         } message: {
@@ -442,7 +451,7 @@ struct SettingsView: View {
                 Button {
                     isShowingFriendImportOptions = false
                     DispatchQueue.main.async {
-                        onOpenAppleFriendImport()
+                        isShowingAppleFriendImport = true
                     }
                 } label: {
                     HStack {

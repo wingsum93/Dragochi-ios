@@ -10,8 +10,12 @@ import Combine
 
 struct MainView: View {
     @ObservedObject var store: MainStore
+    let dependencies: AppDependencies
+    let onOpenGameSettings: () -> Void
+    let onOpenFriendSettings: () -> Void
     @SceneStorage("home.trackingSnapshotData") private var trackingSnapshotData: Data?
     @State private var isResumeLastSetupEnabled = true
+    @State private var addSessionDraft: AddSessionDraft?
     @Environment(\.locale) private var locale
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -48,8 +52,33 @@ struct MainView: View {
         .onChange(of: store.state.trackingSnapshotData) { _, data in
             trackingSnapshotData = data
         }
+        .onChange(of: store.state.pendingAddSessionDraft) { _, draft in
+            guard let draft else { return }
+            addSessionDraft = draft
+            store.send(.clearPendingDraft)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .friendsDidChange)) { _ in
             store.send(.onAppear)
+        }
+        .sheet(item: $addSessionDraft) { draft in
+            AddSessionView(
+                store: AddSessionStore(
+                    dependencies: dependencies,
+                    draft: draft,
+                    onSetupConfirmed: draft.mode == .preStartSetup ? { setup in
+                        store.send(.preStartSetupConfirmed(setup))
+                    } : nil,
+                    onOpenGameSettings: {
+                        addSessionDraft = nil
+                        onOpenGameSettings()
+                    },
+                    onOpenFriendSettings: {
+                        addSessionDraft = nil
+                        onOpenFriendSettings()
+                    },
+                    onClose: { addSessionDraft = nil }
+                )
+            )
         }
     }
 

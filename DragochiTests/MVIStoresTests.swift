@@ -915,7 +915,7 @@ struct MVIStoresTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let store = StatsStore(dependencies: dependencies)
+            let store = StatisticStore(dependencies: dependencies)
 
             store.send(.onAppear)
             #expect(store.state.report != nil)
@@ -963,7 +963,7 @@ struct MVIStoresTests {
 
             let januaryStart = monthStart(2025, 1)
             let marchStart = monthStart(2025, 3)
-            let store = StatsStore(dependencies: dependencies)
+            let store = StatisticStore(dependencies: dependencies)
 
             store.send(.onAppear)
             #expect(store.state.availableMonthStarts == [januaryStart, marchStart])
@@ -988,7 +988,7 @@ struct MVIStoresTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let store = StatsStore(dependencies: dependencies)
+            let store = StatisticStore(dependencies: dependencies)
 
             let currentMonthStart = Calendar.current.dateInterval(of: .month, for: Date())?.start ?? Date()
 

@@ -79,7 +79,7 @@ Sources:
 - `Dragochi/Features/History/HistoryView.swift`
 - `Dragochi/Features/History/HistoryStore.swift`
 
-## Stats Screen (`StatsView`)
+## Stats Screen (`StatisticView`)
 
 ### Target copy (vision)
 
@@ -95,7 +95,7 @@ Sources:
 - "Platform Breakdown"
 
 Status: `In transition`
-Source: `Dragochi/Features/Stats/StatsView.swift`
+Source: `Dragochi/Features/Stats/StatisticView.swift`
 
 ## Settings Screen (`SettingsView`)
 

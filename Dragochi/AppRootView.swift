@@ -19,15 +19,13 @@ struct AppRootView: View {
         case settings
     }
 
-    @State private var addSessionDraft: AddSessionDraft?
     @State private var isShowingGameSettings = false
     @State private var isShowingFriendSettings = false
-    @State private var isShowingAppleFriendImport = false
     @State private var selectedTab: Tab = .home
 
     @StateObject private var mainStore: MainStore
     @StateObject private var historyStore: HistoryStore
-    @StateObject private var statsStore: StatsStore
+    @StateObject private var statsStore: StatisticStore
     @StateObject private var settingsStore: SettingsStore
 
     private let dependencies: AppDependencies
@@ -45,13 +43,18 @@ struct AppRootView: View {
         }
         _mainStore = StateObject(wrappedValue: MainStore(dependencies: dependencies))
         _historyStore = StateObject(wrappedValue: HistoryStore(dependencies: dependencies))
-        _statsStore = StateObject(wrappedValue: StatsStore(dependencies: dependencies))
+        _statsStore = StateObject(wrappedValue: StatisticStore(dependencies: dependencies))
         _settingsStore = StateObject(wrappedValue: SettingsStore(dependencies: dependencies))
     }
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            MainView(store: mainStore)
+            MainView(
+                store: mainStore,
+                dependencies: dependencies,
+                onOpenGameSettings: { isShowingGameSettings = true },
+                onOpenFriendSettings: { isShowingFriendSettings = true }
+            )
                 .tabItem {
                     Label("title_tab_home", systemImage: "gamecontroller")
                         .accessibilityIdentifier("tab.home.button")
@@ -65,7 +68,7 @@ struct AppRootView: View {
                 }
                 .tag(Tab.history)
 
-            StatsView(store: statsStore)
+            StatisticView(store: statsStore)
                 .tabItem {
                     Label("title_tab_stats", systemImage: "chart.bar")
                         .accessibilityIdentifier("tab.stats.button")
@@ -74,9 +77,9 @@ struct AppRootView: View {
 
             SettingsView(
                 store: settingsStore,
+                dependencies: dependencies,
                 onOpenGameSettings: { isShowingGameSettings = true },
-                onOpenFriendSettings: { isShowingFriendSettings = true },
-                onOpenAppleFriendImport: { isShowingAppleFriendImport = true }
+                onOpenFriendSettings: { isShowingFriendSettings = true }
             )
                 .tabItem {
                     Label("title_tab_settings", systemImage: "gearshape")
@@ -89,27 +92,6 @@ struct AppRootView: View {
             if isUITesting {
                 selectedTab = .home
             }
-        }
-        
-        .sheet(item: $addSessionDraft) { draft in
-            AddSessionView(
-                store: AddSessionStore(
-                    dependencies: dependencies,
-                    draft: draft,
-                    onSetupConfirmed: draft.mode == .preStartSetup ? { setup in
-                        mainStore.send(.preStartSetupConfirmed(setup))
-                    } : nil,
-                    onOpenGameSettings: {
-                        addSessionDraft = nil
-                        isShowingGameSettings = true
-                    },
-                    onOpenFriendSettings: {
-                        addSessionDraft = nil
-                        isShowingFriendSettings = true
-                    },
-                    onClose: { addSessionDraft = nil }
-                )
-            )
         }
         .fullScreenCover(isPresented: $isShowingGameSettings) {
             GameSettingsView(
@@ -126,19 +108,6 @@ struct AppRootView: View {
                     onClose: { isShowingFriendSettings = false }
                 )
             )
-        }
-        .fullScreenCover(isPresented: $isShowingAppleFriendImport) {
-            AppleFriendImportView(
-                store: AppleFriendImportStore(
-                    dependencies: dependencies,
-                    onClose: { isShowingAppleFriendImport = false }
-                )
-            )
-        }
-        .onChange(of: mainStore.state.pendingAddSessionDraft) { _, draft in
-            guard let draft else { return }
-            addSessionDraft = draft
-            mainStore.send(.clearPendingDraft)
         }
     }
 

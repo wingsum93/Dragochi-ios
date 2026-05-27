@@ -1,5 +1,5 @@
 //
-//  StatsView.swift
+//  StatisticView.swift
 //  Dragochi
 //
 //  Created by Codex on 12/2/2026.
@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-struct StatsView: View {
-    @ObservedObject var store: StatsStore
+struct StatisticView: View {
+    @ObservedObject var store: StatisticStore
     @Environment(\.locale) private var locale
 
     var body: some View {

@@ -25,7 +25,7 @@ See [doc/detail-function.md](doc/detail-function.md) and [doc/screen.md](doc/scr
 Root tabs (`AppRootView`):
 - Home (`MainView` + `MainStore`)
 - History (`HistoryView` + `HistoryStore`)
-- Stats (`StatsView` + `StatsStore`)
+- Stats (`StatisticView` + `StatisticStore`)
 - Settings (`SettingsView` + `SettingsStore`)
 
 Modal flows:
