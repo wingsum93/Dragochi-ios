@@ -10,7 +10,13 @@ import Combine
 
 struct MainView: View {
     @ObservedObject var viewModel: MainViewModel
-    let container: AppDIContainer
+    let makeAddSessionViewModel: (
+        AddSessionDraft,
+        ((SessionSetupInput) -> Void)?,
+        @escaping () -> Void,
+        @escaping () -> Void,
+        @escaping () -> Void
+    ) -> AddSessionViewModel
     let onOpenGameSettings: () -> Void
     let onOpenFriendSettings: () -> Void
     @SceneStorage("home.trackingSnapshotData") private var trackingSnapshotData: Data?
@@ -62,20 +68,20 @@ struct MainView: View {
         }
         .sheet(item: $addSessionDraft) { draft in
             AddSessionSheet(
-                viewModel: container.makeAddSessionViewModel(
-                    draft: draft,
-                    onSetupConfirmed: draft.mode == .preStartSetup ? { setup in
+                viewModel: makeAddSessionViewModel(
+                    draft,
+                    draft.mode == .preStartSetup ? { setup in
                         viewModel.send(.preStartSetupConfirmed(setup))
                     } : nil,
-                    onOpenGameSettings: {
+                    {
                         addSessionDraft = nil
                         onOpenGameSettings()
                     },
-                    onOpenFriendSettings: {
+                    {
                         addSessionDraft = nil
                         onOpenFriendSettings()
                     },
-                    onClose: { addSessionDraft = nil }
+                    { addSessionDraft = nil }
                 )
             )
         }

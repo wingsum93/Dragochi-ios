@@ -28,29 +28,55 @@ struct AppRootView: View {
     @StateObject private var statsStore: StatisticViewModel
     @StateObject private var settingsStore: SettingsViewModel
 
-    private let container: AppDIContainer
+    private let makeAddSessionViewModel: (
+        AddSessionDraft,
+        ((SessionSetupInput) -> Void)?,
+        @escaping () -> Void,
+        @escaping () -> Void,
+        @escaping () -> Void
+    ) -> AddSessionViewModel
+    private let makeGameSettingsViewModel: (@escaping () -> Void) -> GameSettingsViewModel
+    private let makeFriendSettingsViewModel: (@escaping () -> Void) -> FriendSettingsViewModel
+    private let makeAppleFriendImportViewModel: (@escaping () -> Void) -> AppleFriendImportViewModel
     private let isUITesting: Bool
 
     init(container: ModelContainer) {
         let appContainer = AppDIContainer(modelContainer: container)
         let processInfo = ProcessInfo.processInfo
 
-        self.container = appContainer
         self.isUITesting = processInfo.arguments.contains("-ui-testing")
         if self.isUITesting {
-            Self.seedUITestFriendsIfNeeded(container: appContainer, processInfo: processInfo)
+            Self.seedUITestFriendsIfNeeded(friendRepository: appContainer.friendRepository, processInfo: processInfo)
         }
         _mainStore = StateObject(wrappedValue: appContainer.makeMainViewModel())
         _historyStore = StateObject(wrappedValue: appContainer.makeHistoryViewModel())
         _statsStore = StateObject(wrappedValue: appContainer.makeStatisticViewModel())
         _settingsStore = StateObject(wrappedValue: appContainer.makeSettingsViewModel())
+        self.makeAddSessionViewModel = { draft, onSetupConfirmed, onOpenGameSettings, onOpenFriendSettings, onClose in
+            appContainer.makeAddSessionViewModel(
+                draft: draft,
+                onSetupConfirmed: onSetupConfirmed,
+                onOpenGameSettings: onOpenGameSettings,
+                onOpenFriendSettings: onOpenFriendSettings,
+                onClose: onClose
+            )
+        }
+        self.makeGameSettingsViewModel = { onClose in
+            appContainer.makeGameSettingsViewModel(onClose: onClose)
+        }
+        self.makeFriendSettingsViewModel = { onClose in
+            appContainer.makeFriendSettingsViewModel(onClose: onClose)
+        }
+        self.makeAppleFriendImportViewModel = { onClose in
+            appContainer.makeAppleFriendImportViewModel(onClose: onClose)
+        }
     }
 
     var body: some View {
         TabView(selection: $selectedTab) {
             MainView(
                 viewModel: mainStore,
-                container: container,
+                makeAddSessionViewModel: makeAddSessionViewModel,
                 onOpenGameSettings: { isShowingGameSettings = true },
                 onOpenFriendSettings: { isShowingFriendSettings = true }
             )
@@ -76,7 +102,7 @@ struct AppRootView: View {
 
             SettingsView(
                 viewModel: settingsStore,
-                container: container,
+                makeAppleFriendImportViewModel: makeAppleFriendImportViewModel,
                 onOpenGameSettings: { isShowingGameSettings = true },
                 onOpenFriendSettings: { isShowingFriendSettings = true }
             )
@@ -94,21 +120,21 @@ struct AppRootView: View {
         }
         .fullScreenCover(isPresented: $isShowingGameSettings) {
             GameSettingsFullPage(
-                viewModel: container.makeGameSettingsViewModel(
-                    onClose: { isShowingGameSettings = false }
+                viewModel: makeGameSettingsViewModel(
+                    { isShowingGameSettings = false }
                 )
             )
         }
         .fullScreenCover(isPresented: $isShowingFriendSettings) {
             FriendSettingsFullPage(
-                viewModel: container.makeFriendSettingsViewModel(
-                    onClose: { isShowingFriendSettings = false }
+                viewModel: makeFriendSettingsViewModel(
+                    { isShowingFriendSettings = false }
                 )
             )
         }
     }
 
-    private static func seedUITestFriendsIfNeeded(container: AppDIContainer, processInfo: ProcessInfo) {
+    private static func seedUITestFriendsIfNeeded(friendRepository: FriendRepository, processInfo: ProcessInfo) {
         guard let fixtureJSON = processInfo.environment[Self.uiTestFriendsJSONKey] else { return }
         guard let data = fixtureJSON.data(using: .utf8) else { return }
 
@@ -116,16 +142,16 @@ struct AppRootView: View {
             let fixtures = try JSONDecoder().decode([UITestFriendFixture].self, from: data)
 
             // Make each launch deterministic for UI tests by replacing all friends with fixtures.
-            let existingFriends = try container.friendRepository.fetchAll()
+            let existingFriends = try friendRepository.fetchAll()
             for friend in existingFriends {
-                try container.friendRepository.delete(id: friend.id)
+                try friendRepository.delete(id: friend.id)
             }
 
             for fixture in fixtures {
                 let resolvedName = fixture.resolvedName
                 guard !resolvedName.isEmpty else { continue }
 
-                _ = try container.friendRepository.create(
+                _ = try friendRepository.create(
                     name: resolvedName,
                     handle: nil,
                     avatarAssetName: fixture.resolvedAvatarAssetName,

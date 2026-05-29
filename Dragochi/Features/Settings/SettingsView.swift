@@ -11,7 +11,7 @@ import MessageUI
 
 struct SettingsView: View {
     @ObservedObject var viewModel: SettingsViewModel
-    let container: AppDIContainer
+    let makeAppleFriendImportViewModel: (@escaping () -> Void) -> AppleFriendImportViewModel
     let onOpenGameSettings: () -> Void
     let onOpenFriendSettings: () -> Void
     @Environment(\.openURL) private var openURL
@@ -23,12 +23,12 @@ struct SettingsView: View {
 
     init(
         viewModel: SettingsViewModel,
-        container: AppDIContainer,
+        makeAppleFriendImportViewModel: @escaping (@escaping () -> Void) -> AppleFriendImportViewModel,
         onOpenGameSettings: @escaping () -> Void = {},
         onOpenFriendSettings: @escaping () -> Void = {}
     ) {
         self.viewModel = viewModel
-        self.container = container
+        self.makeAppleFriendImportViewModel = makeAppleFriendImportViewModel
         self.onOpenGameSettings = onOpenGameSettings
         self.onOpenFriendSettings = onOpenFriendSettings
     }
@@ -313,36 +313,7 @@ struct SettingsView: View {
         .accessibilityIdentifier("screen.settings")
         .onAppear { viewModel.send(.onAppear) }
         .sheet(isPresented: $isShowingOpenSourceLicenses) {
-            NavigationStack {
-                List(openSourceLicenses) { (license: OpenSourceLicenseItem) in
-                    Button {
-                        guard let url = license.url else { return }
-                        openURL(url)
-                    } label: {
-                        HStack(spacing: DragonTheme.current.spacing(.md)) {
-                            Image(systemName: license.icon)
-                                .frame(width: 24)
-                                .foregroundStyle(DragonTheme.current.color(.textPrimary))
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(license.title)
-                                    .font(DragonTheme.current.font(.labelSmall))
-                                    .foregroundStyle(DragonTheme.current.color(.textPrimary))
-                                Text(license.subtitle)
-                                    .font(DragonTheme.current.font(.gameCardLabel))
-                                    .foregroundStyle(DragonTheme.current.color(.textTertiary))
-                            }
-
-                            Spacer()
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .navigationTitle("title_open_source_license")
-                .navigationBarTitleDisplayMode(.inline)
-            }
-            .presentationDetents([.medium, .large])
+            openSourceLicensesSheet
         }
         .sheet(
             item: Binding(
@@ -382,8 +353,8 @@ struct SettingsView: View {
         }
         .fullScreenCover(isPresented: $isShowingAppleFriendImport) {
             AppleFriendImportFullPage(
-                viewModel: container.makeAppleFriendImportViewModel(
-                    onClose: { isShowingAppleFriendImport = false }
+                viewModel: makeAppleFriendImportViewModel(
+                    { isShowingAppleFriendImport = false }
                 )
             )
         }
@@ -415,6 +386,43 @@ struct SettingsView: View {
         } message: {
             Text("text_mail_not_available")
         }
+    }
+
+    private var openSourceLicensesSheet: some View {
+        NavigationStack {
+            List(openSourceLicenses) { (license: OpenSourceLicenseItem) in
+                Button {
+                    guard let url = license.url else { return }
+                    openURL(url)
+                } label: {
+                    openSourceLicenseRow(license)
+                }
+                .buttonStyle(.plain)
+            }
+            .navigationTitle("title_open_source_license")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    private func openSourceLicenseRow(_ license: OpenSourceLicenseItem) -> some View {
+        HStack(spacing: DragonTheme.current.spacing(.md)) {
+            Image(systemName: license.icon)
+                .frame(width: 24)
+                .foregroundStyle(DragonTheme.current.color(.textPrimary))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(license.title)
+                    .font(DragonTheme.current.font(.labelSmall))
+                    .foregroundStyle(DragonTheme.current.color(.textPrimary))
+                Text(license.subtitle)
+                    .font(DragonTheme.current.font(.gameCardLabel))
+                    .foregroundStyle(DragonTheme.current.color(.textTertiary))
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, 4)
     }
 
     private func openPerAppLanguageSettings() {
