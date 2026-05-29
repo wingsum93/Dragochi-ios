@@ -77,7 +77,7 @@ Status: `In transition`
 Sources:
 
 - `Dragochi/Features/History/HistoryView.swift`
-- `Dragochi/Features/History/HistoryStore.swift`
+- `Dragochi/Features/History/HistoryViewModel.swift`
 
 ## Stats Screen (`StatisticView`)
 

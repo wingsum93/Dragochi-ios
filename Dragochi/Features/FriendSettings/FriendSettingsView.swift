@@ -8,10 +8,10 @@
 import SwiftUI
 
 struct FriendSettingsView: View {
-    @StateObject private var store: FriendSettingsStore
+    @StateObject private var store: FriendSettingsViewModel
     @Environment(\.locale) private var locale
 
-    init(store: FriendSettingsStore) {
+    init(store: FriendSettingsViewModel) {
         _store = StateObject(wrappedValue: store)
     }
 

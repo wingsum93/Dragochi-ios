@@ -1,5 +1,5 @@
 //
-//  AddSessionStore.swift
+//  AddSessionViewModel.swift
 //  Dragochi
 //
 //  Created by Codex on 12/2/2026.
@@ -33,7 +33,7 @@ struct AddSessionDraft: Identifiable, Hashable {
 }
 
 @MainActor
-final class AddSessionStore: ObservableObject {
+final class AddSessionViewModel: ObservableObject {
     struct State: Equatable {
         var mode: AddSessionMode
         var sessionID: UUID?

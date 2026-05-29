@@ -1,5 +1,5 @@
 //
-//  MVIStoresTests.swift
+//  MVIViewModelsTests.swift
 //  DragochiTests
 //
 //  Created by Codex on 12/2/2026.
@@ -10,7 +10,7 @@ import SwiftData
 import Testing
 @testable import Dragochi
 
-struct MVIStoresTests {
+struct MVIViewModelsTests {
     @Test
     func mainStore_loadsLatestEndedSessionForResumeCard() async throws {
         try await MainActor.run {
@@ -37,7 +37,7 @@ struct MVIStoresTests {
                 friendIDs: []
             )
 
-            let store = MainStore(dependencies: dependencies)
+            let store = MainViewModel(dependencies: dependencies)
             store.send(.onAppear)
 
             #expect(older.id != newer.id)
@@ -50,7 +50,7 @@ struct MVIStoresTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let store = MainStore(dependencies: dependencies)
+            let store = MainViewModel(dependencies: dependencies)
 
             store.send(.onAppear)
 
@@ -66,7 +66,7 @@ struct MVIStoresTests {
             let dependencies = AppDependencies(modelContext: ModelContext(container))
 
             var current = Date(timeIntervalSince1970: 1_700_000_000)
-            let store = MainStore(dependencies: dependencies, now: { current })
+            let store = MainViewModel(dependencies: dependencies, now: { current })
 
             store.send(.onAppear)
             let gameAssets = Set(store.state.games.compactMap(\.imageAssetName))
@@ -103,7 +103,7 @@ struct MVIStoresTests {
             store.send(.tick)
             #expect(store.state.elapsedSeconds == 15)
 
-            let restoredStore = MainStore(dependencies: dependencies, now: { current })
+            let restoredStore = MainViewModel(dependencies: dependencies, now: { current })
             restoredStore.send(.onAppear)
             restoredStore.send(.restoreTrackingSnapshot(snapshotData))
             #expect(restoredStore.state.trackingStatus == .paused)
@@ -146,7 +146,7 @@ struct MVIStoresTests {
                 note: "test"
             )
             var didClose = false
-            let store = AddSessionStore(
+            let store = AddSessionViewModel(
                 dependencies: dependencies,
                 draft: draft,
                 onClose: { didClose = true }
@@ -195,7 +195,7 @@ struct MVIStoresTests {
                 friendIDs: [activeFriend.id, inactiveFriend.id]
             )
 
-            let store = MainStore(dependencies: dependencies, now: { current })
+            let store = MainViewModel(dependencies: dependencies, now: { current })
             store.send(.onAppear)
             store.send(.startTapped(resumeLastSetupEnabled: true))
 
@@ -237,7 +237,7 @@ struct MVIStoresTests {
                 friendIDs: []
             )
 
-            let store = MainStore(dependencies: dependencies, now: { current })
+            let store = MainViewModel(dependencies: dependencies, now: { current })
             store.send(.onAppear)
             store.send(.startTapped(resumeLastSetupEnabled: true))
 
@@ -268,7 +268,7 @@ struct MVIStoresTests {
             var didClose = false
             var receivedSetup: SessionSetupInput?
 
-            let store = AddSessionStore(
+            let store = AddSessionViewModel(
                 dependencies: dependencies,
                 draft: draft,
                 onSetupConfirmed: { setup in receivedSetup = setup },
@@ -301,7 +301,7 @@ struct MVIStoresTests {
                 note: ""
             )
 
-            let store = AddSessionStore(dependencies: dependencies, draft: draft)
+            let store = AddSessionViewModel(dependencies: dependencies, draft: draft)
             store.send(.onAppear)
 
             #expect(store.state.teammateChips.isEmpty)
@@ -331,7 +331,7 @@ struct MVIStoresTests {
                 note: ""
             )
 
-            let store = AddSessionStore(dependencies: dependencies, draft: draft)
+            let store = AddSessionViewModel(dependencies: dependencies, draft: draft)
             store.send(.onAppear)
 
             #expect(store.state.teammateChips.count == 1)
@@ -388,7 +388,7 @@ struct MVIStoresTests {
                 selectedFriendIDs: [],
                 note: ""
             )
-            let store = AddSessionStore(dependencies: dependencies, draft: draft)
+            let store = AddSessionViewModel(dependencies: dependencies, draft: draft)
 
             store.send(.onAppear)
 
@@ -408,7 +408,7 @@ struct MVIStoresTests {
                 isActive: true,
                 note: "Original note"
             )
-            let store = FriendSettingsStore(dependencies: dependencies)
+            let store = FriendSettingsViewModel(dependencies: dependencies)
 
             store.send(.onAppear)
             #expect(store.state.friends.count == 1)
@@ -487,7 +487,7 @@ struct MVIStoresTests {
                 order: 2,
                 note: nil
             )
-            let store = FriendSettingsStore(dependencies: dependencies)
+            let store = FriendSettingsViewModel(dependencies: dependencies)
 
             store.send(.onAppear)
 
@@ -531,7 +531,7 @@ struct MVIStoresTests {
                 order: 2,
                 note: nil
             )
-            let store = FriendSettingsStore(dependencies: dependencies)
+            let store = FriendSettingsViewModel(dependencies: dependencies)
 
             store.send(.onAppear)
             store.send(.toggleReorderMode)
@@ -570,7 +570,7 @@ struct MVIStoresTests {
                 order: 1,
                 note: nil
             )
-            let store = FriendSettingsStore(dependencies: dependencies)
+            let store = FriendSettingsViewModel(dependencies: dependencies)
 
             store.send(.onAppear)
             store.send(.toggleReorderMode)
@@ -591,7 +591,7 @@ struct MVIStoresTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let store = AppleFriendImportStore(dependencies: dependencies)
+            let store = AppleFriendImportViewModel(dependencies: dependencies)
 
             store.send(
                 .contactsSelected([
@@ -620,7 +620,7 @@ struct MVIStoresTests {
                 note: nil
             )
             var didClose = false
-            let store = AppleFriendImportStore(
+            let store = AppleFriendImportViewModel(
                 dependencies: dependencies,
                 onClose: { didClose = true }
             )
@@ -654,7 +654,7 @@ struct MVIStoresTests {
                 note: nil
             )
             var didClose = false
-            let store = AppleFriendImportStore(
+            let store = AppleFriendImportViewModel(
                 dependencies: dependencies,
                 onClose: { didClose = true }
             )
@@ -687,7 +687,7 @@ struct MVIStoresTests {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
             var didClose = false
-            let store = AppleFriendImportStore(
+            let store = AppleFriendImportViewModel(
                 dependencies: dependencies,
                 onClose: { didClose = true }
             )
@@ -718,7 +718,7 @@ struct MVIStoresTests {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
             var didClose = false
-            let store = GameSettingsStore(
+            let store = GameSettingsViewModel(
                 dependencies: dependencies,
                 onClose: { didClose = true },
                 isUITesting: true
@@ -738,7 +738,7 @@ struct MVIStoresTests {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
             var didClose = false
-            let store = GameSettingsStore(
+            let store = GameSettingsViewModel(
                 dependencies: dependencies,
                 onClose: { didClose = true },
                 isUITesting: true
@@ -777,7 +777,7 @@ struct MVIStoresTests {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
             var didClose = false
-            let store = GameSettingsStore(
+            let store = GameSettingsViewModel(
                 dependencies: dependencies,
                 onClose: { didClose = true },
                 isUITesting: true
@@ -812,7 +812,7 @@ struct MVIStoresTests {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
             var didClose = false
-            let store = GameSettingsStore(
+            let store = GameSettingsViewModel(
                 dependencies: dependencies,
                 onClose: { didClose = true },
                 isUITesting: true
@@ -891,7 +891,7 @@ struct MVIStoresTests {
                 friendIDs: [alexID, benID, caraID]
             )
 
-            let store = HistoryStore(dependencies: dependencies)
+            let store = HistoryViewModel(dependencies: dependencies)
             store.send(.onAppear)
             #expect(!store.state.sections.isEmpty)
             #expect(store.state.totalPlaytimeSeconds > 0)
@@ -915,7 +915,7 @@ struct MVIStoresTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let store = StatisticStore(dependencies: dependencies)
+            let store = StatisticViewModel(dependencies: dependencies)
 
             store.send(.onAppear)
             #expect(store.state.report != nil)
@@ -963,7 +963,7 @@ struct MVIStoresTests {
 
             let januaryStart = monthStart(2025, 1)
             let marchStart = monthStart(2025, 3)
-            let store = StatisticStore(dependencies: dependencies)
+            let store = StatisticViewModel(dependencies: dependencies)
 
             store.send(.onAppear)
             #expect(store.state.availableMonthStarts == [januaryStart, marchStart])
@@ -988,7 +988,7 @@ struct MVIStoresTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let store = StatisticStore(dependencies: dependencies)
+            let store = StatisticViewModel(dependencies: dependencies)
 
             let currentMonthStart = Calendar.current.dateInterval(of: .month, for: Date())?.start ?? Date()
 
@@ -1007,7 +1007,7 @@ struct MVIStoresTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let store = SettingsStore(dependencies: dependencies)
+            let store = SettingsViewModel(dependencies: dependencies)
 
             store.send(.toggleICloud(true))
             #expect(store.state.isICloudSyncOn)
@@ -1022,7 +1022,7 @@ struct MVIStoresTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let store = SettingsStore(dependencies: dependencies)
+            let store = SettingsViewModel(dependencies: dependencies)
 
             store.send(.reportIssueTapped(canSendMail: true))
 
@@ -1053,7 +1053,7 @@ struct MVIStoresTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let store = SettingsStore(dependencies: dependencies)
+            let store = SettingsViewModel(dependencies: dependencies)
 
             store.send(.reportIssueTapped(canSendMail: false))
 

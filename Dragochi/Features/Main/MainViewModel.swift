@@ -1,5 +1,5 @@
 //
-//  MainStore.swift
+//  MainViewModel.swift
 //  Dragochi
 //
 //  Created by Codex on 12/2/2026.
@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 @MainActor
-final class MainStore: ObservableObject {
+final class MainViewModel: ObservableObject {
     enum TrackingStatus: String, Codable, Equatable {
         case idle
         case running

@@ -10,7 +10,7 @@ import UIKit
 import MessageUI
 
 struct SettingsView: View {
-    @ObservedObject var store: SettingsStore
+    @ObservedObject var store: SettingsViewModel
     let dependencies: AppDependencies
     let onOpenGameSettings: () -> Void
     let onOpenFriendSettings: () -> Void
@@ -22,7 +22,7 @@ struct SettingsView: View {
     @State private var isShowingAppleFriendImport = false
 
     init(
-        store: SettingsStore,
+        store: SettingsViewModel,
         dependencies: AppDependencies,
         onOpenGameSettings: @escaping () -> Void = {},
         onOpenFriendSettings: @escaping () -> Void = {}
@@ -367,7 +367,7 @@ struct SettingsView: View {
         }
         .fullScreenCover(isPresented: $isShowingAppleFriendImport) {
             AppleFriendImportView(
-                store: AppleFriendImportStore(
+                store: AppleFriendImportViewModel(
                     dependencies: dependencies,
                     onClose: { isShowingAppleFriendImport = false }
                 )
@@ -390,7 +390,7 @@ struct SettingsView: View {
             )
         ) {
             Button("button_copy_developer_email") {
-                UIPasteboard.general.string = SettingsStore.reportIssueRecipientEmail
+                UIPasteboard.general.string = SettingsViewModel.reportIssueRecipientEmail
             }
             Button("button_open_mail_app") {
                 openSupportMailto()
@@ -441,7 +441,7 @@ struct SettingsView: View {
     }
 
     private func openSupportMailto() {
-        guard let url = URL(string: "mailto:\(SettingsStore.reportIssueRecipientEmail)") else { return }
+        guard let url = URL(string: "mailto:\(SettingsViewModel.reportIssueRecipientEmail)") else { return }
         openURL(url)
     }
 

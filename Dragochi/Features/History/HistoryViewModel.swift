@@ -1,5 +1,5 @@
 //
-//  HistoryStore.swift
+//  HistoryViewModel.swift
 //  Dragochi
 //
 //  Created by Codex on 12/2/2026.
@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 @MainActor
-final class HistoryStore: ObservableObject {
+final class HistoryViewModel: ObservableObject {
     enum HistoryFilter: CaseIterable {
         case allTime
         case thisWeek

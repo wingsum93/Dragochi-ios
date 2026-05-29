@@ -1,5 +1,5 @@
 //
-//  AppleFriendImportStore.swift
+//  AppleFriendImportViewModel.swift
 //  Dragochi
 //
 //  Created by Codex on 21/3/2026.
@@ -10,7 +10,7 @@ import Contacts
 import Foundation
 
 @MainActor
-final class AppleFriendImportStore: ObservableObject {
+final class AppleFriendImportViewModel: ObservableObject {
     struct State: Equatable {
         var selectedContacts: [ImportedAppleContact] = []
         var isShowingPicker = false

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct StatisticView: View {
-    @ObservedObject var store: StatisticStore
+    @ObservedObject var store: StatisticViewModel
     @Environment(\.locale) private var locale
 
     var body: some View {

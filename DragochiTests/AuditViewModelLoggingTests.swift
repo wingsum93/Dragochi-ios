@@ -1,5 +1,5 @@
 //
-//  AuditStoreLoggingTests.swift
+//  AuditViewModelLoggingTests.swift
 //  DragochiTests
 //
 //  Created by Codex on 23/3/2026.
@@ -25,7 +25,7 @@ private final class SpyAuditLogger: AuditLogging {
     }
 }
 
-struct AuditStoreLoggingTests {
+struct AuditViewModelLoggingTests {
     @Test
     func mainStore_logsTrackingLifecycleSuccessEvents() async throws {
         try await MainActor.run {
@@ -36,7 +36,7 @@ struct AuditStoreLoggingTests {
                 auditLogger: spyLogger
             )
             var current = Date(timeIntervalSince1970: 1_700_000_000)
-            let store = MainStore(dependencies: dependencies, now: { current })
+            let store = MainViewModel(dependencies: dependencies, now: { current })
 
             store.send(.onAppear)
             guard let selectedGameID = store.state.games.first?.id else {
@@ -74,7 +74,7 @@ struct AuditStoreLoggingTests {
                 modelContext: ModelContext(container),
                 auditLogger: spyLogger
             )
-            let store = MainStore(dependencies: dependencies)
+            let store = MainViewModel(dependencies: dependencies)
 
             store.send(.restoreTrackingSnapshot(Data("invalid-json".utf8)))
 
@@ -111,7 +111,7 @@ struct AuditStoreLoggingTests {
                 note: secretNote
             )
 
-            let store = AddSessionStore(dependencies: dependencies, draft: draft)
+            let store = AddSessionViewModel(dependencies: dependencies, draft: draft)
             store.send(.onAppear)
             store.send(.saveTapped)
 
@@ -149,7 +149,7 @@ struct AuditStoreLoggingTests {
                 note: ""
             )
 
-            let store = AddSessionStore(dependencies: dependencies, draft: draft)
+            let store = AddSessionViewModel(dependencies: dependencies, draft: draft)
             store.send(.saveTapped)
 
             #expect(

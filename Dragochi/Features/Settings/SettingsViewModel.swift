@@ -1,5 +1,5 @@
 //
-//  SettingsStore.swift
+//  SettingsViewModel.swift
 //  Dragochi
 //
 //  Created by Codex on 12/2/2026.
@@ -20,7 +20,7 @@ struct IssueReportDraft: Identifiable, Equatable {
 }
 
 @MainActor
-final class SettingsStore: ObservableObject {
+final class SettingsViewModel: ObservableObject {
     static let reportIssueRecipientEmail = "wingsum.developer@gmail.com"
     private static let reportIssueSubject = "Dragochi Issue Report"
 

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct HistoryView: View {
-    @ObservedObject var store: HistoryStore
+    @ObservedObject var store: HistoryViewModel
     @Environment(\.locale) private var locale
 
     var body: some View {
@@ -47,7 +47,7 @@ struct HistoryView: View {
 
     private var filterBar: some View {
         HStack(spacing: DragonTheme.current.spacing(.sm)) {
-            ForEach(HistoryStore.HistoryFilter.allCases, id: \.self) { filter in
+            ForEach(HistoryViewModel.HistoryFilter.allCases, id: \.self) { filter in
                 Button {
                     store.send(.selectFilter(filter))
                 } label: {
@@ -86,11 +86,11 @@ struct HistoryView: View {
         }
     }
 
-    private func rowCard(_ row: HistoryStore.HistoryRow) -> some View {
+    private func rowCard(_ row: HistoryViewModel.HistoryRow) -> some View {
         HistoryRowCardView(row: row, locale: locale)
     }
 
-    private func filterTitle(for filter: HistoryStore.HistoryFilter) -> String {
+    private func filterTitle(for filter: HistoryViewModel.HistoryFilter) -> String {
         let key: String
         switch filter {
         case .allTime:
@@ -127,7 +127,7 @@ struct HistoryView: View {
 }
 
 private struct HistoryRowCardView: View {
-    let row: HistoryStore.HistoryRow
+    let row: HistoryViewModel.HistoryRow
     let locale: Locale
 
     var body: some View {
@@ -196,7 +196,7 @@ private struct HistoryRowCardView: View {
 
 private struct HistoryRowVariantsPreview: View {
     private let previewLocale = Locale(identifier: "en")
-    private let rows: [HistoryStore.HistoryRow] = [
+    private let rows: [HistoryViewModel.HistoryRow] = [
         .init(
             id: UUID(),
             gameTitle: "Valorant",

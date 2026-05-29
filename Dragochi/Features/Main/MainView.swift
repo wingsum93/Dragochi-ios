@@ -9,7 +9,7 @@ import SwiftUI
 import Combine
 
 struct MainView: View {
-    @ObservedObject var store: MainStore
+    @ObservedObject var store: MainViewModel
     let dependencies: AppDependencies
     let onOpenGameSettings: () -> Void
     let onOpenFriendSettings: () -> Void
@@ -62,7 +62,7 @@ struct MainView: View {
         }
         .sheet(item: $addSessionDraft) { draft in
             AddSessionView(
-                store: AddSessionStore(
+                store: AddSessionViewModel(
                     dependencies: dependencies,
                     draft: draft,
                     onSetupConfirmed: draft.mode == .preStartSetup ? { setup in

@@ -113,7 +113,7 @@ struct GameCatalogSyncTests {
             note: ""
         )
 
-        let store = AddSessionStore(dependencies: dependencies, draft: draft)
+        let store = AddSessionViewModel(dependencies: dependencies, draft: draft)
         store.send(.onAppear)
 
         #expect(store.state.gameCards.count == 1)

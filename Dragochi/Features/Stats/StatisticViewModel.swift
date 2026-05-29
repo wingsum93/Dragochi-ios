@@ -1,5 +1,5 @@
 //
-//  StatisticStore.swift
+//  StatisticViewModel.swift
 //  Dragochi
 //
 //  Created by Codex on 12/2/2026.
@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 @MainActor
-final class StatisticStore: ObservableObject {
+final class StatisticViewModel: ObservableObject {
     struct State: Equatable {
         var monthStart: Date
         var availableMonthStarts: [Date] = []

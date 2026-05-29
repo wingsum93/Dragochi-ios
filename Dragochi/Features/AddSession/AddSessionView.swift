@@ -8,10 +8,10 @@
 import SwiftUI
 
 struct AddSessionView: View {
-    @StateObject private var store: AddSessionStore
+    @StateObject private var store: AddSessionViewModel
     @Environment(\.locale) private var locale
 
-    init(store: AddSessionStore) {
+    init(store: AddSessionViewModel) {
         _store = StateObject(wrappedValue: store)
     }
 

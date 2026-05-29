@@ -8,10 +8,10 @@
 import SwiftUI
 
 struct AppleFriendImportView: View {
-    @StateObject private var store: AppleFriendImportStore
+    @StateObject private var store: AppleFriendImportViewModel
     @Environment(\.locale) private var locale
 
-    init(store: AppleFriendImportStore) {
+    init(store: AppleFriendImportViewModel) {
         _store = StateObject(wrappedValue: store)
     }
 

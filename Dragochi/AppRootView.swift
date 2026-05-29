@@ -23,10 +23,10 @@ struct AppRootView: View {
     @State private var isShowingFriendSettings = false
     @State private var selectedTab: Tab = .home
 
-    @StateObject private var mainStore: MainStore
-    @StateObject private var historyStore: HistoryStore
-    @StateObject private var statsStore: StatisticStore
-    @StateObject private var settingsStore: SettingsStore
+    @StateObject private var mainStore: MainViewModel
+    @StateObject private var historyStore: HistoryViewModel
+    @StateObject private var statsStore: StatisticViewModel
+    @StateObject private var settingsStore: SettingsViewModel
 
     private let dependencies: AppDependencies
     private let isUITesting: Bool
@@ -41,10 +41,10 @@ struct AppRootView: View {
         if self.isUITesting {
             Self.seedUITestFriendsIfNeeded(dependencies: dependencies, processInfo: processInfo)
         }
-        _mainStore = StateObject(wrappedValue: MainStore(dependencies: dependencies))
-        _historyStore = StateObject(wrappedValue: HistoryStore(dependencies: dependencies))
-        _statsStore = StateObject(wrappedValue: StatisticStore(dependencies: dependencies))
-        _settingsStore = StateObject(wrappedValue: SettingsStore(dependencies: dependencies))
+        _mainStore = StateObject(wrappedValue: MainViewModel(dependencies: dependencies))
+        _historyStore = StateObject(wrappedValue: HistoryViewModel(dependencies: dependencies))
+        _statsStore = StateObject(wrappedValue: StatisticViewModel(dependencies: dependencies))
+        _settingsStore = StateObject(wrappedValue: SettingsViewModel(dependencies: dependencies))
     }
 
     var body: some View {
@@ -95,7 +95,7 @@ struct AppRootView: View {
         }
         .fullScreenCover(isPresented: $isShowingGameSettings) {
             GameSettingsView(
-                store: GameSettingsStore(
+                store: GameSettingsViewModel(
                     dependencies: dependencies,
                     onClose: { isShowingGameSettings = false }
                 )
@@ -103,7 +103,7 @@ struct AppRootView: View {
         }
         .fullScreenCover(isPresented: $isShowingFriendSettings) {
             FriendSettingsView(
-                store: FriendSettingsStore(
+                store: FriendSettingsViewModel(
                     dependencies: dependencies,
                     onClose: { isShowingFriendSettings = false }
                 )

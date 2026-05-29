@@ -1,5 +1,5 @@
 //
-//  GameSettingsStore.swift
+//  GameSettingsViewModel.swift
 //  Dragochi
 //
 //  Created by Codex on 15/2/2026.
@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 @MainActor
-final class GameSettingsStore: ObservableObject {
+final class GameSettingsViewModel: ObservableObject {
     struct State: Equatable {
         var query: String = ""
         var catalog: [CatalogGame] = []

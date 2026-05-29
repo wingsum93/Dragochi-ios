@@ -23,15 +23,15 @@ See [doc/detail-function.md](doc/detail-function.md) and [doc/screen.md](doc/scr
 ## App Structure
 
 Root tabs (`AppRootView`):
-- Home (`MainView` + `MainStore`)
-- History (`HistoryView` + `HistoryStore`)
-- Stats (`StatisticView` + `StatisticStore`)
-- Settings (`SettingsView` + `SettingsStore`)
+- Home (`MainView` + `MainViewModel`)
+- History (`HistoryView` + `HistoryViewModel`)
+- Stats (`StatisticView` + `StatisticViewModel`)
+- Settings (`SettingsView` + `SettingsViewModel`)
 
 Modal flows:
-- Add Session (`AddSessionView` + `AddSessionStore`)
-- Game Settings (`GameSettingsView` + `GameSettingsStore`)
-- Friend Settings (`FriendSettingsView` + `FriendSettingsStore`)
+- Add Session (`AddSessionView` + `AddSessionViewModel`)
+- Game Settings (`GameSettingsView` + `GameSettingsViewModel`)
+- Friend Settings (`FriendSettingsView` + `FriendSettingsViewModel`)
 
 Architecture layers:
 - `Features/*`: SwiftUI views + MVI-style stores

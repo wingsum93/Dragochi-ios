@@ -25,7 +25,7 @@ It also documents where to safely change the Remote Config parameter key (`game_
 
 High-level path:
 
-`DragochiApp` -> `AppDependencies` -> (`MainStore` / `AddSessionStore` / `GameSettingsStore`) -> `GameCatalogSyncService` -> `FirebaseRemoteConfigGameCatalogService` -> local repositories
+`DragochiApp` -> `AppDependencies` -> (`MainViewModel` / `AddSessionViewModel` / `GameSettingsViewModel`) -> `GameCatalogSyncService` -> `FirebaseRemoteConfigGameCatalogService` -> local repositories
 
 ### 2.3 Class/Method Map
 
@@ -40,9 +40,9 @@ High-level path:
 | `GameCatalogSyncService` | `seedFromFallbackIfNeeded()` | Seed initial catalog from fallback and default selections. | `/Users/ericho/iosHub/Dragochi/Dragochi/Data/Services/GameCatalogSyncService.swift:30` |
 | `GameCatalogSyncService` | `refreshFromRemote()` | Fetch latest catalog from remote and apply retention rules. | `/Users/ericho/iosHub/Dragochi/Dragochi/Data/Services/GameCatalogSyncService.swift:36` |
 | `GameCatalogSyncService` | `apply(catalog:persistDefaultSelectionIfNeeded:)` | Upsert/cleanup game selection and metadata safely. | `/Users/ericho/iosHub/Dragochi/Dragochi/Data/Services/GameCatalogSyncService.swift:57` |
-| `MainStore` | `loadInitialData()` and `refreshCatalogFromRemote()` | Seed catalog on load, then refresh from remote. | `/Users/ericho/iosHub/Dragochi/Dragochi/Features/Main/MainStore.swift:107`, `/Users/ericho/iosHub/Dragochi/Dragochi/Features/Main/MainStore.swift:277` |
-| `AddSessionStore` | `loadData()` and `refreshFromRemote()` | Seed/refresh catalog to populate Add Session game cards. | `/Users/ericho/iosHub/Dragochi/Dragochi/Features/AddSession/AddSessionStore.swift:128`, `/Users/ericho/iosHub/Dragochi/Dragochi/Features/AddSession/AddSessionStore.swift:150` |
-| `GameSettingsStore` | `load()` and `refreshFromRemote()` | Seed/refresh catalog for settings list + enabled toggles. | `/Users/ericho/iosHub/Dragochi/Dragochi/Features/GameSettings/GameSettingsStore.swift:68`, `/Users/ericho/iosHub/Dragochi/Dragochi/Features/GameSettings/GameSettingsStore.swift:87` |
+| `MainViewModel` | `loadInitialData()` and `refreshCatalogFromRemote()` | Seed catalog on load, then refresh from remote. | `/Users/ericho/iosHub/Dragochi/Dragochi/Features/Main/MainViewModel.swift:107`, `/Users/ericho/iosHub/Dragochi/Dragochi/Features/Main/MainViewModel.swift:277` |
+| `AddSessionViewModel` | `loadData()` and `refreshFromRemote()` | Seed/refresh catalog to populate Add Session game cards. | `/Users/ericho/iosHub/Dragochi/Dragochi/Features/AddSession/AddSessionViewModel.swift:128`, `/Users/ericho/iosHub/Dragochi/Dragochi/Features/AddSession/AddSessionViewModel.swift:150` |
+| `GameSettingsViewModel` | `load()` and `refreshFromRemote()` | Seed/refresh catalog for settings list + enabled toggles. | `/Users/ericho/iosHub/Dragochi/Dragochi/Features/GameSettings/GameSettingsViewModel.swift:68`, `/Users/ericho/iosHub/Dragochi/Dragochi/Features/GameSettings/GameSettingsViewModel.swift:87` |
 
 ### 2.4 Runtime Behavior Notes
 
