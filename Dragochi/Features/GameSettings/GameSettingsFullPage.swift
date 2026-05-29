@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct GameSettingsFullPage: View {
-    @StateObject private var viewModel: GameSettingsViewModel
+    @StateObject private var viewModel: GameSettingViewModel
     @Environment(\.locale) private var locale
     private let searchContentSpacing: CGFloat = 8
     private let searchIconWidth: CGFloat = 16
@@ -16,7 +16,7 @@ struct GameSettingsFullPage: View {
     private let searchInnerHorizontalPadding: CGFloat = 12
     private let separatorGap: CGFloat = 0
 
-    init(viewModel: GameSettingsViewModel) {
+    init(viewModel: GameSettingViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
 

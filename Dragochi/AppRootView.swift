@@ -16,10 +16,10 @@ struct AppRootView: View {
     @State private var isShowingFriendSettings = false
     @StateObject private var appRouter = AppRouter()
 
-    @StateObject private var mainStore: MainViewModel
-    @StateObject private var historyStore: HistoryViewModel
-    @StateObject private var statsStore: StatisticViewModel
-    @StateObject private var settingsStore: SettingsViewModel
+    @StateObject private var mainViewModel: MainViewModel
+    @StateObject private var historyViewModel: HistoryViewModel
+    @StateObject private var statsViewModel: StatisticViewModel
+    @StateObject private var settingsViewModel: SettingViewModel
 
     private let makeAddSessionViewModel: (
         AddSessionDraft,
@@ -28,8 +28,8 @@ struct AppRootView: View {
         @escaping () -> Void,
         @escaping () -> Void
     ) -> AddSessionViewModel
-    private let makeGameSettingsViewModel: (@escaping () -> Void) -> GameSettingsViewModel
-    private let makeFriendSettingsViewModel: (@escaping () -> Void) -> FriendSettingsViewModel
+    private let makeGameSettingViewModel: (@escaping () -> Void) -> GameSettingViewModel
+    private let makeFriendSettingViewModel: (@escaping () -> Void) -> FriendSettingViewModel
     private let makeAppleFriendImportViewModel: (@escaping () -> Void) -> AppleFriendImportViewModel
     private let isUITesting: Bool
 
@@ -41,10 +41,10 @@ struct AppRootView: View {
         if self.isUITesting {
             Self.seedUITestFriendsIfNeeded(friendRepository: appContainer.friendRepository, processInfo: processInfo)
         }
-        _mainStore = StateObject(wrappedValue: appContainer.makeMainViewModel())
-        _historyStore = StateObject(wrappedValue: appContainer.makeHistoryViewModel())
-        _statsStore = StateObject(wrappedValue: appContainer.makeStatisticViewModel())
-        _settingsStore = StateObject(wrappedValue: appContainer.makeSettingsViewModel())
+        _mainViewModel = StateObject(wrappedValue: appContainer.makeMainViewModel())
+        _historyViewModel = StateObject(wrappedValue: appContainer.makeHistoryViewModel())
+        _statsViewModel = StateObject(wrappedValue: appContainer.makeStatisticViewModel())
+        _settingsViewModel = StateObject(wrappedValue: appContainer.makeSettingViewModel())
         self.makeAddSessionViewModel = { draft, onSetupConfirmed, onOpenGameSettings, onOpenFriendSettings, onClose in
             appContainer.makeAddSessionViewModel(
                 draft: draft,
@@ -54,11 +54,11 @@ struct AppRootView: View {
                 onClose: onClose
             )
         }
-        self.makeGameSettingsViewModel = { onClose in
-            appContainer.makeGameSettingsViewModel(onClose: onClose)
+        self.makeGameSettingViewModel = { onClose in
+            appContainer.makeGameSettingViewModel(onClose: onClose)
         }
-        self.makeFriendSettingsViewModel = { onClose in
-            appContainer.makeFriendSettingsViewModel(onClose: onClose)
+        self.makeFriendSettingViewModel = { onClose in
+            appContainer.makeFriendSettingViewModel(onClose: onClose)
         }
         self.makeAppleFriendImportViewModel = { onClose in
             appContainer.makeAppleFriendImportViewModel(onClose: onClose)
@@ -68,7 +68,7 @@ struct AppRootView: View {
     var body: some View {
         TabView(selection: $appRouter.selectedTab) {
             MainView(
-                viewModel: mainStore,
+                viewModel: mainViewModel,
                 makeAddSessionViewModel: makeAddSessionViewModel,
                 onOpenGameSettings: { isShowingGameSettings = true },
                 onOpenFriendSettings: { isShowingFriendSettings = true }
@@ -79,14 +79,14 @@ struct AppRootView: View {
                 }
                 .tag(AppTab.home)
 
-            HistoryView(viewModel: historyStore)
+            HistoryView(viewModel: historyViewModel)
                 .tabItem {
                     Label("title_tab_history", systemImage: "clock.arrow.circlepath")
                         .accessibilityIdentifier("tab.history.button")
                 }
                 .tag(AppTab.history)
 
-            StatisticView(viewModel: statsStore)
+            StatisticView(viewModel: statsViewModel)
                 .tabItem {
                     Label("title_tab_stats", systemImage: "chart.bar")
                         .accessibilityIdentifier("tab.stats.button")
@@ -94,7 +94,7 @@ struct AppRootView: View {
                 .tag(AppTab.stats)
 
             SettingView(
-                viewModel: settingsStore,
+                viewModel: settingsViewModel,
                 makeAppleFriendImportViewModel: makeAppleFriendImportViewModel,
                 onOpenGameSettings: { isShowingGameSettings = true },
                 onOpenFriendSettings: { isShowingFriendSettings = true }
@@ -113,14 +113,14 @@ struct AppRootView: View {
         }
         .fullScreenCover(isPresented: $isShowingGameSettings) {
             GameSettingsFullPage(
-                viewModel: makeGameSettingsViewModel(
+                viewModel: makeGameSettingViewModel(
                     { isShowingGameSettings = false }
                 )
             )
         }
         .fullScreenCover(isPresented: $isShowingFriendSettings) {
             FriendSettingsFullPage(
-                viewModel: makeFriendSettingsViewModel(
+                viewModel: makeFriendSettingViewModel(
                     { isShowingFriendSettings = false }
                 )
             )

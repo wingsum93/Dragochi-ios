@@ -1,5 +1,5 @@
 //
-//  FriendSettingsViewModel.swift
+//  FriendSettingViewModel.swift
 //  Dragochi
 //
 //  Created by Codex on 17/2/2026.
@@ -13,7 +13,7 @@ extension Notification.Name {
 }
 
 @MainActor
-final class FriendSettingsViewModel: ObservableObject {
+final class FriendSettingViewModel: ObservableObject {
     struct State: Equatable {
         var friends: [FriendEntity] = []
         var isLoading = false

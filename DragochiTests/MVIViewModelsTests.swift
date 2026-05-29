@@ -404,7 +404,7 @@ struct MVIViewModelsTests {
                 isActive: true,
                 note: "Original note"
             )
-            let viewModel = dependencies.makeFriendSettingsViewModel()
+            let viewModel = dependencies.makeFriendSettingViewModel()
 
             viewModel.send(.onAppear)
             #expect(viewModel.state.friends.count == 1)
@@ -483,7 +483,7 @@ struct MVIViewModelsTests {
                 order: 2,
                 note: nil
             )
-            let viewModel = dependencies.makeFriendSettingsViewModel()
+            let viewModel = dependencies.makeFriendSettingViewModel()
 
             viewModel.send(.onAppear)
 
@@ -527,7 +527,7 @@ struct MVIViewModelsTests {
                 order: 2,
                 note: nil
             )
-            let viewModel = dependencies.makeFriendSettingsViewModel()
+            let viewModel = dependencies.makeFriendSettingViewModel()
 
             viewModel.send(.onAppear)
             viewModel.send(.toggleReorderMode)
@@ -566,7 +566,7 @@ struct MVIViewModelsTests {
                 order: 1,
                 note: nil
             )
-            let viewModel = dependencies.makeFriendSettingsViewModel()
+            let viewModel = dependencies.makeFriendSettingViewModel()
 
             viewModel.send(.onAppear)
             viewModel.send(.toggleReorderMode)
@@ -711,7 +711,7 @@ struct MVIViewModelsTests {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDIContainer(modelContainer: container)
             var didClose = false
-            let viewModel = dependencies.makeGameSettingsViewModel(
+            let viewModel = dependencies.makeGameSettingViewModel(
                 onClose: { didClose = true },
                 isUITesting: true
             )
@@ -730,7 +730,7 @@ struct MVIViewModelsTests {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDIContainer(modelContainer: container)
             var didClose = false
-            let viewModel = dependencies.makeGameSettingsViewModel(
+            let viewModel = dependencies.makeGameSettingViewModel(
                 onClose: { didClose = true },
                 isUITesting: true
             )
@@ -768,7 +768,7 @@ struct MVIViewModelsTests {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDIContainer(modelContainer: container)
             var didClose = false
-            let viewModel = dependencies.makeGameSettingsViewModel(
+            let viewModel = dependencies.makeGameSettingViewModel(
                 onClose: { didClose = true },
                 isUITesting: true
             )
@@ -802,7 +802,7 @@ struct MVIViewModelsTests {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDIContainer(modelContainer: container)
             var didClose = false
-            let viewModel = dependencies.makeGameSettingsViewModel(
+            let viewModel = dependencies.makeGameSettingViewModel(
                 onClose: { didClose = true },
                 isUITesting: true
             )
@@ -996,7 +996,7 @@ struct MVIViewModelsTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDIContainer(modelContainer: container)
-            let viewModel = dependencies.makeSettingsViewModel()
+            let viewModel = dependencies.makeSettingViewModel()
 
             viewModel.send(.toggleICloud(true))
             #expect(viewModel.state.isICloudSyncOn)
@@ -1011,7 +1011,7 @@ struct MVIViewModelsTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDIContainer(modelContainer: container)
-            let viewModel = dependencies.makeSettingsViewModel()
+            let viewModel = dependencies.makeSettingViewModel()
 
             viewModel.send(.reportIssueTapped(canSendMail: true))
 
@@ -1042,7 +1042,7 @@ struct MVIViewModelsTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDIContainer(modelContainer: container)
-            let viewModel = dependencies.makeSettingsViewModel()
+            let viewModel = dependencies.makeSettingViewModel()
 
             viewModel.send(.reportIssueTapped(canSendMail: false))
 

@@ -10,7 +10,7 @@ import UIKit
 import MessageUI
 
 struct SettingView: View {
-    @ObservedObject var viewModel: SettingsViewModel
+    @ObservedObject var viewModel: SettingViewModel
     let makeAppleFriendImportViewModel: (@escaping () -> Void) -> AppleFriendImportViewModel
     let onOpenGameSettings: () -> Void
     let onOpenFriendSettings: () -> Void
@@ -22,7 +22,7 @@ struct SettingView: View {
     @State private var isShowingAppleFriendImport = false
 
     init(
-        viewModel: SettingsViewModel,
+        viewModel: SettingViewModel,
         makeAppleFriendImportViewModel: @escaping (@escaping () -> Void) -> AppleFriendImportViewModel,
         onOpenGameSettings: @escaping () -> Void = {},
         onOpenFriendSettings: @escaping () -> Void = {}
@@ -375,7 +375,7 @@ struct SettingView: View {
             )
         ) {
             Button("button_copy_developer_email") {
-                UIPasteboard.general.string = SettingsViewModel.reportIssueRecipientEmail
+                UIPasteboard.general.string = SettingViewModel.reportIssueRecipientEmail
             }
             Button("button_open_mail_app") {
                 openSupportMailto()
@@ -463,7 +463,7 @@ struct SettingView: View {
     }
 
     private func openSupportMailto() {
-        guard let url = URL(string: "mailto:\(SettingsViewModel.reportIssueRecipientEmail)") else { return }
+        guard let url = URL(string: "mailto:\(SettingViewModel.reportIssueRecipientEmail)") else { return }
         openURL(url)
     }
 }

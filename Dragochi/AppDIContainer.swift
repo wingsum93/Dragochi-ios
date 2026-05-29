@@ -73,8 +73,8 @@ final class AppDIContainer {
         )
     }
 
-    func makeSettingsViewModel() -> SettingsViewModel {
-        SettingsViewModel(
+    func makeSettingViewModel() -> SettingViewModel {
+        SettingViewModel(
             backupService: backupService,
             auditLogger: auditLogger
         )
@@ -104,11 +104,11 @@ final class AppDIContainer {
         )
     }
 
-    func makeGameSettingsViewModel(
+    func makeGameSettingViewModel(
         onClose: @escaping () -> Void,
         isUITesting: Bool = ProcessInfo.processInfo.arguments.contains("-ui-testing")
-    ) -> GameSettingsViewModel {
-        GameSettingsViewModel(
+    ) -> GameSettingViewModel {
+        GameSettingViewModel(
             gameRepository: gameRepository,
             enabledSelectionRepository: enabledGameSelectionRepository,
             gameCatalogSyncService: gameCatalogSyncService,
@@ -118,8 +118,8 @@ final class AppDIContainer {
         )
     }
 
-    func makeFriendSettingsViewModel(onClose: @escaping () -> Void = {}) -> FriendSettingsViewModel {
-        FriendSettingsViewModel(
+    func makeFriendSettingViewModel(onClose: @escaping () -> Void = {}) -> FriendSettingViewModel {
+        FriendSettingViewModel(
             friendRepository: friendRepository,
             auditLogger: auditLogger,
             onClose: onClose

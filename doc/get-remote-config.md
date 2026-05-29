@@ -25,7 +25,7 @@ It also documents where to safely change the Remote Config parameter key (`game_
 
 High-level path:
 
-`DragochiApp` -> `AppDIContainer` -> (`MainViewModel` / `AddSessionViewModel` / `GameSettingsViewModel`) -> `GameCatalogSyncService` -> `FirebaseRemoteConfigGameCatalogService` -> local repositories
+`DragochiApp` -> `AppDIContainer` -> (`MainViewModel` / `AddSessionViewModel` / `GameSettingViewModel`) -> `GameCatalogSyncService` -> `FirebaseRemoteConfigGameCatalogService` -> local repositories
 
 ### 2.3 Class/Method Map
 
@@ -42,7 +42,7 @@ High-level path:
 | `GameCatalogSyncService` | `apply(catalog:persistDefaultSelectionIfNeeded:)` | Upsert/cleanup game selection and metadata safely. | `/Users/ericho/iosHub/Dragochi/Dragochi/Data/Services/GameCatalogSyncService.swift:57` |
 | `MainViewModel` | `loadInitialData()` and `refreshCatalogFromRemote()` | Seed catalog on load, then refresh from remote. | `/Users/ericho/iosHub/Dragochi/Dragochi/Features/Main/MainViewModel.swift:107`, `/Users/ericho/iosHub/Dragochi/Dragochi/Features/Main/MainViewModel.swift:277` |
 | `AddSessionViewModel` | `loadData()` and `refreshFromRemote()` | Seed/refresh catalog to populate Add Session game cards. | `/Users/ericho/iosHub/Dragochi/Dragochi/Features/AddSession/AddSessionViewModel.swift:128`, `/Users/ericho/iosHub/Dragochi/Dragochi/Features/AddSession/AddSessionViewModel.swift:150` |
-| `GameSettingsViewModel` | `load()` and `refreshFromRemote()` | Seed/refresh catalog for settings list + enabled toggles. | `/Users/ericho/iosHub/Dragochi/Dragochi/Features/GameSettings/GameSettingsViewModel.swift:68`, `/Users/ericho/iosHub/Dragochi/Dragochi/Features/GameSettings/GameSettingsViewModel.swift:87` |
+| `GameSettingViewModel` | `load()` and `refreshFromRemote()` | Seed/refresh catalog for settings list + enabled toggles. | `/Users/ericho/iosHub/Dragochi/Dragochi/Features/GameSettings/GameSettingViewModel.swift:68`, `/Users/ericho/iosHub/Dragochi/Dragochi/Features/GameSettings/GameSettingViewModel.swift:87` |
 
 ### 2.4 Runtime Behavior Notes
 

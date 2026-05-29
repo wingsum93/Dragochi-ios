@@ -26,12 +26,12 @@ Root tabs (`AppRootView`):
 - Home (`MainView` + `MainViewModel`)
 - History (`HistoryView` + `HistoryViewModel`)
 - Stats (`StatisticView` + `StatisticViewModel`)
-- Settings (`SettingsView` + `SettingsViewModel`)
+- Settings (`SettingsView` + `SettingViewModel`)
 
 Modal flows:
 - Add Session (`AddSessionView` + `AddSessionViewModel`)
-- Game Settings (`GameSettingsView` + `GameSettingsViewModel`)
-- Friend Settings (`FriendSettingsView` + `FriendSettingsViewModel`)
+- Game Settings (`GameSettingsView` + `GameSettingViewModel`)
+- Friend Settings (`FriendSettingsView` + `FriendSettingViewModel`)
 
 Architecture layers:
 - `Features/*`: SwiftUI views + MVI-style stores
