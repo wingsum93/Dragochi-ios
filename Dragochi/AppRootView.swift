@@ -28,30 +28,29 @@ struct AppRootView: View {
     @StateObject private var statsStore: StatisticViewModel
     @StateObject private var settingsStore: SettingsViewModel
 
-    private let dependencies: AppDependencies
+    private let container: AppDIContainer
     private let isUITesting: Bool
 
     init(container: ModelContainer) {
-        let modelContext = ModelContext(container)
-        let dependencies = AppDependencies(modelContext: modelContext)
+        let appContainer = AppDIContainer(modelContainer: container)
         let processInfo = ProcessInfo.processInfo
 
-        self.dependencies = dependencies
+        self.container = appContainer
         self.isUITesting = processInfo.arguments.contains("-ui-testing")
         if self.isUITesting {
-            Self.seedUITestFriendsIfNeeded(dependencies: dependencies, processInfo: processInfo)
+            Self.seedUITestFriendsIfNeeded(container: appContainer, processInfo: processInfo)
         }
-        _mainStore = StateObject(wrappedValue: MainViewModel(dependencies: dependencies))
-        _historyStore = StateObject(wrappedValue: HistoryViewModel(dependencies: dependencies))
-        _statsStore = StateObject(wrappedValue: StatisticViewModel(dependencies: dependencies))
-        _settingsStore = StateObject(wrappedValue: SettingsViewModel(dependencies: dependencies))
+        _mainStore = StateObject(wrappedValue: appContainer.makeMainViewModel())
+        _historyStore = StateObject(wrappedValue: appContainer.makeHistoryViewModel())
+        _statsStore = StateObject(wrappedValue: appContainer.makeStatisticViewModel())
+        _settingsStore = StateObject(wrappedValue: appContainer.makeSettingsViewModel())
     }
 
     var body: some View {
         TabView(selection: $selectedTab) {
             MainView(
                 viewModel: mainStore,
-                dependencies: dependencies,
+                container: container,
                 onOpenGameSettings: { isShowingGameSettings = true },
                 onOpenFriendSettings: { isShowingFriendSettings = true }
             )
@@ -77,7 +76,7 @@ struct AppRootView: View {
 
             SettingsView(
                 viewModel: settingsStore,
-                dependencies: dependencies,
+                container: container,
                 onOpenGameSettings: { isShowingGameSettings = true },
                 onOpenFriendSettings: { isShowingFriendSettings = true }
             )
@@ -95,23 +94,21 @@ struct AppRootView: View {
         }
         .fullScreenCover(isPresented: $isShowingGameSettings) {
             GameSettingsFullPage(
-                viewModel: GameSettingsViewModel(
-                    dependencies: dependencies,
+                viewModel: container.makeGameSettingsViewModel(
                     onClose: { isShowingGameSettings = false }
                 )
             )
         }
         .fullScreenCover(isPresented: $isShowingFriendSettings) {
             FriendSettingsFullPage(
-                viewModel: FriendSettingsViewModel(
-                    dependencies: dependencies,
+                viewModel: container.makeFriendSettingsViewModel(
                     onClose: { isShowingFriendSettings = false }
                 )
             )
         }
     }
 
-    private static func seedUITestFriendsIfNeeded(dependencies: AppDependencies, processInfo: ProcessInfo) {
+    private static func seedUITestFriendsIfNeeded(container: AppDIContainer, processInfo: ProcessInfo) {
         guard let fixtureJSON = processInfo.environment[Self.uiTestFriendsJSONKey] else { return }
         guard let data = fixtureJSON.data(using: .utf8) else { return }
 
@@ -119,16 +116,16 @@ struct AppRootView: View {
             let fixtures = try JSONDecoder().decode([UITestFriendFixture].self, from: data)
 
             // Make each launch deterministic for UI tests by replacing all friends with fixtures.
-            let existingFriends = try dependencies.friendRepository.fetchAll()
+            let existingFriends = try container.friendRepository.fetchAll()
             for friend in existingFriends {
-                try dependencies.friendRepository.delete(id: friend.id)
+                try container.friendRepository.delete(id: friend.id)
             }
 
             for fixture in fixtures {
                 let resolvedName = fixture.resolvedName
                 guard !resolvedName.isEmpty else { continue }
 
-                _ = try dependencies.friendRepository.create(
+                _ = try container.friendRepository.create(
                     name: resolvedName,
                     handle: nil,
                     avatarAssetName: fixture.resolvedAvatarAssetName,

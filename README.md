@@ -38,7 +38,7 @@ Architecture layers:
 - `Domain/*`: repository/service protocols and core models
 - `Data/*`: SwiftData repositories, models, and concrete services
 
-Dependency wiring happens in `AppDependencies`.
+Dependency wiring happens in `AppDIContainer`.
 
 ## Data & Services
 

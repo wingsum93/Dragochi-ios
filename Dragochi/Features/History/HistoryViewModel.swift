@@ -51,10 +51,14 @@ final class HistoryViewModel: ObservableObject {
     private let gameRepository: GameRepository
     private let friendRepository: FriendRepository
 
-    init(dependencies: AppDependencies) {
-        self.sessionRepository = dependencies.sessionRepository
-        self.gameRepository = dependencies.gameRepository
-        self.friendRepository = dependencies.friendRepository
+    init(
+        sessionRepository: SessionRepository,
+        gameRepository: GameRepository,
+        friendRepository: FriendRepository
+    ) {
+        self.sessionRepository = sessionRepository
+        self.gameRepository = gameRepository
+        self.friendRepository = friendRepository
     }
 
     func send(_ action: Action) {

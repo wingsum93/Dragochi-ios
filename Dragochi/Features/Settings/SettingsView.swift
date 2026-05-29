@@ -11,7 +11,7 @@ import MessageUI
 
 struct SettingsView: View {
     @ObservedObject var viewModel: SettingsViewModel
-    let dependencies: AppDependencies
+    let container: AppDIContainer
     let onOpenGameSettings: () -> Void
     let onOpenFriendSettings: () -> Void
     @Environment(\.openURL) private var openURL
@@ -23,12 +23,12 @@ struct SettingsView: View {
 
     init(
         viewModel: SettingsViewModel,
-        dependencies: AppDependencies,
+        container: AppDIContainer,
         onOpenGameSettings: @escaping () -> Void = {},
         onOpenFriendSettings: @escaping () -> Void = {}
     ) {
         self.viewModel = viewModel
-        self.dependencies = dependencies
+        self.container = container
         self.onOpenGameSettings = onOpenGameSettings
         self.onOpenFriendSettings = onOpenFriendSettings
     }
@@ -362,13 +362,27 @@ struct SettingsView: View {
             )
         }
         .sheet(isPresented: $isShowingFriendImportOptions) {
-            friendImportOptionsSheet
-                .presentationDetents([.height(220)])
+            FriendImportOptionSheet(
+                onImportFromApple: {
+                    isShowingFriendImportOptions = false
+                    DispatchQueue.main.async {
+                        isShowingAppleFriendImport = true
+                    }
+                },
+                onImportFromGoogle: {
+                    isShowingFriendImportOptions = false
+                    DispatchQueue.main.async {
+                        isShowingGoogleImportComingSoon = true
+                    }
+                },
+                onCancel: {
+                    isShowingFriendImportOptions = false
+                }
+            )
         }
         .fullScreenCover(isPresented: $isShowingAppleFriendImport) {
             AppleFriendImportFullPage(
-                viewModel: AppleFriendImportViewModel(
-                    dependencies: dependencies,
+                viewModel: container.makeAppleFriendImportViewModel(
                     onClose: { isShowingAppleFriendImport = false }
                 )
             )
@@ -443,64 +457,6 @@ struct SettingsView: View {
     private func openSupportMailto() {
         guard let url = URL(string: "mailto:\(SettingsViewModel.reportIssueRecipientEmail)") else { return }
         openURL(url)
-    }
-
-    private var friendImportOptionsSheet: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
-                Button {
-                    isShowingFriendImportOptions = false
-                    DispatchQueue.main.async {
-                        isShowingAppleFriendImport = true
-                    }
-                } label: {
-                    HStack {
-                        Text("button_import_from_apple")
-                            .font(DragonTheme.current.font(.labelSmall))
-                            .foregroundStyle(DragonTheme.current.color(.textPrimary))
-                        Spacer()
-                    }
-                    .padding(.vertical, 8)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("action.importFromAppleInSheet")
-
-                Button {
-                    isShowingFriendImportOptions = false
-                    DispatchQueue.main.async {
-                        isShowingGoogleImportComingSoon = true
-                    }
-                } label: {
-                    HStack {
-                        Text("button_import_from_google")
-                            .font(DragonTheme.current.font(.labelSmall))
-                            .foregroundStyle(DragonTheme.current.color(.textPrimary))
-                        Spacer()
-                    }
-                    .padding(.vertical, 8)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("action.importFromGoogleInSheet")
-
-                Spacer()
-            }
-            .padding(DragonTheme.current.spacing(.lg))
-            .overlay(alignment: .topLeading) {
-                Color.clear
-                    .frame(width: 1, height: 1)
-                    .accessibilityIdentifier("sheet.friendImportOptions")
-            }
-            .navigationTitle("title_import_friends")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("button_cancel") {
-                        isShowingFriendImportOptions = false
-                    }
-                }
-            }
-            .background(DragonTheme.current.color(.bgBase).ignoresSafeArea())
-        }
     }
 }
 

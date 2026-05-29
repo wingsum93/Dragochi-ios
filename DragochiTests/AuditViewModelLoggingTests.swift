@@ -31,12 +31,9 @@ struct AuditViewModelLoggingTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let spyLogger = SpyAuditLogger()
-            let dependencies = AppDependencies(
-                modelContext: ModelContext(container),
-                auditLogger: spyLogger
-            )
+            let dependencies = AppDIContainer(modelContainer: container, auditLogger: spyLogger)
             var current = Date(timeIntervalSince1970: 1_700_000_000)
-            let viewModel = MainViewModel(dependencies: dependencies, now: { current })
+            let viewModel = dependencies.makeMainViewModel(now: { current })
 
             viewModel.send(.onAppear)
             guard let selectedGameID = viewModel.state.games.first?.id else {
@@ -70,11 +67,8 @@ struct AuditViewModelLoggingTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let spyLogger = SpyAuditLogger()
-            let dependencies = AppDependencies(
-                modelContext: ModelContext(container),
-                auditLogger: spyLogger
-            )
-            let viewModel = MainViewModel(dependencies: dependencies)
+            let dependencies = AppDIContainer(modelContainer: container, auditLogger: spyLogger)
+            let viewModel = dependencies.makeMainViewModel()
 
             viewModel.send(.restoreTrackingSnapshot(Data("invalid-json".utf8)))
 
@@ -94,10 +88,7 @@ struct AuditViewModelLoggingTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let spyLogger = SpyAuditLogger()
-            let dependencies = AppDependencies(
-                modelContext: ModelContext(container),
-                auditLogger: spyLogger
-            )
+            let dependencies = AppDIContainer(modelContainer: container, auditLogger: spyLogger)
             let secretNote = "PRIVATE_AUDIT_NOTE_SHOULD_NOT_BE_LOGGED"
             let draft = AddSessionDraft(
                 id: UUID(),
@@ -111,7 +102,7 @@ struct AuditViewModelLoggingTests {
                 note: secretNote
             )
 
-            let viewModel = AddSessionViewModel(dependencies: dependencies, draft: draft)
+            let viewModel = dependencies.makeAddSessionViewModel(draft: draft)
             viewModel.send(.onAppear)
             viewModel.send(.saveTapped)
 
@@ -132,10 +123,7 @@ struct AuditViewModelLoggingTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let spyLogger = SpyAuditLogger()
-            let dependencies = AppDependencies(
-                modelContext: ModelContext(container),
-                auditLogger: spyLogger
-            )
+            let dependencies = AppDIContainer(modelContainer: container, auditLogger: spyLogger)
 
             let draft = AddSessionDraft(
                 id: UUID(),
@@ -149,7 +137,7 @@ struct AuditViewModelLoggingTests {
                 note: ""
             )
 
-            let viewModel = AddSessionViewModel(dependencies: dependencies, draft: draft)
+            let viewModel = dependencies.makeAddSessionViewModel(draft: draft)
             viewModel.send(.saveTapped)
 
             #expect(

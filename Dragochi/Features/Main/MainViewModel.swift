@@ -64,12 +64,19 @@ final class MainViewModel: ObservableObject {
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
 
-    init(dependencies: AppDependencies, now: @escaping () -> Date = Date.init) {
-        self.sessionRepository = dependencies.sessionRepository
-        self.gameRepository = dependencies.gameRepository
-        self.friendRepository = dependencies.friendRepository
-        self.gameCatalogSyncService = dependencies.gameCatalogSyncService
-        self.auditLogger = dependencies.auditLogger
+    init(
+        sessionRepository: SessionRepository,
+        gameRepository: GameRepository,
+        friendRepository: FriendRepository,
+        gameCatalogSyncService: GameCatalogSyncService,
+        auditLogger: AuditLogging,
+        now: @escaping () -> Date = Date.init
+    ) {
+        self.sessionRepository = sessionRepository
+        self.gameRepository = gameRepository
+        self.friendRepository = friendRepository
+        self.gameCatalogSyncService = gameCatalogSyncService
+        self.auditLogger = auditLogger
         self.now = now
         self.isUITesting = ProcessInfo.processInfo.arguments.contains("-ui-testing")
     }

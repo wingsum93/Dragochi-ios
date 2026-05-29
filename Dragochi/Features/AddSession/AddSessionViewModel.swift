@@ -80,21 +80,28 @@ final class AddSessionViewModel: ObservableObject {
     private let onClose: () -> Void
 
     init(
-        dependencies: AppDependencies,
+        sessionRepository: SessionRepository,
+        gameRepository: GameRepository,
+        enabledGameSelectionRepository: EnabledGameSelectionRepository,
+        friendRepository: FriendRepository,
+        gameArrangeManager: GameArrangeManager,
+        friendListArrangeManager: FriendListArrangeManager,
+        gameCatalogSyncService: GameCatalogSyncService,
+        auditLogger: AuditLogging,
         draft: AddSessionDraft,
         onSetupConfirmed: ((SessionSetupInput) -> Void)? = nil,
         onOpenGameSettings: @escaping () -> Void = {},
         onOpenFriendSettings: @escaping () -> Void = {},
         onClose: @escaping () -> Void = {}
     ) {
-        self.sessionRepository = dependencies.sessionRepository
-        self.gameRepository = dependencies.gameRepository
-        self.enabledGameSelectionRepository = dependencies.enabledGameSelectionRepository
-        self.friendRepository = dependencies.friendRepository
-        self.gameArrangeManager = dependencies.gameArrangeManager
-        self.friendListArrangeManager = dependencies.friendListArrangeManager
-        self.gameCatalogSyncService = dependencies.gameCatalogSyncService
-        self.auditLogger = dependencies.auditLogger
+        self.sessionRepository = sessionRepository
+        self.gameRepository = gameRepository
+        self.enabledGameSelectionRepository = enabledGameSelectionRepository
+        self.friendRepository = friendRepository
+        self.gameArrangeManager = gameArrangeManager
+        self.friendListArrangeManager = friendListArrangeManager
+        self.gameCatalogSyncService = gameCatalogSyncService
+        self.auditLogger = auditLogger
         self.onSetupConfirmed = onSetupConfirmed
         self.onOpenGameSettings = onOpenGameSettings
         self.onOpenFriendSettings = onOpenFriendSettings

@@ -93,7 +93,7 @@ struct GameCatalogSyncTests {
     @MainActor
     func addSessionStore_showsOnlyAddCardWhenNoEnabledGames() async throws {
         let container = try SwiftDataStack.makeInMemoryContainer()
-        let dependencies = AppDependencies(modelContext: ModelContext(container))
+        let dependencies = AppDIContainer(modelContainer: container)
 
         _ = try dependencies.gameCatalogSyncService.seedFromFallbackIfNeeded()
         let enabledIDs = try dependencies.enabledGameSelectionRepository.fetchEnabledRemoteIDs()
@@ -113,7 +113,7 @@ struct GameCatalogSyncTests {
             note: ""
         )
 
-        let viewModel = AddSessionViewModel(dependencies: dependencies, draft: draft)
+        let viewModel = dependencies.makeAddSessionViewModel(draft: draft)
         viewModel.send(.onAppear)
 
         #expect(viewModel.state.gameCards.count == 1)

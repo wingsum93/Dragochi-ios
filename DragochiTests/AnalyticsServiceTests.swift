@@ -15,7 +15,7 @@ struct AnalyticsServiceTests {
     func swiftDataAnalyticsService_computesMonthlyAggregatesAndMoM() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
 
             var calendar = Calendar(identifier: .gregorian)
             calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current

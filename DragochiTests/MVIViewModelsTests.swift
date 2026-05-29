@@ -15,7 +15,7 @@ struct MVIViewModelsTests {
     func mainStore_loadsLatestEndedSessionForResumeCard() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
 
             let older = try dependencies.sessionRepository.create(
                 startAt: Date(timeIntervalSince1970: 1_700_000_000),
@@ -37,7 +37,7 @@ struct MVIViewModelsTests {
                 friendIDs: []
             )
 
-            let viewModel = MainViewModel(dependencies: dependencies)
+            let viewModel = dependencies.makeMainViewModel()
             viewModel.send(.onAppear)
 
             #expect(older.id != newer.id)
@@ -49,8 +49,8 @@ struct MVIViewModelsTests {
     func mainStore_noEndedSessionsKeepsLatestEndedSessionNil() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let viewModel = MainViewModel(dependencies: dependencies)
+            let dependencies = AppDIContainer(modelContainer: container)
+            let viewModel = dependencies.makeMainViewModel()
 
             viewModel.send(.onAppear)
 
@@ -63,10 +63,10 @@ struct MVIViewModelsTests {
     func mainStore_trackingPauseResumeAndRestoreFlow() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
 
             var current = Date(timeIntervalSince1970: 1_700_000_000)
-            let viewModel = MainViewModel(dependencies: dependencies, now: { current })
+            let viewModel = dependencies.makeMainViewModel(now: { current })
 
             viewModel.send(.onAppear)
             let gameAssets = Set(viewModel.state.games.compactMap(\.imageAssetName))
@@ -103,7 +103,7 @@ struct MVIViewModelsTests {
             viewModel.send(.tick)
             #expect(viewModel.state.elapsedSeconds == 15)
 
-            let restoredStore = MainViewModel(dependencies: dependencies, now: { current })
+            let restoredStore = dependencies.makeMainViewModel(now: { current })
             restoredStore.send(.onAppear)
             restoredStore.send(.restoreTrackingSnapshot(snapshotData))
             #expect(restoredStore.state.trackingStatus == .paused)
@@ -133,7 +133,7 @@ struct MVIViewModelsTests {
     func addSessionStore_createsManualSession() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
             let draft = AddSessionDraft(
                 id: UUID(),
                 mode: .manualEntry,
@@ -146,9 +146,7 @@ struct MVIViewModelsTests {
                 note: "test"
             )
             var didClose = false
-            let viewModel = AddSessionViewModel(
-                dependencies: dependencies,
-                draft: draft,
+            let viewModel = dependencies.makeAddSessionViewModel(draft: draft,
                 onClose: { didClose = true }
             )
 
@@ -168,7 +166,7 @@ struct MVIViewModelsTests {
     func mainStore_startTappedWithResumeEnabledStartsTrackingFromLatestSession() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
             var current = Date(timeIntervalSince1970: 1_700_000_000)
 
             let game = try dependencies.gameRepository.create(name: "Apex Legends", imageAssetName: "apex", remoteID: nil)
@@ -195,7 +193,7 @@ struct MVIViewModelsTests {
                 friendIDs: [activeFriend.id, inactiveFriend.id]
             )
 
-            let viewModel = MainViewModel(dependencies: dependencies, now: { current })
+            let viewModel = dependencies.makeMainViewModel(now: { current })
             viewModel.send(.onAppear)
             viewModel.send(.startTapped(resumeLastSetupEnabled: true))
 
@@ -224,7 +222,7 @@ struct MVIViewModelsTests {
     func mainStore_startTappedWithResumeEnabledFallsBackToNormalFlowWhenNoGame() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
             let current = Date(timeIntervalSince1970: 1_700_000_000)
 
             _ = try dependencies.sessionRepository.create(
@@ -237,7 +235,7 @@ struct MVIViewModelsTests {
                 friendIDs: []
             )
 
-            let viewModel = MainViewModel(dependencies: dependencies, now: { current })
+            let viewModel = dependencies.makeMainViewModel(now: { current })
             viewModel.send(.onAppear)
             viewModel.send(.startTapped(resumeLastSetupEnabled: true))
 
@@ -251,7 +249,7 @@ struct MVIViewModelsTests {
     func addSessionStore_preStartAllowsZeroPeople() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
             let game = try dependencies.gameRepository.create(name: "Apex Legends", imageAssetName: "apex", remoteID: nil)
 
             let draft = AddSessionDraft(
@@ -268,9 +266,7 @@ struct MVIViewModelsTests {
             var didClose = false
             var receivedSetup: SessionSetupInput?
 
-            let viewModel = AddSessionViewModel(
-                dependencies: dependencies,
-                draft: draft,
+            let viewModel = dependencies.makeAddSessionViewModel(draft: draft,
                 onSetupConfirmed: { setup in receivedSetup = setup },
                 onClose: { didClose = true }
             )
@@ -288,7 +284,7 @@ struct MVIViewModelsTests {
     func addSessionStore_showsNoTeammateChipsWhenNoActiveFriends() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
             let draft = AddSessionDraft(
                 id: UUID(),
                 mode: .manualEntry,
@@ -301,7 +297,7 @@ struct MVIViewModelsTests {
                 note: ""
             )
 
-            let viewModel = AddSessionViewModel(dependencies: dependencies, draft: draft)
+            let viewModel = dependencies.makeAddSessionViewModel(draft: draft)
             viewModel.send(.onAppear)
 
             #expect(viewModel.state.teammateChips.isEmpty)
@@ -312,7 +308,7 @@ struct MVIViewModelsTests {
     func addSessionStore_usesPersistedFriendAvatarAsset() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
             let friend = try dependencies.friendRepository.create(
                 name: "Ava",
                 handle: nil,
@@ -331,7 +327,7 @@ struct MVIViewModelsTests {
                 note: ""
             )
 
-            let viewModel = AddSessionViewModel(dependencies: dependencies, draft: draft)
+            let viewModel = dependencies.makeAddSessionViewModel(draft: draft)
             viewModel.send(.onAppear)
 
             #expect(viewModel.state.teammateChips.count == 1)
@@ -344,7 +340,7 @@ struct MVIViewModelsTests {
     func addSessionStore_ordersTeammateChipsByHistoricalPlaytime() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
             let alex = try dependencies.friendRepository.create(
                 name: "Alex",
                 handle: nil,
@@ -388,7 +384,7 @@ struct MVIViewModelsTests {
                 selectedFriendIDs: [],
                 note: ""
             )
-            let viewModel = AddSessionViewModel(dependencies: dependencies, draft: draft)
+            let viewModel = dependencies.makeAddSessionViewModel(draft: draft)
 
             viewModel.send(.onAppear)
 
@@ -400,7 +396,7 @@ struct MVIViewModelsTests {
     func friendSettingsStore_addEditDeleteAndValidation() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
             let existing = try dependencies.friendRepository.create(
                 name: "Mason",
                 handle: nil,
@@ -408,7 +404,7 @@ struct MVIViewModelsTests {
                 isActive: true,
                 note: "Original note"
             )
-            let viewModel = FriendSettingsViewModel(dependencies: dependencies)
+            let viewModel = dependencies.makeFriendSettingsViewModel()
 
             viewModel.send(.onAppear)
             #expect(viewModel.state.friends.count == 1)
@@ -462,7 +458,7 @@ struct MVIViewModelsTests {
     func friendSettingsStore_normalizesNonContiguousOrdersOnAppear() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
             _ = try dependencies.friendRepository.create(
                 name: "Cara",
                 handle: nil,
@@ -487,7 +483,7 @@ struct MVIViewModelsTests {
                 order: 2,
                 note: nil
             )
-            let viewModel = FriendSettingsViewModel(dependencies: dependencies)
+            let viewModel = dependencies.makeFriendSettingsViewModel()
 
             viewModel.send(.onAppear)
 
@@ -506,7 +502,7 @@ struct MVIViewModelsTests {
     func friendSettingsStore_moveFriendsPersistsContiguousOrder() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
             _ = try dependencies.friendRepository.create(
                 name: "Alex",
                 handle: nil,
@@ -531,7 +527,7 @@ struct MVIViewModelsTests {
                 order: 2,
                 note: nil
             )
-            let viewModel = FriendSettingsViewModel(dependencies: dependencies)
+            let viewModel = dependencies.makeFriendSettingsViewModel()
 
             viewModel.send(.onAppear)
             viewModel.send(.toggleReorderMode)
@@ -553,7 +549,7 @@ struct MVIViewModelsTests {
     func friendSettingsStore_newFriendAppendsToEndAfterCustomOrder() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
             _ = try dependencies.friendRepository.create(
                 name: "Alex",
                 handle: nil,
@@ -570,7 +566,7 @@ struct MVIViewModelsTests {
                 order: 1,
                 note: nil
             )
-            let viewModel = FriendSettingsViewModel(dependencies: dependencies)
+            let viewModel = dependencies.makeFriendSettingsViewModel()
 
             viewModel.send(.onAppear)
             viewModel.send(.toggleReorderMode)
@@ -590,8 +586,8 @@ struct MVIViewModelsTests {
     func appleFriendImportStore_selectingContactsStoresUniqueSelection() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let viewModel = AppleFriendImportViewModel(dependencies: dependencies)
+            let dependencies = AppDIContainer(modelContainer: container)
+            let viewModel = dependencies.makeAppleFriendImportViewModel()
 
             viewModel.send(
                 .contactsSelected([
@@ -610,7 +606,7 @@ struct MVIViewModelsTests {
     func appleFriendImportStore_confirmWithoutDuplicatesImportsAndAppendsOrder() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
             _ = try dependencies.friendRepository.create(
                 name: "Existing",
                 handle: nil,
@@ -620,8 +616,7 @@ struct MVIViewModelsTests {
                 note: nil
             )
             var didClose = false
-            let viewModel = AppleFriendImportViewModel(
-                dependencies: dependencies,
+            let viewModel = dependencies.makeAppleFriendImportViewModel(
                 onClose: { didClose = true }
             )
 
@@ -644,7 +639,7 @@ struct MVIViewModelsTests {
     func appleFriendImportStore_duplicateNameShowsConfirmThenImportsWhenConfirmed() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
             _ = try dependencies.friendRepository.create(
                 name: "Ava",
                 handle: nil,
@@ -654,8 +649,7 @@ struct MVIViewModelsTests {
                 note: nil
             )
             var didClose = false
-            let viewModel = AppleFriendImportViewModel(
-                dependencies: dependencies,
+            let viewModel = dependencies.makeAppleFriendImportViewModel(
                 onClose: { didClose = true }
             )
 
@@ -685,10 +679,9 @@ struct MVIViewModelsTests {
     func appleFriendImportStore_persistsNameOnlyForImportedContacts() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
             var didClose = false
-            let viewModel = AppleFriendImportViewModel(
-                dependencies: dependencies,
+            let viewModel = dependencies.makeAppleFriendImportViewModel(
                 onClose: { didClose = true }
             )
 
@@ -716,10 +709,9 @@ struct MVIViewModelsTests {
     func gameSettingsStore_doneTappedWithoutChangesClosesImmediately() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
             var didClose = false
-            let viewModel = GameSettingsViewModel(
-                dependencies: dependencies,
+            let viewModel = dependencies.makeGameSettingsViewModel(
                 onClose: { didClose = true },
                 isUITesting: true
             )
@@ -736,10 +728,9 @@ struct MVIViewModelsTests {
     func gameSettingsStore_doneTappedWithChangesShowsDialogAndNoKeepsPage() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
             var didClose = false
-            let viewModel = GameSettingsViewModel(
-                dependencies: dependencies,
+            let viewModel = dependencies.makeGameSettingsViewModel(
                 onClose: { didClose = true },
                 isUITesting: true
             )
@@ -775,10 +766,9 @@ struct MVIViewModelsTests {
     func gameSettingsStore_confirmSavePersistsDiffAndCloses() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
             var didClose = false
-            let viewModel = GameSettingsViewModel(
-                dependencies: dependencies,
+            let viewModel = dependencies.makeGameSettingsViewModel(
                 onClose: { didClose = true },
                 isUITesting: true
             )
@@ -810,10 +800,9 @@ struct MVIViewModelsTests {
     func gameSettingsStore_backTappedClosesWithoutSavingDraftChanges() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
             var didClose = false
-            let viewModel = GameSettingsViewModel(
-                dependencies: dependencies,
+            let viewModel = dependencies.makeGameSettingsViewModel(
                 onClose: { didClose = true },
                 isUITesting: true
             )
@@ -838,7 +827,7 @@ struct MVIViewModelsTests {
     func historyStore_buildsSections() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
 
             let alexID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
             let benID = UUID(uuidString: "00000000-0000-0000-0000-000000000002")!
@@ -891,7 +880,7 @@ struct MVIViewModelsTests {
                 friendIDs: [alexID, benID, caraID]
             )
 
-            let viewModel = HistoryViewModel(dependencies: dependencies)
+            let viewModel = dependencies.makeHistoryViewModel()
             viewModel.send(.onAppear)
             #expect(!viewModel.state.sections.isEmpty)
             #expect(viewModel.state.totalPlaytimeSeconds > 0)
@@ -914,8 +903,8 @@ struct MVIViewModelsTests {
     func statsStore_loadsReport() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let viewModel = StatisticViewModel(dependencies: dependencies)
+            let dependencies = AppDIContainer(modelContainer: container)
+            let viewModel = dependencies.makeStatisticViewModel()
 
             viewModel.send(.onAppear)
             #expect(viewModel.state.report != nil)
@@ -926,7 +915,7 @@ struct MVIViewModelsTests {
     func statsStore_navigationSkipsEmptyMonths() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
+            let dependencies = AppDIContainer(modelContainer: container)
 
             var calendar = Calendar.current
 
@@ -963,7 +952,7 @@ struct MVIViewModelsTests {
 
             let januaryStart = monthStart(2025, 1)
             let marchStart = monthStart(2025, 3)
-            let viewModel = StatisticViewModel(dependencies: dependencies)
+            let viewModel = dependencies.makeStatisticViewModel()
 
             viewModel.send(.onAppear)
             #expect(viewModel.state.availableMonthStarts == [januaryStart, marchStart])
@@ -987,8 +976,8 @@ struct MVIViewModelsTests {
     func statsStore_noEndedRecordsDisablesNavigation() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let viewModel = StatisticViewModel(dependencies: dependencies)
+            let dependencies = AppDIContainer(modelContainer: container)
+            let viewModel = dependencies.makeStatisticViewModel()
 
             let currentMonthStart = Calendar.current.dateInterval(of: .month, for: Date())?.start ?? Date()
 
@@ -1006,8 +995,8 @@ struct MVIViewModelsTests {
     func settingsStore_toggleAndBackup() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let viewModel = SettingsViewModel(dependencies: dependencies)
+            let dependencies = AppDIContainer(modelContainer: container)
+            let viewModel = dependencies.makeSettingsViewModel()
 
             viewModel.send(.toggleICloud(true))
             #expect(viewModel.state.isICloudSyncOn)
@@ -1021,8 +1010,8 @@ struct MVIViewModelsTests {
     func settingsStore_reportIssueCreatesDraftWithAttachmentAndTemplateBody() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let viewModel = SettingsViewModel(dependencies: dependencies)
+            let dependencies = AppDIContainer(modelContainer: container)
+            let viewModel = dependencies.makeSettingsViewModel()
 
             viewModel.send(.reportIssueTapped(canSendMail: true))
 
@@ -1052,8 +1041,8 @@ struct MVIViewModelsTests {
     func settingsStore_reportIssueWhenMailUnavailableShowsFallbackAlert() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
-            let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let viewModel = SettingsViewModel(dependencies: dependencies)
+            let dependencies = AppDIContainer(modelContainer: container)
+            let viewModel = dependencies.makeSettingsViewModel()
 
             viewModel.send(.reportIssueTapped(canSendMail: false))
 

@@ -10,7 +10,7 @@ import Combine
 
 struct MainView: View {
     @ObservedObject var viewModel: MainViewModel
-    let dependencies: AppDependencies
+    let container: AppDIContainer
     let onOpenGameSettings: () -> Void
     let onOpenFriendSettings: () -> Void
     @SceneStorage("home.trackingSnapshotData") private var trackingSnapshotData: Data?
@@ -62,8 +62,7 @@ struct MainView: View {
         }
         .sheet(item: $addSessionDraft) { draft in
             AddSessionSheet(
-                viewModel: AddSessionViewModel(
-                    dependencies: dependencies,
+                viewModel: container.makeAddSessionViewModel(
                     draft: draft,
                     onSetupConfirmed: draft.mode == .preStartSetup ? { setup in
                         viewModel.send(.preStartSetupConfirmed(setup))

@@ -49,9 +49,9 @@ final class SettingsViewModel: ObservableObject {
     private let backupService: BackupService
     private let auditLogger: AuditLogging
 
-    init(dependencies: AppDependencies) {
-        self.backupService = dependencies.backupService
-        self.auditLogger = dependencies.auditLogger
+    init(backupService: BackupService, auditLogger: AuditLogging) {
+        self.backupService = backupService
+        self.auditLogger = auditLogger
     }
 
     func send(_ action: Action) {

@@ -57,9 +57,13 @@ final class FriendSettingsViewModel: ObservableObject {
     private let auditLogger: AuditLogging
     private let onClose: () -> Void
 
-    init(dependencies: AppDependencies, onClose: @escaping () -> Void = {}) {
-        self.friendRepository = dependencies.friendRepository
-        self.auditLogger = dependencies.auditLogger
+    init(
+        friendRepository: FriendRepository,
+        auditLogger: AuditLogging,
+        onClose: @escaping () -> Void = {}
+    ) {
+        self.friendRepository = friendRepository
+        self.auditLogger = auditLogger
         self.onClose = onClose
     }
 

@@ -41,14 +41,17 @@ final class GameSettingsViewModel: ObservableObject {
     private let onClose: () -> Void
 
     init(
-        dependencies: AppDependencies,
+        gameRepository: GameRepository,
+        enabledSelectionRepository: EnabledGameSelectionRepository,
+        gameCatalogSyncService: GameCatalogSyncService,
+        auditLogger: AuditLogging,
         onClose: @escaping () -> Void,
         isUITesting: Bool = ProcessInfo.processInfo.arguments.contains("-ui-testing")
     ) {
-        self.gameRepository = dependencies.gameRepository
-        self.enabledSelectionRepository = dependencies.enabledGameSelectionRepository
-        self.gameCatalogSyncService = dependencies.gameCatalogSyncService
-        self.auditLogger = dependencies.auditLogger
+        self.gameRepository = gameRepository
+        self.enabledSelectionRepository = enabledSelectionRepository
+        self.gameCatalogSyncService = gameCatalogSyncService
+        self.auditLogger = auditLogger
         self.isUITesting = isUITesting
         self.onClose = onClose
     }

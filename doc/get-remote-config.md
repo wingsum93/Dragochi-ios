@@ -18,21 +18,21 @@ It also documents where to safely change the Remote Config parameter key (`game_
 ### 2.2 Quick Architecture (Request Path)
 
 1. `DragochiApp` initializes Firebase when possible.
-2. `AppDependencies` wires `GameCatalogService` and `GameCatalogSyncService`.
+2. `AppDIContainer` wires `GameCatalogService` and `GameCatalogSyncService`.
 3. Feature stores trigger seed/refresh operations.
 4. `GameCatalogSyncService` asks `FirebaseRemoteConfigGameCatalogService` for latest catalog.
 5. Decoded catalog is validated and synced into local repositories.
 
 High-level path:
 
-`DragochiApp` -> `AppDependencies` -> (`MainViewModel` / `AddSessionViewModel` / `GameSettingsViewModel`) -> `GameCatalogSyncService` -> `FirebaseRemoteConfigGameCatalogService` -> local repositories
+`DragochiApp` -> `AppDIContainer` -> (`MainViewModel` / `AddSessionViewModel` / `GameSettingsViewModel`) -> `GameCatalogSyncService` -> `FirebaseRemoteConfigGameCatalogService` -> local repositories
 
 ### 2.3 Class/Method Map
 
 | Class | Method | Responsibility | Source |
 |---|---|---|---|
 | `DragochiApp` | `configureFirebaseIfPossible()` | Configure Firebase app when not testing and plist exists. | `/Users/ericho/iosHub/Dragochi/Dragochi/DragochiApp.swift:39` |
-| `AppDependencies` | `init(modelContext:)` | Wire repositories + catalog service + sync service. | `/Users/ericho/iosHub/Dragochi/Dragochi/AppDependencies.swift:22` |
+| `AppDIContainer` | `init(modelContainer:auditLogger:)` | Own the SwiftData context and wire repositories + catalog service + sync service. | `/Users/ericho/iosHub/Dragochi/Dragochi/AppDIContainer.swift:35` |
 | `FirebaseRemoteConfigGameCatalogService` | `init(catalogKey:fallback:)` | Define Remote Config parameter key and fallback catalog. | `/Users/ericho/iosHub/Dragochi/Dragochi/Data/Services/FirebaseRemoteConfigGameCatalogService.swift:31` |
 | `FirebaseRemoteConfigGameCatalogService` | `fetchLatestCatalog()` | Fetch and decode Remote Config JSON; fallback if unavailable/invalid. | `/Users/ericho/iosHub/Dragochi/Dragochi/Data/Services/FirebaseRemoteConfigGameCatalogService.swift:43` |
 | `FirebaseRemoteConfigGameCatalogService` | `fetchAndActivate(remoteConfig:)` | Execute `fetchAndActivate` async bridge. | `/Users/ericho/iosHub/Dragochi/Dragochi/Data/Services/FirebaseRemoteConfigGameCatalogService.swift:71` |
@@ -56,10 +56,10 @@ High-level path:
 ### 2.5 How to Change Remote Config Key (New Joiner Runbook)
 
 1. In Firebase Remote Config, choose a new parameter key (example: `game_catalog_v2`).
-2. Update service construction in `/Users/ericho/iosHub/Dragochi/Dragochi/AppDependencies.swift:33` to pass the new key:
+2. Update service construction in `/Users/ericho/iosHub/Dragochi/Dragochi/AppDIContainer.swift` to pass the new key:
 
 ```swift
-self.gameCatalogService = FirebaseRemoteConfigGameCatalogService(catalogKey: "game_catalog_v2")
+lazy var gameCatalogService: GameCatalogService = FirebaseRemoteConfigGameCatalogService(catalogKey: "game_catalog_v2")
 ```
 
 3. Publish the same JSON payload format under the new Firebase key.

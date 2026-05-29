@@ -35,13 +35,17 @@ final class StatisticViewModel: ObservableObject {
     private let gameRepository: GameRepository
     private let calendar = Calendar.current
 
-    init(dependencies: AppDependencies) {
+    init(
+        analyticsService: AnalyticsService,
+        sessionRepository: SessionRepository,
+        gameRepository: GameRepository
+    ) {
         let now = Date()
         let monthStart = Calendar.current.dateInterval(of: .month, for: now)?.start ?? now
         self.state = State(monthStart: monthStart, report: nil)
-        self.analyticsService = dependencies.analyticsService
-        self.sessionRepository = dependencies.sessionRepository
-        self.gameRepository = dependencies.gameRepository
+        self.analyticsService = analyticsService
+        self.sessionRepository = sessionRepository
+        self.gameRepository = gameRepository
     }
 
     func send(_ action: Action) {
