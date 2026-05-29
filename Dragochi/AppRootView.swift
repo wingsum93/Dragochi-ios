@@ -12,16 +12,9 @@ import SwiftData
 struct AppRootView: View {
     private static let uiTestFriendsJSONKey = "DRAGOCHI_UI_TEST_FRIENDS_JSON"
 
-    private enum Tab: Hashable {
-        case home
-        case history
-        case stats
-        case settings
-    }
-
     @State private var isShowingGameSettings = false
     @State private var isShowingFriendSettings = false
-    @State private var selectedTab: Tab = .home
+    @StateObject private var appRouter = AppRouter()
 
     @StateObject private var mainStore: MainViewModel
     @StateObject private var historyStore: HistoryViewModel
@@ -73,7 +66,7 @@ struct AppRootView: View {
     }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $appRouter.selectedTab) {
             MainView(
                 viewModel: mainStore,
                 makeAddSessionViewModel: makeAddSessionViewModel,
@@ -84,23 +77,23 @@ struct AppRootView: View {
                     Label("title_tab_home", systemImage: "gamecontroller")
                         .accessibilityIdentifier("tab.home.button")
                 }
-                .tag(Tab.home)
+                .tag(AppTab.home)
 
             HistoryView(viewModel: historyStore)
                 .tabItem {
                     Label("title_tab_history", systemImage: "clock.arrow.circlepath")
                         .accessibilityIdentifier("tab.history.button")
                 }
-                .tag(Tab.history)
+                .tag(AppTab.history)
 
             StatisticView(viewModel: statsStore)
                 .tabItem {
                     Label("title_tab_stats", systemImage: "chart.bar")
                         .accessibilityIdentifier("tab.stats.button")
                 }
-                .tag(Tab.stats)
+                .tag(AppTab.stats)
 
-            SettingsView(
+            SettingView(
                 viewModel: settingsStore,
                 makeAppleFriendImportViewModel: makeAppleFriendImportViewModel,
                 onOpenGameSettings: { isShowingGameSettings = true },
@@ -110,12 +103,12 @@ struct AppRootView: View {
                     Label("title_tab_settings", systemImage: "gearshape")
                         .accessibilityIdentifier("tab.settings.button")
                 }
-                .tag(Tab.settings)
+                .tag(AppTab.settings)
         }
         .tint(DragonTheme.current.color(.tabTintShine))
         .onAppear {
             if isUITesting {
-                selectedTab = .home
+                appRouter.route(to: .home)
             }
         }
         .fullScreenCover(isPresented: $isShowingGameSettings) {

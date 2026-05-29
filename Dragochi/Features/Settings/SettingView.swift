@@ -1,5 +1,5 @@
 //
-//  SettingsView.swift
+//  SettingView.swift
 //  Dragochi
 //
 //  Created by Codex on 12/2/2026.
@@ -9,7 +9,7 @@ import SwiftUI
 import UIKit
 import MessageUI
 
-struct SettingsView: View {
+struct SettingView: View {
     @ObservedObject var viewModel: SettingsViewModel
     let makeAppleFriendImportViewModel: (@escaping () -> Void) -> AppleFriendImportViewModel
     let onOpenGameSettings: () -> Void

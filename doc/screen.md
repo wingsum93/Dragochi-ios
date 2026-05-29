@@ -97,7 +97,7 @@ Sources:
 Status: `In transition`
 Source: `Dragochi/Features/Stats/StatisticView.swift`
 
-## Settings Screen (`SettingsView`)
+## Settings Screen (`SettingView`)
 
 ### Target copy (vision)
 
@@ -117,7 +117,7 @@ Source: `Dragochi/Features/Stats/StatisticView.swift`
   - "Import" / "Importing..."
 
 Status: `In transition`
-Source: `Dragochi/Features/Settings/SettingsView.swift`
+Source: `Dragochi/Features/Settings/SettingView.swift`
 
 ## Add Session Sheet (`AddSessionView`)
 
