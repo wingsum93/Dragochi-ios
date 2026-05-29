@@ -1,5 +1,5 @@
 //
-//  AddSessionView.swift
+//  AddSessionSheet.swift
 //  Dragochi
 //
 //  Created by Codex on 12/2/2026.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct AddSessionView: View {
+struct AddSessionSheet: View {
     @StateObject private var viewModel: AddSessionViewModel
     @Environment(\.locale) private var locale
 

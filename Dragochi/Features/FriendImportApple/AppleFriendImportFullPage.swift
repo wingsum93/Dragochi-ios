@@ -1,5 +1,5 @@
 //
-//  AppleFriendImportView.swift
+//  AppleFriendImportFullPage.swift
 //  Dragochi
 //
 //  Created by Codex on 21/3/2026.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct AppleFriendImportView: View {
+struct AppleFriendImportFullPage: View {
     @StateObject private var viewModel: AppleFriendImportViewModel
     @Environment(\.locale) private var locale
 

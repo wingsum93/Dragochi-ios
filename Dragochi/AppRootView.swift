@@ -94,7 +94,7 @@ struct AppRootView: View {
             }
         }
         .fullScreenCover(isPresented: $isShowingGameSettings) {
-            GameSettingsView(
+            GameSettingsFullPage(
                 viewModel: GameSettingsViewModel(
                     dependencies: dependencies,
                     onClose: { isShowingGameSettings = false }
@@ -102,7 +102,7 @@ struct AppRootView: View {
             )
         }
         .fullScreenCover(isPresented: $isShowingFriendSettings) {
-            FriendSettingsView(
+            FriendSettingsFullPage(
                 viewModel: FriendSettingsViewModel(
                     dependencies: dependencies,
                     onClose: { isShowingFriendSettings = false }

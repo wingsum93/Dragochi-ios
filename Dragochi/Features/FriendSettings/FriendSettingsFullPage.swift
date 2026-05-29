@@ -1,5 +1,5 @@
 //
-//  FriendSettingsView.swift
+//  FriendSettingsFullPage.swift
 //  Dragochi
 //
 //  Created by Codex on 17/2/2026.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct FriendSettingsView: View {
+struct FriendSettingsFullPage: View {
     @StateObject private var viewModel: FriendSettingsViewModel
     @Environment(\.locale) private var locale
 

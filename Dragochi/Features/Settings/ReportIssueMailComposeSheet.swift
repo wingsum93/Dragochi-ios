@@ -1,5 +1,5 @@
 //
-//  ReportIssueMailComposeView.swift
+//  ReportIssueMailComposeSheet.swift
 //  Dragochi
 //
 //  Created by Codex on 23/3/2026.
@@ -8,7 +8,7 @@
 import MessageUI
 import SwiftUI
 
-struct ReportIssueMailComposeView: UIViewControllerRepresentable {
+struct ReportIssueMailComposeSheet: UIViewControllerRepresentable {
     let draft: IssueReportDraft
     let onFinish: () -> Void
 

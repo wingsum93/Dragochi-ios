@@ -354,7 +354,7 @@ struct SettingsView: View {
                 }
             )
         ) { draft in
-            ReportIssueMailComposeView(
+            ReportIssueMailComposeSheet(
                 draft: draft,
                 onFinish: {
                     viewModel.send(.clearIssueReportDraft)
@@ -366,7 +366,7 @@ struct SettingsView: View {
                 .presentationDetents([.height(220)])
         }
         .fullScreenCover(isPresented: $isShowingAppleFriendImport) {
-            AppleFriendImportView(
+            AppleFriendImportFullPage(
                 viewModel: AppleFriendImportViewModel(
                     dependencies: dependencies,
                     onClose: { isShowingAppleFriendImport = false }

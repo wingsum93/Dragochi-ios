@@ -1,5 +1,5 @@
 //
-//  GameSettingsView.swift
+//  GameSettingsFullPage.swift
 //  Dragochi
 //
 //  Created by Codex on 15/2/2026.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct GameSettingsView: View {
+struct GameSettingsFullPage: View {
     @StateObject private var viewModel: GameSettingsViewModel
     @Environment(\.locale) private var locale
     private let searchContentSpacing: CGFloat = 8

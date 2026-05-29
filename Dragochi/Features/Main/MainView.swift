@@ -61,7 +61,7 @@ struct MainView: View {
             viewModel.send(.onAppear)
         }
         .sheet(item: $addSessionDraft) { draft in
-            AddSessionView(
+            AddSessionSheet(
                 viewModel: AddSessionViewModel(
                     dependencies: dependencies,
                     draft: draft,
