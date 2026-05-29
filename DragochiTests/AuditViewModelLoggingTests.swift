@@ -36,11 +36,11 @@ struct AuditViewModelLoggingTests {
                 auditLogger: spyLogger
             )
             var current = Date(timeIntervalSince1970: 1_700_000_000)
-            let store = MainViewModel(dependencies: dependencies, now: { current })
+            let viewModel = MainViewModel(dependencies: dependencies, now: { current })
 
-            store.send(.onAppear)
-            guard let selectedGameID = store.state.games.first?.id else {
-                Issue.record("Expected at least one game for main store tracking test.")
+            viewModel.send(.onAppear)
+            guard let selectedGameID = viewModel.state.games.first?.id else {
+                Issue.record("Expected at least one game for main viewModel tracking test.")
                 return
             }
 
@@ -51,12 +51,12 @@ struct AuditViewModelLoggingTests {
                 note: "this note should never appear in audit metadata"
             )
 
-            store.send(.preStartSetupConfirmed(setup))
-            store.send(.pauseResumeTapped)
-            store.send(.pauseResumeTapped)
+            viewModel.send(.preStartSetupConfirmed(setup))
+            viewModel.send(.pauseResumeTapped)
+            viewModel.send(.pauseResumeTapped)
             current = current.addingTimeInterval(10)
-            store.send(.tick)
-            store.send(.stopTapped)
+            viewModel.send(.tick)
+            viewModel.send(.stopTapped)
 
             #expect(spyLogger.entries.contains { $0.action == .mainTrackingStarted && $0.outcome == .success })
             #expect(spyLogger.entries.contains { $0.action == .mainTrackingPaused && $0.outcome == .success })
@@ -74,9 +74,9 @@ struct AuditViewModelLoggingTests {
                 modelContext: ModelContext(container),
                 auditLogger: spyLogger
             )
-            let store = MainViewModel(dependencies: dependencies)
+            let viewModel = MainViewModel(dependencies: dependencies)
 
-            store.send(.restoreTrackingSnapshot(Data("invalid-json".utf8)))
+            viewModel.send(.restoreTrackingSnapshot(Data("invalid-json".utf8)))
 
             #expect(
                 spyLogger.entries.contains {
@@ -111,9 +111,9 @@ struct AuditViewModelLoggingTests {
                 note: secretNote
             )
 
-            let store = AddSessionViewModel(dependencies: dependencies, draft: draft)
-            store.send(.onAppear)
-            store.send(.saveTapped)
+            let viewModel = AddSessionViewModel(dependencies: dependencies, draft: draft)
+            viewModel.send(.onAppear)
+            viewModel.send(.saveTapped)
 
             guard let entry = spyLogger.entries.last(where: {
                 $0.action == .addSessionManualSaved && $0.outcome == .success
@@ -149,8 +149,8 @@ struct AuditViewModelLoggingTests {
                 note: ""
             )
 
-            let store = AddSessionViewModel(dependencies: dependencies, draft: draft)
-            store.send(.saveTapped)
+            let viewModel = AddSessionViewModel(dependencies: dependencies, draft: draft)
+            viewModel.send(.saveTapped)
 
             #expect(
                 spyLogger.entries.contains {

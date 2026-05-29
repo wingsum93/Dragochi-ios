@@ -10,7 +10,7 @@ import UIKit
 import MessageUI
 
 struct SettingsView: View {
-    @ObservedObject var store: SettingsViewModel
+    @ObservedObject var viewModel: SettingsViewModel
     let dependencies: AppDependencies
     let onOpenGameSettings: () -> Void
     let onOpenFriendSettings: () -> Void
@@ -22,12 +22,12 @@ struct SettingsView: View {
     @State private var isShowingAppleFriendImport = false
 
     init(
-        store: SettingsViewModel,
+        viewModel: SettingsViewModel,
         dependencies: AppDependencies,
         onOpenGameSettings: @escaping () -> Void = {},
         onOpenFriendSettings: @escaping () -> Void = {}
     ) {
-        self.store = store
+        self.viewModel = viewModel
         self.dependencies = dependencies
         self.onOpenGameSettings = onOpenGameSettings
         self.onOpenFriendSettings = onOpenFriendSettings
@@ -67,8 +67,8 @@ struct SettingsView: View {
                             Toggle(
                                 "",
                                 isOn: Binding(
-                                    get: { store.state.isICloudSyncOn },
-                                    set: { store.send(.toggleICloud($0)) }
+                                    get: { viewModel.state.isICloudSyncOn },
+                                    set: { viewModel.send(.toggleICloud($0)) }
                                 )
                             )
                             .labelsHidden()
@@ -88,7 +88,7 @@ struct SettingsView: View {
                             .font(DragonTheme.current.font(.titleSection))
                             .foregroundStyle(DragonTheme.current.color(.textPrimary))
 
-                        if let date = store.state.lastBackupDate {
+                        if let date = viewModel.state.lastBackupDate {
                             Text(L10n.format("text_backup_last_export_format", locale: locale, formatDate(date)))
                                 .font(DragonTheme.current.font(.labelSmall))
                                 .foregroundStyle(DragonTheme.current.color(.textTertiary))
@@ -100,11 +100,11 @@ struct SettingsView: View {
 
                         HStack(spacing: DragonTheme.current.spacing(.sm)) {
                             Button {
-                                store.send(.exportTapped)
+                                viewModel.send(.exportTapped)
                             } label: {
                                 Text(
                                     L10n.string(
-                                        store.state.isExporting ? "button_exporting" : "button_export",
+                                        viewModel.state.isExporting ? "button_exporting" : "button_export",
                                         locale: locale
                                     )
                                 )
@@ -116,14 +116,14 @@ struct SettingsView: View {
                                     .clipShape(Capsule())
                             }
                             .buttonStyle(.plain)
-                            .disabled(store.state.isExporting)
+                            .disabled(viewModel.state.isExporting)
 
                             Button {
-                                store.send(.importTapped)
+                                viewModel.send(.importTapped)
                             } label: {
                                 Text(
                                     L10n.string(
-                                        store.state.isImporting ? "button_importing" : "button_import",
+                                        viewModel.state.isImporting ? "button_importing" : "button_import",
                                         locale: locale
                                     )
                                 )
@@ -135,7 +135,7 @@ struct SettingsView: View {
                                     .clipShape(Capsule())
                             }
                             .buttonStyle(.plain)
-                            .disabled(store.state.isImporting)
+                            .disabled(viewModel.state.isImporting)
                         }
                     }
                     .padding(DragonTheme.current.spacing(.md))
@@ -280,7 +280,7 @@ struct SettingsView: View {
                         .buttonStyle(.plain)
 
                         Button {
-                            store.send(.reportIssueTapped(canSendMail: MFMailComposeViewController.canSendMail()))
+                            viewModel.send(.reportIssueTapped(canSendMail: MFMailComposeViewController.canSendMail()))
                         } label: {
                             HStack {
                                 Image(systemName: "exclamationmark.bubble")
@@ -311,7 +311,7 @@ struct SettingsView: View {
             }
         }
         .accessibilityIdentifier("screen.settings")
-        .onAppear { store.send(.onAppear) }
+        .onAppear { viewModel.send(.onAppear) }
         .sheet(isPresented: $isShowingOpenSourceLicenses) {
             NavigationStack {
                 List(openSourceLicenses) { (license: OpenSourceLicenseItem) in
@@ -346,10 +346,10 @@ struct SettingsView: View {
         }
         .sheet(
             item: Binding(
-                get: { store.state.issueReportDraft },
+                get: { viewModel.state.issueReportDraft },
                 set: { newValue in
                     if newValue == nil {
-                        store.send(.clearIssueReportDraft)
+                        viewModel.send(.clearIssueReportDraft)
                     }
                 }
             )
@@ -357,7 +357,7 @@ struct SettingsView: View {
             ReportIssueMailComposeView(
                 draft: draft,
                 onFinish: {
-                    store.send(.clearIssueReportDraft)
+                    viewModel.send(.clearIssueReportDraft)
                 }
             )
         }
@@ -367,7 +367,7 @@ struct SettingsView: View {
         }
         .fullScreenCover(isPresented: $isShowingAppleFriendImport) {
             AppleFriendImportView(
-                store: AppleFriendImportViewModel(
+                viewModel: AppleFriendImportViewModel(
                     dependencies: dependencies,
                     onClose: { isShowingAppleFriendImport = false }
                 )
@@ -381,10 +381,10 @@ struct SettingsView: View {
         .alert(
             "title_mail_not_available",
             isPresented: Binding(
-                get: { store.state.isShowingMailUnavailableAlert },
+                get: { viewModel.state.isShowingMailUnavailableAlert },
                 set: { isPresented in
                     if !isPresented {
-                        store.send(.dismissMailUnavailableAlert)
+                        viewModel.send(.dismissMailUnavailableAlert)
                     }
                 }
             )
@@ -396,7 +396,7 @@ struct SettingsView: View {
                 openSupportMailto()
             }
             Button("button_cancel", role: .cancel) {
-                store.send(.dismissMailUnavailableAlert)
+                viewModel.send(.dismissMailUnavailableAlert)
             }
         } message: {
             Text("text_mail_not_available")

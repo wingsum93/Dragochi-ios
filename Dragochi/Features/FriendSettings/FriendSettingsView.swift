@@ -8,11 +8,11 @@
 import SwiftUI
 
 struct FriendSettingsView: View {
-    @StateObject private var store: FriendSettingsViewModel
+    @StateObject private var viewModel: FriendSettingsViewModel
     @Environment(\.locale) private var locale
 
-    init(store: FriendSettingsViewModel) {
-        _store = StateObject(wrappedValue: store)
+    init(viewModel: FriendSettingsViewModel) {
+        _viewModel = StateObject(wrappedValue: viewModel)
     }
 
     private let avatarColumns: [GridItem] = Array(repeating: GridItem(.flexible(), spacing: 12), count: 5)
@@ -23,7 +23,7 @@ struct FriendSettingsView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 content
-                if let errorMessage = store.state.errorMessage {
+                if let errorMessage = viewModel.state.errorMessage {
                     Text(errorMessage)
                         .font(DragonTheme.current.font(.labelSmall))
                         .foregroundStyle(.red)
@@ -46,7 +46,7 @@ struct FriendSettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
-                        store.send(.backTapped)
+                        viewModel.send(.backTapped)
                     } label: {
                         Image(systemName: "chevron.left")
                     }
@@ -55,9 +55,9 @@ struct FriendSettingsView: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        store.send(.toggleReorderMode)
+                        viewModel.send(.toggleReorderMode)
                     } label: {
-                        if store.state.isReorderMode {
+                        if viewModel.state.isReorderMode {
                             Text("button_done")
                         } else {
                             Text("Reorder")
@@ -67,9 +67,9 @@ struct FriendSettingsView: View {
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    if !store.state.isReorderMode {
+                    if !viewModel.state.isReorderMode {
                         Button {
-                            store.send(.addTapped)
+                            viewModel.send(.addTapped)
                         } label: {
                             Image(systemName: "plus")
                         }
@@ -78,17 +78,17 @@ struct FriendSettingsView: View {
                 }
             }
         }
-        .onAppear { store.send(.onAppear) }
+        .onAppear { viewModel.send(.onAppear) }
         .sheet(isPresented: isShowingEditDialog) {
             editDialog
                 .presentationDetents([.medium, .large])
         }
         .alert("title_delete_friend", isPresented: isShowingDeleteDialog) {
             Button("button_cancel", role: .cancel) {
-                store.send(.cancelDeleteTapped)
+                viewModel.send(.cancelDeleteTapped)
             }
             Button("button_delete", role: .destructive) {
-                store.send(.confirmDeleteTapped)
+                viewModel.send(.confirmDeleteTapped)
             }
         } message: {
             Text("text_confirm_remove_friend")
@@ -97,9 +97,9 @@ struct FriendSettingsView: View {
 
     @ViewBuilder
     private var content: some View {
-        if store.state.isLoading {
+        if viewModel.state.isLoading {
             loadingView
-        } else if store.state.friends.isEmpty {
+        } else if viewModel.state.friends.isEmpty {
             emptyStateView
         } else {
             friendsListView
@@ -148,7 +148,7 @@ struct FriendSettingsView: View {
 
     private var friendsListView: some View {
         List {
-            ForEach(store.state.friends) { friend in
+            ForEach(viewModel.state.friends) { friend in
                 HStack(spacing: DragonTheme.current.spacing(.md)) {
                     avatar(for: friend.avatarAssetName)
 
@@ -158,9 +158,9 @@ struct FriendSettingsView: View {
 
                     Spacer()
 
-                    if !store.state.isReorderMode {
+                    if !viewModel.state.isReorderMode {
                         Button {
-                            store.send(.editTapped(friend.id))
+                            viewModel.send(.editTapped(friend.id))
                         } label: {
                             Image(systemName: "pencil")
                                 .foregroundStyle(DragonTheme.current.color(.textTertiary))
@@ -169,7 +169,7 @@ struct FriendSettingsView: View {
                         .accessibilityIdentifier("action.editFriend.\(friend.id.uuidString)")
 
                         Button(role: .destructive) {
-                            store.send(.deleteTapped(friend.id))
+                            viewModel.send(.deleteTapped(friend.id))
                         } label: {
                             Image(systemName: "trash")
                         }
@@ -182,11 +182,11 @@ struct FriendSettingsView: View {
                 .listRowBackground(DragonTheme.current.color(.bgBase))
             }
             .onMove { source, destination in
-                store.send(.moveFriends(source, destination))
+                viewModel.send(.moveFriends(source, destination))
             }
-            .moveDisabled(!store.state.isReorderMode)
+            .moveDisabled(!viewModel.state.isReorderMode)
         }
-        .environment(\.editMode, .constant(store.state.isReorderMode ? .active : .inactive))
+        .environment(\.editMode, .constant(viewModel.state.isReorderMode ? .active : .inactive))
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
     }
@@ -222,8 +222,8 @@ struct FriendSettingsView: View {
                         TextField(
                             L10n.string("text_enter_friend_name", locale: locale),
                             text: Binding(
-                                get: { store.state.editingName },
-                                set: { store.send(.updateEditingName($0)) }
+                                get: { viewModel.state.editingName },
+                                set: { viewModel.send(.updateEditingName($0)) }
                             )
                         )
                         .textInputAutocapitalization(.words)
@@ -247,7 +247,7 @@ struct FriendSettingsView: View {
                         LazyVGrid(columns: avatarColumns, spacing: 12) {
                             ForEach(FriendAvatarOptions.assetNames, id: \.self) { assetName in
                                 Button {
-                                    store.send(.selectEditingAvatar(assetName))
+                                    viewModel.send(.selectEditingAvatar(assetName))
                                 } label: {
                                     ZStack {
                                         Image(assetName)
@@ -258,7 +258,7 @@ struct FriendSettingsView: View {
 
                                         Circle()
                                             .stroke(
-                                                store.state.editingAvatarAssetName == assetName
+                                                viewModel.state.editingAvatarAssetName == assetName
                                                     ? DragonTheme.current.color(.accentPrimary)
                                                     : Color.clear,
                                                 lineWidth: 2
@@ -279,8 +279,8 @@ struct FriendSettingsView: View {
 
                         FriendNoteTextView(
                             text: Binding(
-                                get: { store.state.editingNote },
-                                set: { store.send(.updateEditingNote($0)) }
+                                get: { viewModel.state.editingNote },
+                                set: { viewModel.send(.updateEditingNote($0)) }
                             )
                         )
                         .frame(height: 120)
@@ -294,11 +294,11 @@ struct FriendSettingsView: View {
                         .clipShape(RoundedRectangle(cornerRadius: DragonTheme.current.radius(.card), style: .continuous))
                     }
 
-                    if let validationMessageKey = store.state.editValidationMessageKey {
+                    if let validationMessageKey = viewModel.state.editValidationMessageKey {
                         Text(L10n.string(validationMessageKey, locale: locale))
                             .font(DragonTheme.current.font(.labelSmall))
                             .foregroundStyle(.red)
-                    } else if let validationMessage = store.state.editValidationMessage {
+                    } else if let validationMessage = viewModel.state.editValidationMessage {
                         Text(validationMessage)
                             .font(DragonTheme.current.font(.labelSmall))
                             .foregroundStyle(.red)
@@ -307,17 +307,17 @@ struct FriendSettingsView: View {
                 .padding(DragonTheme.current.spacing(.lg))
             }
             .background(DragonTheme.current.color(.bgBase).ignoresSafeArea())
-            .navigationTitle(L10n.string(store.dialogTitleKey, locale: locale))
+            .navigationTitle(L10n.string(viewModel.dialogTitleKey, locale: locale))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("button_cancel") {
-                        store.send(.cancelEditingTapped)
+                        viewModel.send(.cancelEditingTapped)
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("button_save") {
-                        store.send(.saveEditingTapped)
+                        viewModel.send(.saveEditingTapped)
                     }
                     .accessibilityIdentifier("action.saveFriend")
                 }
@@ -327,10 +327,10 @@ struct FriendSettingsView: View {
 
     private var isShowingEditDialog: Binding<Bool> {
         Binding(
-            get: { store.state.isShowingEditDialog },
+            get: { viewModel.state.isShowingEditDialog },
             set: { isPresented in
                 if !isPresented {
-                    store.send(.cancelEditingTapped)
+                    viewModel.send(.cancelEditingTapped)
                 }
             }
         )
@@ -338,10 +338,10 @@ struct FriendSettingsView: View {
 
     private var isShowingDeleteDialog: Binding<Bool> {
         Binding(
-            get: { store.state.isShowingDeleteDialog },
+            get: { viewModel.state.isShowingDeleteDialog },
             set: { isPresented in
                 if !isPresented {
-                    store.send(.cancelDeleteTapped)
+                    viewModel.send(.cancelDeleteTapped)
                 }
             }
         )

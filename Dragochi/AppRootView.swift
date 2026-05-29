@@ -50,7 +50,7 @@ struct AppRootView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             MainView(
-                store: mainStore,
+                viewModel: mainStore,
                 dependencies: dependencies,
                 onOpenGameSettings: { isShowingGameSettings = true },
                 onOpenFriendSettings: { isShowingFriendSettings = true }
@@ -61,14 +61,14 @@ struct AppRootView: View {
                 }
                 .tag(Tab.home)
 
-            HistoryView(store: historyStore)
+            HistoryView(viewModel: historyStore)
                 .tabItem {
                     Label("title_tab_history", systemImage: "clock.arrow.circlepath")
                         .accessibilityIdentifier("tab.history.button")
                 }
                 .tag(Tab.history)
 
-            StatisticView(store: statsStore)
+            StatisticView(viewModel: statsStore)
                 .tabItem {
                     Label("title_tab_stats", systemImage: "chart.bar")
                         .accessibilityIdentifier("tab.stats.button")
@@ -76,7 +76,7 @@ struct AppRootView: View {
                 .tag(Tab.stats)
 
             SettingsView(
-                store: settingsStore,
+                viewModel: settingsStore,
                 dependencies: dependencies,
                 onOpenGameSettings: { isShowingGameSettings = true },
                 onOpenFriendSettings: { isShowingFriendSettings = true }
@@ -95,7 +95,7 @@ struct AppRootView: View {
         }
         .fullScreenCover(isPresented: $isShowingGameSettings) {
             GameSettingsView(
-                store: GameSettingsViewModel(
+                viewModel: GameSettingsViewModel(
                     dependencies: dependencies,
                     onClose: { isShowingGameSettings = false }
                 )
@@ -103,7 +103,7 @@ struct AppRootView: View {
         }
         .fullScreenCover(isPresented: $isShowingFriendSettings) {
             FriendSettingsView(
-                store: FriendSettingsViewModel(
+                viewModel: FriendSettingsViewModel(
                     dependencies: dependencies,
                     onClose: { isShowingFriendSettings = false }
                 )

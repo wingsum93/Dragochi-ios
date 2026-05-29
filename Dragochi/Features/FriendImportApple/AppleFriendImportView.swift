@@ -8,23 +8,23 @@
 import SwiftUI
 
 struct AppleFriendImportView: View {
-    @StateObject private var store: AppleFriendImportViewModel
+    @StateObject private var viewModel: AppleFriendImportViewModel
     @Environment(\.locale) private var locale
 
-    init(store: AppleFriendImportViewModel) {
-        _store = StateObject(wrappedValue: store)
+    init(viewModel: AppleFriendImportViewModel) {
+        _viewModel = StateObject(wrappedValue: viewModel)
     }
 
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.md)) {
-                if store.state.selectedContacts.isEmpty {
+                if viewModel.state.selectedContacts.isEmpty {
                     Text("text_import_apple_initial_description")
                         .font(DragonTheme.current.font(.labelSmall))
                         .foregroundStyle(DragonTheme.current.color(.textTertiary))
 
                     Button {
-                        store.send(.importTapped)
+                        viewModel.send(.importTapped)
                     } label: {
                         Text("button_import_from_apple")
                             .font(DragonTheme.current.font(.labelSmall))
@@ -58,7 +58,7 @@ struct AppleFriendImportView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
-                        store.send(.closeTapped)
+                        viewModel.send(.closeTapped)
                     } label: {
                         Image(systemName: "chevron.left")
                     }
@@ -69,37 +69,37 @@ struct AppleFriendImportView: View {
         .sheet(isPresented: isShowingPicker) {
             AppleContactPickerRepresentable(
                 onContactsSelected: { contacts in
-                    store.send(.contactsSelected(contacts))
+                    viewModel.send(.contactsSelected(contacts))
                 },
                 onCancel: {
-                    store.send(.contactSelectionCancelled)
+                    viewModel.send(.contactSelectionCancelled)
                 }
             )
         }
         .alert("title_duplicate_friends_found", isPresented: isShowingDuplicateAlert) {
             Button("button_cancel", role: .cancel) {
-                store.send(.cancelDuplicateImportTapped)
+                viewModel.send(.cancelDuplicateImportTapped)
             }
             Button("button_confirm_import") {
-                store.send(.confirmDuplicateImportTapped)
+                viewModel.send(.confirmDuplicateImportTapped)
             }
         } message: {
             Text(
                 L10n.format(
                     "text_import_duplicate_friends_confirm_format",
                     locale: locale,
-                    Int64(store.state.duplicateCount)
+                    Int64(viewModel.state.duplicateCount)
                 )
             )
         }
         .alert("title_import_friends", isPresented: isShowingFeedbackAlert) {
             Button("button_done", role: .cancel) {
-                store.send(.dismissFeedbackAlert)
+                viewModel.send(.dismissFeedbackAlert)
             }
         } message: {
-            if let key = store.state.feedbackMessageKey {
+            if let key = viewModel.state.feedbackMessageKey {
                 Text(L10n.string(key, locale: locale))
-            } else if let message = store.state.feedbackMessage {
+            } else if let message = viewModel.state.feedbackMessage {
                 Text(message)
             } else {
                 Text("")
@@ -115,7 +115,7 @@ struct AppleFriendImportView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
-                    ForEach(Array(store.state.selectedContacts.enumerated()), id: \.element.id) { index, contact in
+                    ForEach(Array(viewModel.state.selectedContacts.enumerated()), id: \.element.id) { index, contact in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(L10n.format("text_contact_id_format", locale: locale, contact.id))
                                 .font(DragonTheme.current.font(.gameCardLabel))
@@ -145,7 +145,7 @@ struct AppleFriendImportView: View {
     private var actionButtons: some View {
         HStack(spacing: DragonTheme.current.spacing(.sm)) {
             Button {
-                store.send(.reselectTapped)
+                viewModel.send(.reselectTapped)
             } label: {
                 Text("button_reselect")
                     .font(DragonTheme.current.font(.labelSmall))
@@ -159,7 +159,7 @@ struct AppleFriendImportView: View {
             .accessibilityIdentifier("action.reselectAppleContacts")
 
             Button {
-                store.send(.confirmImportTapped)
+                viewModel.send(.confirmImportTapped)
             } label: {
                 Text("button_confirm_import")
                     .font(DragonTheme.current.font(.labelSmall))
@@ -170,17 +170,17 @@ struct AppleFriendImportView: View {
                     .clipShape(Capsule())
             }
             .buttonStyle(.plain)
-            .disabled(store.state.isImporting)
+            .disabled(viewModel.state.isImporting)
             .accessibilityIdentifier("action.confirmAppleImport")
         }
     }
 
     private var isShowingPicker: Binding<Bool> {
         Binding(
-            get: { store.state.isShowingPicker },
+            get: { viewModel.state.isShowingPicker },
             set: { isPresented in
                 if !isPresented {
-                    store.send(.contactSelectionCancelled)
+                    viewModel.send(.contactSelectionCancelled)
                 }
             }
         )
@@ -188,17 +188,17 @@ struct AppleFriendImportView: View {
 
     private var isShowingDuplicateAlert: Binding<Bool> {
         Binding(
-            get: { store.state.isShowingDuplicateAlert },
+            get: { viewModel.state.isShowingDuplicateAlert },
             set: { _ in }
         )
     }
 
     private var isShowingFeedbackAlert: Binding<Bool> {
         Binding(
-            get: { store.state.isShowingFeedbackAlert },
+            get: { viewModel.state.isShowingFeedbackAlert },
             set: { isPresented in
                 if !isPresented {
-                    store.send(.dismissFeedbackAlert)
+                    viewModel.send(.dismissFeedbackAlert)
                 }
             }
         )

@@ -37,11 +37,11 @@ struct MVIViewModelsTests {
                 friendIDs: []
             )
 
-            let store = MainViewModel(dependencies: dependencies)
-            store.send(.onAppear)
+            let viewModel = MainViewModel(dependencies: dependencies)
+            viewModel.send(.onAppear)
 
             #expect(older.id != newer.id)
-            #expect(store.state.latestEndedSession?.id == newer.id)
+            #expect(viewModel.state.latestEndedSession?.id == newer.id)
         }
     }
 
@@ -50,12 +50,12 @@ struct MVIViewModelsTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let store = MainViewModel(dependencies: dependencies)
+            let viewModel = MainViewModel(dependencies: dependencies)
 
-            store.send(.onAppear)
+            viewModel.send(.onAppear)
 
-            #expect(store.state.latestEndedSession == nil)
-            #expect(store.state.friends.isEmpty)
+            #expect(viewModel.state.latestEndedSession == nil)
+            #expect(viewModel.state.friends.isEmpty)
         }
     }
 
@@ -66,16 +66,16 @@ struct MVIViewModelsTests {
             let dependencies = AppDependencies(modelContext: ModelContext(container))
 
             var current = Date(timeIntervalSince1970: 1_700_000_000)
-            let store = MainViewModel(dependencies: dependencies, now: { current })
+            let viewModel = MainViewModel(dependencies: dependencies, now: { current })
 
-            store.send(.onAppear)
-            let gameAssets = Set(store.state.games.compactMap(\.imageAssetName))
+            viewModel.send(.onAppear)
+            let gameAssets = Set(viewModel.state.games.compactMap(\.imageAssetName))
             #expect(gameAssets.isSuperset(of: ["apex", "lol", "wwz", "clash_royale", "volarant"]))
 
-            store.send(.startTapped(resumeLastSetupEnabled: false))
-            #expect(store.state.pendingAddSessionDraft?.mode == .preStartSetup)
+            viewModel.send(.startTapped(resumeLastSetupEnabled: false))
+            #expect(viewModel.state.pendingAddSessionDraft?.mode == .preStartSetup)
 
-            guard let selectedGameID = store.state.games.first?.id else {
+            guard let selectedGameID = viewModel.state.games.first?.id else {
                 Issue.record("Expected at least one game to be available.")
                 return
             }
@@ -86,28 +86,28 @@ struct MVIViewModelsTests {
                 selectedFriendIDs: [],
                 note: "focus run"
             )
-            store.send(.preStartSetupConfirmed(setup))
-            #expect(store.state.trackingStatus == .running)
+            viewModel.send(.preStartSetupConfirmed(setup))
+            #expect(viewModel.state.trackingStatus == .running)
 
             current = current.addingTimeInterval(15)
-            store.send(.tick)
-            #expect(store.state.elapsedSeconds == 15)
+            viewModel.send(.tick)
+            #expect(viewModel.state.elapsedSeconds == 15)
 
-            store.send(.pauseResumeTapped)
-            #expect(store.state.trackingStatus == .paused)
-            #expect(store.state.elapsedSeconds == 15)
-            let snapshotData = store.state.trackingSnapshotData
+            viewModel.send(.pauseResumeTapped)
+            #expect(viewModel.state.trackingStatus == .paused)
+            #expect(viewModel.state.elapsedSeconds == 15)
+            let snapshotData = viewModel.state.trackingSnapshotData
             #expect(snapshotData != nil)
 
             current = current.addingTimeInterval(20)
-            store.send(.tick)
-            #expect(store.state.elapsedSeconds == 15)
+            viewModel.send(.tick)
+            #expect(viewModel.state.elapsedSeconds == 15)
 
             let restoredStore = MainViewModel(dependencies: dependencies, now: { current })
             restoredStore.send(.onAppear)
             restoredStore.send(.restoreTrackingSnapshot(snapshotData))
             #expect(restoredStore.state.trackingStatus == .paused)
-            #expect(restoredStore.state.currentSessionID == store.state.currentSessionID)
+            #expect(restoredStore.state.currentSessionID == viewModel.state.currentSessionID)
 
             restoredStore.send(.pauseResumeTapped)
             #expect(restoredStore.state.trackingStatus == .running)
@@ -146,14 +146,14 @@ struct MVIViewModelsTests {
                 note: "test"
             )
             var didClose = false
-            let store = AddSessionViewModel(
+            let viewModel = AddSessionViewModel(
                 dependencies: dependencies,
                 draft: draft,
                 onClose: { didClose = true }
             )
 
-            store.send(.onAppear)
-            store.send(.saveTapped)
+            viewModel.send(.onAppear)
+            viewModel.send(.saveTapped)
 
             let sessions = try dependencies.sessionRepository.fetchEnded(
                 between: Date(timeIntervalSince1970: 1_699_999_000),
@@ -195,18 +195,18 @@ struct MVIViewModelsTests {
                 friendIDs: [activeFriend.id, inactiveFriend.id]
             )
 
-            let store = MainViewModel(dependencies: dependencies, now: { current })
-            store.send(.onAppear)
-            store.send(.startTapped(resumeLastSetupEnabled: true))
+            let viewModel = MainViewModel(dependencies: dependencies, now: { current })
+            viewModel.send(.onAppear)
+            viewModel.send(.startTapped(resumeLastSetupEnabled: true))
 
-            #expect(store.state.trackingStatus == .running)
-            #expect(store.state.pendingAddSessionDraft == nil)
-            #expect(store.state.activeSetup?.selectedGameID == game.id)
-            #expect(store.state.activeSetup?.selectedPlatform == .console)
-            #expect(store.state.activeSetup?.selectedFriendIDs == [activeFriend.id])
-            #expect(store.state.activeSetup?.note == "")
+            #expect(viewModel.state.trackingStatus == .running)
+            #expect(viewModel.state.pendingAddSessionDraft == nil)
+            #expect(viewModel.state.activeSetup?.selectedGameID == game.id)
+            #expect(viewModel.state.activeSetup?.selectedPlatform == .console)
+            #expect(viewModel.state.activeSetup?.selectedFriendIDs == [activeFriend.id])
+            #expect(viewModel.state.activeSetup?.note == "")
 
-            guard let currentSessionID = store.state.currentSessionID else {
+            guard let currentSessionID = viewModel.state.currentSessionID else {
                 Issue.record("Expected active session ID after quick start.")
                 return
             }
@@ -237,13 +237,13 @@ struct MVIViewModelsTests {
                 friendIDs: []
             )
 
-            let store = MainViewModel(dependencies: dependencies, now: { current })
-            store.send(.onAppear)
-            store.send(.startTapped(resumeLastSetupEnabled: true))
+            let viewModel = MainViewModel(dependencies: dependencies, now: { current })
+            viewModel.send(.onAppear)
+            viewModel.send(.startTapped(resumeLastSetupEnabled: true))
 
-            #expect(store.state.trackingStatus == .idle)
-            #expect(store.state.currentSessionID == nil)
-            #expect(store.state.pendingAddSessionDraft?.mode == .preStartSetup)
+            #expect(viewModel.state.trackingStatus == .idle)
+            #expect(viewModel.state.currentSessionID == nil)
+            #expect(viewModel.state.pendingAddSessionDraft?.mode == .preStartSetup)
         }
     }
 
@@ -268,15 +268,15 @@ struct MVIViewModelsTests {
             var didClose = false
             var receivedSetup: SessionSetupInput?
 
-            let store = AddSessionViewModel(
+            let viewModel = AddSessionViewModel(
                 dependencies: dependencies,
                 draft: draft,
                 onSetupConfirmed: { setup in receivedSetup = setup },
                 onClose: { didClose = true }
             )
 
-            store.send(.onAppear)
-            store.send(.saveTapped)
+            viewModel.send(.onAppear)
+            viewModel.send(.saveTapped)
 
             #expect(receivedSetup != nil)
             #expect(receivedSetup?.selectedFriendIDs.isEmpty == true)
@@ -301,10 +301,10 @@ struct MVIViewModelsTests {
                 note: ""
             )
 
-            let store = AddSessionViewModel(dependencies: dependencies, draft: draft)
-            store.send(.onAppear)
+            let viewModel = AddSessionViewModel(dependencies: dependencies, draft: draft)
+            viewModel.send(.onAppear)
 
-            #expect(store.state.teammateChips.isEmpty)
+            #expect(viewModel.state.teammateChips.isEmpty)
         }
     }
 
@@ -331,12 +331,12 @@ struct MVIViewModelsTests {
                 note: ""
             )
 
-            let store = AddSessionViewModel(dependencies: dependencies, draft: draft)
-            store.send(.onAppear)
+            let viewModel = AddSessionViewModel(dependencies: dependencies, draft: draft)
+            viewModel.send(.onAppear)
 
-            #expect(store.state.teammateChips.count == 1)
-            #expect(store.state.teammateChips.first?.avatarAssetName == "F2")
-            #expect(store.state.selectedFriendIDs.contains(friend.id))
+            #expect(viewModel.state.teammateChips.count == 1)
+            #expect(viewModel.state.teammateChips.first?.avatarAssetName == "F2")
+            #expect(viewModel.state.selectedFriendIDs.contains(friend.id))
         }
     }
 
@@ -388,11 +388,11 @@ struct MVIViewModelsTests {
                 selectedFriendIDs: [],
                 note: ""
             )
-            let store = AddSessionViewModel(dependencies: dependencies, draft: draft)
+            let viewModel = AddSessionViewModel(dependencies: dependencies, draft: draft)
 
-            store.send(.onAppear)
+            viewModel.send(.onAppear)
 
-            #expect(store.state.teammateChips.map(\.name) == ["Baby", "Alex"])
+            #expect(viewModel.state.teammateChips.map(\.name) == ["Baby", "Alex"])
         }
     }
 
@@ -408,23 +408,23 @@ struct MVIViewModelsTests {
                 isActive: true,
                 note: "Original note"
             )
-            let store = FriendSettingsViewModel(dependencies: dependencies)
+            let viewModel = FriendSettingsViewModel(dependencies: dependencies)
 
-            store.send(.onAppear)
-            #expect(store.state.friends.count == 1)
+            viewModel.send(.onAppear)
+            #expect(viewModel.state.friends.count == 1)
 
-            store.send(.addTapped)
-            store.send(.updateEditingName("  mason  "))
-            store.send(.saveEditingTapped)
-            #expect(store.state.editValidationMessage != nil || store.state.editValidationMessageKey != nil)
+            viewModel.send(.addTapped)
+            viewModel.send(.updateEditingName("  mason  "))
+            viewModel.send(.saveEditingTapped)
+            #expect(viewModel.state.editValidationMessage != nil || viewModel.state.editValidationMessageKey != nil)
 
-            store.send(.updateEditingName("Ava"))
-            store.send(.selectEditingAvatar("F4"))
-            store.send(.updateEditingNote("Ava note"))
-            store.send(.saveEditingTapped)
-            #expect(store.state.friends.count == 2)
+            viewModel.send(.updateEditingName("Ava"))
+            viewModel.send(.selectEditingAvatar("F4"))
+            viewModel.send(.updateEditingNote("Ava note"))
+            viewModel.send(.saveEditingTapped)
+            #expect(viewModel.state.friends.count == 2)
 
-            guard let addedFriend = store.state.friends.first(where: { $0.name == "Ava" }) else {
+            guard let addedFriend = viewModel.state.friends.first(where: { $0.name == "Ava" }) else {
                 Issue.record("Expected newly added friend.")
                 return
             }
@@ -433,25 +433,25 @@ struct MVIViewModelsTests {
             #expect(addedFriend.order == 1)
             #expect(addedFriend.note == "Ava note")
 
-            store.send(.editTapped(existing.id))
-            #expect(store.state.editingNote == "Original note")
-            store.send(.updateEditingName("Mason Prime"))
-            store.send(.selectEditingAvatar("M2"))
-            store.send(.updateEditingNote("Updated note"))
-            store.send(.saveEditingTapped)
-            #expect(store.state.friends.first(where: { $0.id == existing.id })?.name == "Mason Prime")
-            #expect(store.state.friends.first(where: { $0.id == existing.id })?.avatarAssetName == "M2")
-            #expect(store.state.friends.first(where: { $0.id == existing.id })?.order == 0)
-            #expect(store.state.friends.first(where: { $0.id == existing.id })?.note == "Updated note")
+            viewModel.send(.editTapped(existing.id))
+            #expect(viewModel.state.editingNote == "Original note")
+            viewModel.send(.updateEditingName("Mason Prime"))
+            viewModel.send(.selectEditingAvatar("M2"))
+            viewModel.send(.updateEditingNote("Updated note"))
+            viewModel.send(.saveEditingTapped)
+            #expect(viewModel.state.friends.first(where: { $0.id == existing.id })?.name == "Mason Prime")
+            #expect(viewModel.state.friends.first(where: { $0.id == existing.id })?.avatarAssetName == "M2")
+            #expect(viewModel.state.friends.first(where: { $0.id == existing.id })?.order == 0)
+            #expect(viewModel.state.friends.first(where: { $0.id == existing.id })?.note == "Updated note")
 
-            store.send(.editTapped(existing.id))
-            #expect(store.state.editingNote == "Updated note")
-            store.send(.cancelEditingTapped)
+            viewModel.send(.editTapped(existing.id))
+            #expect(viewModel.state.editingNote == "Updated note")
+            viewModel.send(.cancelEditingTapped)
 
-            store.send(.deleteTapped(existing.id))
-            #expect(store.state.isShowingDeleteDialog)
-            store.send(.confirmDeleteTapped)
-            #expect(!store.state.friends.contains(where: { $0.id == existing.id }))
+            viewModel.send(.deleteTapped(existing.id))
+            #expect(viewModel.state.isShowingDeleteDialog)
+            viewModel.send(.confirmDeleteTapped)
+            #expect(!viewModel.state.friends.contains(where: { $0.id == existing.id }))
 
             let persisted = try dependencies.friendRepository.fetch(id: existing.id)
             #expect(persisted?.isActive == false)
@@ -487,12 +487,12 @@ struct MVIViewModelsTests {
                 order: 2,
                 note: nil
             )
-            let store = FriendSettingsViewModel(dependencies: dependencies)
+            let viewModel = FriendSettingsViewModel(dependencies: dependencies)
 
-            store.send(.onAppear)
+            viewModel.send(.onAppear)
 
-            #expect(store.state.friends.map(\.name) == ["Ben", "Alex", "Cara"])
-            #expect(store.state.friends.map(\.order) == [0, 1, 2])
+            #expect(viewModel.state.friends.map(\.name) == ["Ben", "Alex", "Cara"])
+            #expect(viewModel.state.friends.map(\.order) == [0, 1, 2])
 
             let persisted = try dependencies.friendRepository.fetchActive().sorted {
                 if $0.order != $1.order { return $0.order < $1.order }
@@ -531,14 +531,14 @@ struct MVIViewModelsTests {
                 order: 2,
                 note: nil
             )
-            let store = FriendSettingsViewModel(dependencies: dependencies)
+            let viewModel = FriendSettingsViewModel(dependencies: dependencies)
 
-            store.send(.onAppear)
-            store.send(.toggleReorderMode)
-            store.send(.moveFriends(IndexSet(integer: 0), 3))
+            viewModel.send(.onAppear)
+            viewModel.send(.toggleReorderMode)
+            viewModel.send(.moveFriends(IndexSet(integer: 0), 3))
 
-            #expect(store.state.friends.map(\.name) == ["Ben", "Cara", "Alex"])
-            #expect(store.state.friends.map(\.order) == [0, 1, 2])
+            #expect(viewModel.state.friends.map(\.name) == ["Ben", "Cara", "Alex"])
+            #expect(viewModel.state.friends.map(\.order) == [0, 1, 2])
 
             let persisted = try dependencies.friendRepository.fetchActive().sorted {
                 if $0.order != $1.order { return $0.order < $1.order }
@@ -570,19 +570,19 @@ struct MVIViewModelsTests {
                 order: 1,
                 note: nil
             )
-            let store = FriendSettingsViewModel(dependencies: dependencies)
+            let viewModel = FriendSettingsViewModel(dependencies: dependencies)
 
-            store.send(.onAppear)
-            store.send(.toggleReorderMode)
-            store.send(.moveFriends(IndexSet(integer: 0), 2))
-            store.send(.toggleReorderMode)
+            viewModel.send(.onAppear)
+            viewModel.send(.toggleReorderMode)
+            viewModel.send(.moveFriends(IndexSet(integer: 0), 2))
+            viewModel.send(.toggleReorderMode)
 
-            store.send(.addTapped)
-            store.send(.updateEditingName("Cara"))
-            store.send(.saveEditingTapped)
+            viewModel.send(.addTapped)
+            viewModel.send(.updateEditingName("Cara"))
+            viewModel.send(.saveEditingTapped)
 
-            #expect(store.state.friends.map(\.name) == ["Ben", "Alex", "Cara"])
-            #expect(store.state.friends.map(\.order) == [0, 1, 2])
+            #expect(viewModel.state.friends.map(\.name) == ["Ben", "Alex", "Cara"])
+            #expect(viewModel.state.friends.map(\.order) == [0, 1, 2])
         }
     }
 
@@ -591,9 +591,9 @@ struct MVIViewModelsTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let store = AppleFriendImportViewModel(dependencies: dependencies)
+            let viewModel = AppleFriendImportViewModel(dependencies: dependencies)
 
-            store.send(
+            viewModel.send(
                 .contactsSelected([
                     ImportedAppleContact(id: "C1", fullName: "Ava", email: "ava@example.com", phone: "111"),
                     ImportedAppleContact(id: "C1", fullName: "Ava Duplicate", email: nil, phone: nil),
@@ -601,8 +601,8 @@ struct MVIViewModelsTests {
                 ])
             )
 
-            #expect(store.state.selectedContacts.count == 2)
-            #expect(store.state.selectedContacts.map(\.id) == ["C1", "C2"])
+            #expect(viewModel.state.selectedContacts.count == 2)
+            #expect(viewModel.state.selectedContacts.map(\.id) == ["C1", "C2"])
         }
     }
 
@@ -620,18 +620,18 @@ struct MVIViewModelsTests {
                 note: nil
             )
             var didClose = false
-            let store = AppleFriendImportViewModel(
+            let viewModel = AppleFriendImportViewModel(
                 dependencies: dependencies,
                 onClose: { didClose = true }
             )
 
-            store.send(
+            viewModel.send(
                 .contactsSelected([
                     ImportedAppleContact(id: "C1", fullName: "Ben", email: "ben@example.com", phone: "111"),
                     ImportedAppleContact(id: "C2", fullName: "Cara", email: nil, phone: "222")
                 ])
             )
-            store.send(.confirmImportTapped)
+            viewModel.send(.confirmImportTapped)
 
             #expect(didClose)
             let persisted = try dependencies.friendRepository.fetchActive().sorted { $0.order < $1.order }
@@ -654,24 +654,24 @@ struct MVIViewModelsTests {
                 note: nil
             )
             var didClose = false
-            let store = AppleFriendImportViewModel(
+            let viewModel = AppleFriendImportViewModel(
                 dependencies: dependencies,
                 onClose: { didClose = true }
             )
 
-            store.send(
+            viewModel.send(
                 .contactsSelected([
                     ImportedAppleContact(id: "C1", fullName: "Ava", email: "ava@example.com", phone: nil),
                     ImportedAppleContact(id: "C2", fullName: "Ben", email: nil, phone: nil)
                 ])
             )
-            store.send(.confirmImportTapped)
+            viewModel.send(.confirmImportTapped)
 
-            #expect(store.state.isShowingDuplicateAlert)
-            #expect(store.state.duplicateCount == 1)
+            #expect(viewModel.state.isShowingDuplicateAlert)
+            #expect(viewModel.state.duplicateCount == 1)
             #expect(!didClose)
 
-            store.send(.confirmDuplicateImportTapped)
+            viewModel.send(.confirmDuplicateImportTapped)
             #expect(didClose)
 
             let persisted = try dependencies.friendRepository.fetchActive()
@@ -687,17 +687,17 @@ struct MVIViewModelsTests {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
             var didClose = false
-            let store = AppleFriendImportViewModel(
+            let viewModel = AppleFriendImportViewModel(
                 dependencies: dependencies,
                 onClose: { didClose = true }
             )
 
-            store.send(
+            viewModel.send(
                 .contactsSelected([
                     ImportedAppleContact(id: "C1", fullName: "Luna", email: "luna@example.com", phone: "333")
                 ])
             )
-            store.send(.confirmImportTapped)
+            viewModel.send(.confirmImportTapped)
 
             #expect(didClose)
             guard let persisted = try dependencies.friendRepository.fetchActive().first(where: { $0.name == "Luna" }) else {
@@ -718,17 +718,17 @@ struct MVIViewModelsTests {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
             var didClose = false
-            let store = GameSettingsViewModel(
+            let viewModel = GameSettingsViewModel(
                 dependencies: dependencies,
                 onClose: { didClose = true },
                 isUITesting: true
             )
 
-            store.send(.onAppear)
-            store.send(.doneTapped)
+            viewModel.send(.onAppear)
+            viewModel.send(.doneTapped)
 
             #expect(didClose)
-            #expect(!store.state.isShowingConfirmChangesDialog)
+            #expect(!viewModel.state.isShowingConfirmChangesDialog)
         }
     }
 
@@ -738,34 +738,34 @@ struct MVIViewModelsTests {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
             var didClose = false
-            let store = GameSettingsViewModel(
+            let viewModel = GameSettingsViewModel(
                 dependencies: dependencies,
                 onClose: { didClose = true },
                 isUITesting: true
             )
 
-            store.send(.onAppear)
-            guard let remoteID = store.state.catalog.first?.id else {
+            viewModel.send(.onAppear)
+            guard let remoteID = viewModel.state.catalog.first?.id else {
                 Issue.record("Expected catalog to contain at least one game.")
                 return
             }
 
             let persistedBeforeToggle = try dependencies.enabledGameSelectionRepository.fetchEnabledRemoteIDs()
 
-            store.send(.toggle(remoteID: remoteID))
+            viewModel.send(.toggle(remoteID: remoteID))
 
             let persistedAfterToggle = try dependencies.enabledGameSelectionRepository.fetchEnabledRemoteIDs()
             #expect(persistedAfterToggle == persistedBeforeToggle)
-            #expect(store.state.draftEnabledRemoteIDs != store.state.originalEnabledRemoteIDs)
+            #expect(viewModel.state.draftEnabledRemoteIDs != viewModel.state.originalEnabledRemoteIDs)
 
-            store.send(.doneTapped)
-            #expect(store.state.isShowingConfirmChangesDialog)
+            viewModel.send(.doneTapped)
+            #expect(viewModel.state.isShowingConfirmChangesDialog)
             #expect(!didClose)
 
-            store.send(.cancelSaveChanges)
+            viewModel.send(.cancelSaveChanges)
 
             let persistedAfterCancel = try dependencies.enabledGameSelectionRepository.fetchEnabledRemoteIDs()
-            #expect(!store.state.isShowingConfirmChangesDialog)
+            #expect(!viewModel.state.isShowingConfirmChangesDialog)
             #expect(persistedAfterCancel == persistedBeforeToggle)
             #expect(!didClose)
         }
@@ -777,30 +777,30 @@ struct MVIViewModelsTests {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
             var didClose = false
-            let store = GameSettingsViewModel(
+            let viewModel = GameSettingsViewModel(
                 dependencies: dependencies,
                 onClose: { didClose = true },
                 isUITesting: true
             )
 
-            store.send(.onAppear)
-            guard let remoteID = store.state.catalog.first?.id else {
+            viewModel.send(.onAppear)
+            guard let remoteID = viewModel.state.catalog.first?.id else {
                 Issue.record("Expected catalog to contain at least one game.")
                 return
             }
 
             #expect(try dependencies.gameRepository.fetch(remoteID: remoteID) != nil)
 
-            store.send(.toggle(remoteID: remoteID))
-            store.send(.doneTapped)
-            #expect(store.state.isShowingConfirmChangesDialog)
+            viewModel.send(.toggle(remoteID: remoteID))
+            viewModel.send(.doneTapped)
+            #expect(viewModel.state.isShowingConfirmChangesDialog)
 
-            store.send(.confirmSaveChanges)
+            viewModel.send(.confirmSaveChanges)
 
             let persistedAfterConfirm = try dependencies.enabledGameSelectionRepository.fetchEnabledRemoteIDs()
             #expect(didClose)
-            #expect(!store.state.isShowingConfirmChangesDialog)
-            #expect(store.state.originalEnabledRemoteIDs == store.state.draftEnabledRemoteIDs)
+            #expect(!viewModel.state.isShowingConfirmChangesDialog)
+            #expect(viewModel.state.originalEnabledRemoteIDs == viewModel.state.draftEnabledRemoteIDs)
             #expect(!persistedAfterConfirm.contains(remoteID))
             #expect(try dependencies.gameRepository.fetch(remoteID: remoteID) == nil)
         }
@@ -812,21 +812,21 @@ struct MVIViewModelsTests {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
             var didClose = false
-            let store = GameSettingsViewModel(
+            let viewModel = GameSettingsViewModel(
                 dependencies: dependencies,
                 onClose: { didClose = true },
                 isUITesting: true
             )
 
-            store.send(.onAppear)
-            guard let remoteID = store.state.catalog.first?.id else {
+            viewModel.send(.onAppear)
+            guard let remoteID = viewModel.state.catalog.first?.id else {
                 Issue.record("Expected catalog to contain at least one game.")
                 return
             }
 
             let persistedBeforeBack = try dependencies.enabledGameSelectionRepository.fetchEnabledRemoteIDs()
-            store.send(.toggle(remoteID: remoteID))
-            store.send(.backTapped)
+            viewModel.send(.toggle(remoteID: remoteID))
+            viewModel.send(.backTapped)
             let persistedAfterBack = try dependencies.enabledGameSelectionRepository.fetchEnabledRemoteIDs()
 
             #expect(didClose)
@@ -891,12 +891,12 @@ struct MVIViewModelsTests {
                 friendIDs: [alexID, benID, caraID]
             )
 
-            let store = HistoryViewModel(dependencies: dependencies)
-            store.send(.onAppear)
-            #expect(!store.state.sections.isEmpty)
-            #expect(store.state.totalPlaytimeSeconds > 0)
+            let viewModel = HistoryViewModel(dependencies: dependencies)
+            viewModel.send(.onAppear)
+            #expect(!viewModel.state.sections.isEmpty)
+            #expect(viewModel.state.totalPlaytimeSeconds > 0)
 
-            let rows = store.state.sections.flatMap(\.rows)
+            let rows = viewModel.state.sections.flatMap(\.rows)
             #expect(rows.count == 4)
 
             let locale = Locale.current
@@ -915,10 +915,10 @@ struct MVIViewModelsTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let store = StatisticViewModel(dependencies: dependencies)
+            let viewModel = StatisticViewModel(dependencies: dependencies)
 
-            store.send(.onAppear)
-            #expect(store.state.report != nil)
+            viewModel.send(.onAppear)
+            #expect(viewModel.state.report != nil)
         }
     }
 
@@ -963,23 +963,23 @@ struct MVIViewModelsTests {
 
             let januaryStart = monthStart(2025, 1)
             let marchStart = monthStart(2025, 3)
-            let store = StatisticViewModel(dependencies: dependencies)
+            let viewModel = StatisticViewModel(dependencies: dependencies)
 
-            store.send(.onAppear)
-            #expect(store.state.availableMonthStarts == [januaryStart, marchStart])
-            #expect(store.state.monthStart == marchStart)
-            #expect(store.state.canGoPreviousMonth)
-            #expect(!store.state.canGoNextMonth)
+            viewModel.send(.onAppear)
+            #expect(viewModel.state.availableMonthStarts == [januaryStart, marchStart])
+            #expect(viewModel.state.monthStart == marchStart)
+            #expect(viewModel.state.canGoPreviousMonth)
+            #expect(!viewModel.state.canGoNextMonth)
 
-            store.send(.previousMonth)
-            #expect(store.state.monthStart == januaryStart)
-            #expect(!store.state.canGoPreviousMonth)
-            #expect(store.state.canGoNextMonth)
+            viewModel.send(.previousMonth)
+            #expect(viewModel.state.monthStart == januaryStart)
+            #expect(!viewModel.state.canGoPreviousMonth)
+            #expect(viewModel.state.canGoNextMonth)
 
-            store.send(.nextMonth)
-            #expect(store.state.monthStart == marchStart)
-            #expect(store.state.canGoPreviousMonth)
-            #expect(!store.state.canGoNextMonth)
+            viewModel.send(.nextMonth)
+            #expect(viewModel.state.monthStart == marchStart)
+            #expect(viewModel.state.canGoPreviousMonth)
+            #expect(!viewModel.state.canGoNextMonth)
         }
     }
 
@@ -988,17 +988,17 @@ struct MVIViewModelsTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let store = StatisticViewModel(dependencies: dependencies)
+            let viewModel = StatisticViewModel(dependencies: dependencies)
 
             let currentMonthStart = Calendar.current.dateInterval(of: .month, for: Date())?.start ?? Date()
 
-            store.send(.onAppear)
-            #expect(store.state.availableMonthStarts.isEmpty)
-            #expect(store.state.monthStart == currentMonthStart)
-            #expect(!store.state.canGoPreviousMonth)
-            #expect(!store.state.canGoNextMonth)
-            #expect(store.state.report != nil)
-            #expect(store.state.report?.totalDurationSeconds == 0)
+            viewModel.send(.onAppear)
+            #expect(viewModel.state.availableMonthStarts.isEmpty)
+            #expect(viewModel.state.monthStart == currentMonthStart)
+            #expect(!viewModel.state.canGoPreviousMonth)
+            #expect(!viewModel.state.canGoNextMonth)
+            #expect(viewModel.state.report != nil)
+            #expect(viewModel.state.report?.totalDurationSeconds == 0)
         }
     }
 
@@ -1007,13 +1007,13 @@ struct MVIViewModelsTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let store = SettingsViewModel(dependencies: dependencies)
+            let viewModel = SettingsViewModel(dependencies: dependencies)
 
-            store.send(.toggleICloud(true))
-            #expect(store.state.isICloudSyncOn)
+            viewModel.send(.toggleICloud(true))
+            #expect(viewModel.state.isICloudSyncOn)
 
-            store.send(.exportTapped)
-            #expect(store.state.lastBackupDate != nil)
+            viewModel.send(.exportTapped)
+            #expect(viewModel.state.lastBackupDate != nil)
         }
     }
 
@@ -1022,11 +1022,11 @@ struct MVIViewModelsTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let store = SettingsViewModel(dependencies: dependencies)
+            let viewModel = SettingsViewModel(dependencies: dependencies)
 
-            store.send(.reportIssueTapped(canSendMail: true))
+            viewModel.send(.reportIssueTapped(canSendMail: true))
 
-            guard let draft = store.state.issueReportDraft else {
+            guard let draft = viewModel.state.issueReportDraft else {
                 Issue.record("Expected issue report draft when Mail is available.")
                 return
             }
@@ -1053,12 +1053,12 @@ struct MVIViewModelsTests {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
             let dependencies = AppDependencies(modelContext: ModelContext(container))
-            let store = SettingsViewModel(dependencies: dependencies)
+            let viewModel = SettingsViewModel(dependencies: dependencies)
 
-            store.send(.reportIssueTapped(canSendMail: false))
+            viewModel.send(.reportIssueTapped(canSendMail: false))
 
-            #expect(store.state.issueReportDraft == nil)
-            #expect(store.state.isShowingMailUnavailableAlert)
+            #expect(viewModel.state.issueReportDraft == nil)
+            #expect(viewModel.state.isShowingMailUnavailableAlert)
         }
     }
 }

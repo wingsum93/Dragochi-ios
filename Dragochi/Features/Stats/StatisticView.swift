@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct StatisticView: View {
-    @ObservedObject var store: StatisticViewModel
+    @ObservedObject var viewModel: StatisticViewModel
     @Environment(\.locale) private var locale
 
     var body: some View {
@@ -29,7 +29,7 @@ struct StatisticView: View {
             }
         }
         .accessibilityIdentifier("screen.stats")
-        .onAppear { store.send(.onAppear) }
+        .onAppear { viewModel.send(.onAppear) }
     }
 
     private var header: some View {
@@ -41,31 +41,31 @@ struct StatisticView: View {
     private var monthSelector: some View {
         HStack {
             Button {
-                store.send(.previousMonth)
+                viewModel.send(.previousMonth)
             } label: {
                 Image(systemName: "chevron.left")
             }
             .buttonStyle(.plain)
-            .disabled(!store.state.canGoPreviousMonth)
-            .opacity(store.state.canGoPreviousMonth ? 1 : 0.4)
+            .disabled(!viewModel.state.canGoPreviousMonth)
+            .opacity(viewModel.state.canGoPreviousMonth ? 1 : 0.4)
             .accessibilityIdentifier("action.statsPreviousMonth")
 
             Spacer()
 
-            Text(monthTitle(store.state.monthStart))
+            Text(monthTitle(viewModel.state.monthStart))
                 .font(DragonTheme.current.font(.titleSection))
                 .foregroundStyle(DragonTheme.current.color(.textPrimary))
 
             Spacer()
 
             Button {
-                store.send(.nextMonth)
+                viewModel.send(.nextMonth)
             } label: {
                 Image(systemName: "chevron.right")
             }
             .buttonStyle(.plain)
-            .disabled(!store.state.canGoNextMonth)
-            .opacity(store.state.canGoNextMonth ? 1 : 0.4)
+            .disabled(!viewModel.state.canGoNextMonth)
+            .opacity(viewModel.state.canGoNextMonth ? 1 : 0.4)
             .accessibilityIdentifier("action.statsNextMonth")
         }
         .foregroundStyle(DragonTheme.current.color(.accentPrimary))
@@ -77,11 +77,11 @@ struct StatisticView: View {
                 .font(DragonTheme.current.font(.labelSmall))
                 .foregroundStyle(DragonTheme.current.color(.textTertiary))
 
-            Text(formatDuration(store.state.report?.totalDurationSeconds ?? 0))
+            Text(formatDuration(viewModel.state.report?.totalDurationSeconds ?? 0))
                 .font(DragonTheme.current.font(.displayTimer))
                 .foregroundStyle(DragonTheme.current.color(.accentPrimary))
 
-            if let mom = store.state.report?.mom {
+            if let mom = viewModel.state.report?.mom {
                 Text(L10n.format("text_mom_format", locale: locale, formatPercentage(mom.percentageChange)))
                     .font(DragonTheme.current.font(.labelSmall))
                     .foregroundStyle(DragonTheme.current.color(.textSecondary))
@@ -98,7 +98,7 @@ struct StatisticView: View {
                 .font(DragonTheme.current.font(.labelSmall))
                 .foregroundStyle(DragonTheme.current.color(.textTertiary))
 
-            ForEach(store.state.report?.byPlatform ?? [], id: \.platform) { item in
+            ForEach(viewModel.state.report?.byPlatform ?? [], id: \.platform) { item in
                 HStack {
                     Text(L10n.string(item.platform.titleKey, locale: locale))
                         .font(DragonTheme.current.font(.labelSmall))
@@ -122,9 +122,9 @@ struct StatisticView: View {
                 .font(DragonTheme.current.font(.labelSmall))
                 .foregroundStyle(DragonTheme.current.color(.textTertiary))
 
-            ForEach(Array((store.state.report?.byGame ?? []).enumerated()), id: \.offset) { _, item in
+            ForEach(Array((viewModel.state.report?.byGame ?? []).enumerated()), id: \.offset) { _, item in
                 HStack {
-                    Text((store.gameName(for: item.gameID) ?? L10n.string("text_unknown_game", locale: locale)).uppercased())
+                    Text((viewModel.gameName(for: item.gameID) ?? L10n.string("text_unknown_game", locale: locale)).uppercased())
                         .font(DragonTheme.current.font(.labelSmall))
                         .foregroundStyle(DragonTheme.current.color(.textPrimary))
                     Spacer()

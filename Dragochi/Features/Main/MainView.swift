@@ -9,7 +9,7 @@ import SwiftUI
 import Combine
 
 struct MainView: View {
-    @ObservedObject var store: MainViewModel
+    @ObservedObject var viewModel: MainViewModel
     let dependencies: AppDependencies
     let onOpenGameSettings: () -> Void
     let onOpenFriendSettings: () -> Void
@@ -43,30 +43,30 @@ struct MainView: View {
                 .padding(.bottom, DragonTheme.current.spacing(.lg))
         }
         .onAppear {
-            store.send(.onAppear)
-            store.send(.restoreTrackingSnapshot(trackingSnapshotData))
+            viewModel.send(.onAppear)
+            viewModel.send(.restoreTrackingSnapshot(trackingSnapshotData))
         }
         .onReceive(timer) { _ in
-            store.send(.tick)
+            viewModel.send(.tick)
         }
-        .onChange(of: store.state.trackingSnapshotData) { _, data in
+        .onChange(of: viewModel.state.trackingSnapshotData) { _, data in
             trackingSnapshotData = data
         }
-        .onChange(of: store.state.pendingAddSessionDraft) { _, draft in
+        .onChange(of: viewModel.state.pendingAddSessionDraft) { _, draft in
             guard let draft else { return }
             addSessionDraft = draft
-            store.send(.clearPendingDraft)
+            viewModel.send(.clearPendingDraft)
         }
         .onReceive(NotificationCenter.default.publisher(for: .friendsDidChange)) { _ in
-            store.send(.onAppear)
+            viewModel.send(.onAppear)
         }
         .sheet(item: $addSessionDraft) { draft in
             AddSessionView(
-                store: AddSessionViewModel(
+                viewModel: AddSessionViewModel(
                     dependencies: dependencies,
                     draft: draft,
                     onSetupConfirmed: draft.mode == .preStartSetup ? { setup in
-                        store.send(.preStartSetupConfirmed(setup))
+                        viewModel.send(.preStartSetupConfirmed(setup))
                     } : nil,
                     onOpenGameSettings: {
                         addSessionDraft = nil
@@ -100,7 +100,7 @@ struct MainView: View {
 
     private var timerSection: some View {
         VStack(spacing: DragonTheme.current.spacing(.sm)) {
-            Text(formatDuration(store.state.elapsedSeconds))
+            Text(formatDuration(viewModel.state.elapsedSeconds))
                 .font(DragonTheme.current.font(.displayTimer))
                 .foregroundStyle(DragonTheme.current.color(.textPrimary))
                 .minimumScaleFactor(0.6)
@@ -116,14 +116,14 @@ struct MainView: View {
 
     private var sessionDetailSection: some View {
         VStack(spacing: DragonTheme.current.spacing(.sm)) {
-            if let startAt = store.state.trackingStartAt {
+            if let startAt = viewModel.state.trackingStartAt {
                 Text(L10n.format("text_home_started_at_format", locale: locale, formatTime(startAt)))
                     .font(DragonTheme.current.font(.labelSmall))
                     .foregroundStyle(DragonTheme.current.color(.textTertiary))
                     .tracking(1)
             }
 
-            if let setup = store.state.activeSetup {
+            if let setup = viewModel.state.activeSetup {
                 HStack(spacing: DragonTheme.current.spacing(.sm)) {
                     chip(title: selectedGameTitle(setup.selectedGameID), icon: "gamecontroller")
                     chip(title: L10n.string(setup.selectedPlatform.titleKey, locale: locale), icon: "desktopcomputer")
@@ -137,7 +137,7 @@ struct MainView: View {
 
     @ViewBuilder
     private var controlSection: some View {
-        if store.state.trackingStatus == .idle {
+        if viewModel.state.trackingStatus == .idle {
             startButton
         } else {
             VStack(spacing: DragonTheme.current.spacing(.md)) {
@@ -163,7 +163,7 @@ struct MainView: View {
 
     private var startButton: some View {
         Button {
-            store.send(.startTapped(resumeLastSetupEnabled: isResumeLastSetupEnabled))
+            viewModel.send(.startTapped(resumeLastSetupEnabled: isResumeLastSetupEnabled))
         } label: {
             ZStack {
                 Circle()
@@ -187,7 +187,7 @@ struct MainView: View {
 
     private var stopButton: some View {
         Button {
-            store.send(.stopTapped)
+            viewModel.send(.stopTapped)
         } label: {
             ZStack {
                 Circle()
@@ -211,11 +211,11 @@ struct MainView: View {
 
     private var pauseResumeButton: some View {
         Button {
-            store.send(.pauseResumeTapped)
+            viewModel.send(.pauseResumeTapped)
         } label: {
             Text(
                 L10n.string(
-                    store.state.trackingStatus == .paused ? "button_resume" : "button_pause",
+                    viewModel.state.trackingStatus == .paused ? "button_resume" : "button_pause",
                     locale: locale
                 )
             )
@@ -231,7 +231,7 @@ struct MainView: View {
     }
 
     private var statusText: String {
-        switch store.state.trackingStatus {
+        switch viewModel.state.trackingStatus {
         case .idle:
             return L10n.string("text_home_status_idle", locale: locale)
         case .running:
@@ -242,7 +242,7 @@ struct MainView: View {
     }
 
     private var statusColor: Color {
-        switch store.state.trackingStatus {
+        switch viewModel.state.trackingStatus {
         case .paused:
             return DragonTheme.current.color(.textTertiary)
         case .idle, .running:
@@ -265,20 +265,20 @@ struct MainView: View {
     }
 
     private func selectedGameTitle(_ id: UUID) -> String {
-        store.state.games.first(where: { $0.id == id })?.name ?? L10n.string("text_unknown_game", locale: locale)
+        viewModel.state.games.first(where: { $0.id == id })?.name ?? L10n.string("text_unknown_game", locale: locale)
     }
 
     private var shouldShowResumeLastSetup: Bool {
-        store.state.trackingStatus == .idle
-            && store.state.currentSessionID == nil
-            && store.state.trackingStartAt == nil
-            && store.state.activeSetup == nil
+        viewModel.state.trackingStatus == .idle
+            && viewModel.state.currentSessionID == nil
+            && viewModel.state.trackingStartAt == nil
+            && viewModel.state.activeSetup == nil
     }
 
     private var resumeLastSetupModel: DragonResumeLastSetupModel? {
-        guard let session = store.state.latestEndedSession else { return nil }
+        guard let session = viewModel.state.latestEndedSession else { return nil }
         let selectedGame = session.gameID.flatMap { id in
-            store.state.games.first(where: { $0.id == id })
+            viewModel.state.games.first(where: { $0.id == id })
         }
 
         return DragonResumeLastSetupModel(
@@ -292,7 +292,7 @@ struct MainView: View {
 
     private func teammatesLabel(for friendIDs: [UUID]) -> String {
         let names = friendIDs.compactMap { friendID in
-            store.state.friends.first(where: { $0.id == friendID })?.name
+            viewModel.state.friends.first(where: { $0.id == friendID })?.name
         }
 
         guard !names.isEmpty else {

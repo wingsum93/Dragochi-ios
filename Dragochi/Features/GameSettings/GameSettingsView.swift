@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct GameSettingsView: View {
-    @StateObject private var store: GameSettingsViewModel
+    @StateObject private var viewModel: GameSettingsViewModel
     @Environment(\.locale) private var locale
     private let searchContentSpacing: CGFloat = 8
     private let searchIconWidth: CGFloat = 16
@@ -16,8 +16,8 @@ struct GameSettingsView: View {
     private let searchInnerHorizontalPadding: CGFloat = 12
     private let separatorGap: CGFloat = 0
 
-    init(store: GameSettingsViewModel) {
-        _store = StateObject(wrappedValue: store)
+    init(viewModel: GameSettingsViewModel) {
+        _viewModel = StateObject(wrappedValue: viewModel)
     }
 
     var body: some View {
@@ -25,7 +25,7 @@ struct GameSettingsView: View {
             VStack(spacing: DragonTheme.current.spacing(.md)) {
                 searchField
 
-                if store.filteredCatalog.isEmpty {
+                if viewModel.filteredCatalog.isEmpty {
                     Spacer()
                     Text("title_no_games_found")
                         .font(DragonTheme.current.font(.body))
@@ -33,9 +33,9 @@ struct GameSettingsView: View {
                     Spacer()
                 } else {
                     List {
-                        ForEach(store.filteredCatalog) { game in
+                        ForEach(viewModel.filteredCatalog) { game in
                             Button {
-                                store.send(.toggle(remoteID: game.id))
+                                viewModel.send(.toggle(remoteID: game.id))
                             } label: {
                                 HStack {
                                     Text(game.name)
@@ -44,7 +44,7 @@ struct GameSettingsView: View {
 
                                     Spacer()
 
-                                    if store.state.draftEnabledRemoteIDs.contains(game.id) {
+                                    if viewModel.state.draftEnabledRemoteIDs.contains(game.id) {
                                         Image(systemName: "checkmark")
                                             .foregroundStyle(DragonTheme.current.color(.accentPrimary))
                                             .padding(.trailing, checkmarkTrailingInset)
@@ -74,7 +74,7 @@ struct GameSettingsView: View {
                     .listStyle(.plain)
                 }
 
-                if let errorMessage = store.state.errorMessage {
+                if let errorMessage = viewModel.state.errorMessage {
                     Text(errorMessage)
                         .font(DragonTheme.current.font(.labelSmall))
                         .foregroundStyle(.red)
@@ -93,7 +93,7 @@ struct GameSettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
-                        store.send(.backTapped)
+                        viewModel.send(.backTapped)
                     } label: {
                         Image(systemName: "chevron.left")
                     }
@@ -102,20 +102,20 @@ struct GameSettingsView: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("button_done") {
-                        store.send(.doneTapped)
+                        viewModel.send(.doneTapped)
                     }
                     .accessibilityIdentifier("action.closeGameSettings")
                 }
             }
         }
         .accessibilityIdentifier("screen.gameSettings")
-        .onAppear { store.send(.onAppear) }
+        .onAppear { viewModel.send(.onAppear) }
         .alert("title_confirm_change", isPresented: isShowingConfirmChangesDialog) {
             Button("button_no", role: .cancel) {
-                store.send(.cancelSaveChanges)
+                viewModel.send(.cancelSaveChanges)
             }
             Button("button_yes") {
-                store.send(.confirmSaveChanges)
+                viewModel.send(.confirmSaveChanges)
             }
         } message: {
             Text("text_apply_changes_selected_games")
@@ -131,17 +131,17 @@ struct GameSettingsView: View {
             TextField(
                 L10n.string("text_search_game_name", locale: locale),
                 text: Binding(
-                    get: { store.state.query },
-                    set: { store.send(.updateQuery($0)) }
+                    get: { viewModel.state.query },
+                    set: { viewModel.send(.updateQuery($0)) }
                 )
             )
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
             .foregroundStyle(DragonTheme.current.color(.textPrimary))
 
-            if !store.state.query.isEmpty {
+            if !viewModel.state.query.isEmpty {
                 Button {
-                    store.send(.clearQuery)
+                    viewModel.send(.clearQuery)
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(DragonTheme.current.color(.textTertiary))
@@ -177,10 +177,10 @@ struct GameSettingsView: View {
 
     private var isShowingConfirmChangesDialog: Binding<Bool> {
         Binding(
-            get: { store.state.isShowingConfirmChangesDialog },
+            get: { viewModel.state.isShowingConfirmChangesDialog },
             set: { isPresented in
                 if !isPresented {
-                    store.send(.cancelSaveChanges)
+                    viewModel.send(.cancelSaveChanges)
                 }
             }
         )

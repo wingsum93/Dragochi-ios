@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct HistoryView: View {
-    @ObservedObject var store: HistoryViewModel
+    @ObservedObject var viewModel: HistoryViewModel
     @Environment(\.locale) private var locale
 
     var body: some View {
@@ -28,7 +28,7 @@ struct HistoryView: View {
             }
         }
         .accessibilityIdentifier("screen.history")
-        .onAppear { store.send(.onAppear) }
+        .onAppear { viewModel.send(.onAppear) }
     }
 
     private var header: some View {
@@ -49,14 +49,14 @@ struct HistoryView: View {
         HStack(spacing: DragonTheme.current.spacing(.sm)) {
             ForEach(HistoryViewModel.HistoryFilter.allCases, id: \.self) { filter in
                 Button {
-                    store.send(.selectFilter(filter))
+                    viewModel.send(.selectFilter(filter))
                 } label: {
                     Text(filterTitle(for: filter))
                         .font(DragonTheme.current.font(.labelSmall))
-                        .foregroundStyle(store.state.filter == filter ? .black : DragonTheme.current.color(.textTertiary))
+                        .foregroundStyle(viewModel.state.filter == filter ? .black : DragonTheme.current.color(.textTertiary))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
-                        .background(store.state.filter == filter ? DragonTheme.current.color(.accentPrimary) : DragonTheme.current.color(.surfaceCard))
+                        .background(viewModel.state.filter == filter ? DragonTheme.current.color(.accentPrimary) : DragonTheme.current.color(.surfaceCard))
                         .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -65,7 +65,7 @@ struct HistoryView: View {
     }
 
     private var totalPlaytime: some View {
-        Text(L10n.format("text_history_total_playtime_format", locale: locale, formatDuration(store.state.totalPlaytimeSeconds)))
+        Text(L10n.format("text_history_total_playtime_format", locale: locale, formatDuration(viewModel.state.totalPlaytimeSeconds)))
             .font(DragonTheme.current.font(.labelSmall))
             .foregroundStyle(DragonTheme.current.color(.accentPrimary))
             .tracking(1)
@@ -73,7 +73,7 @@ struct HistoryView: View {
 
     private var sections: some View {
         VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.lg)) {
-            ForEach(store.state.sections) { section in
+            ForEach(viewModel.state.sections) { section in
                 VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
                     Text(sectionTitle(for: section.day))
                         .font(DragonTheme.current.font(.labelSmall))
