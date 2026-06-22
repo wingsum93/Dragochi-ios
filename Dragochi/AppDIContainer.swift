@@ -9,39 +9,39 @@ import SwiftData
 
 @MainActor
 final class AppDIContainer {
-    let modelContainer: ModelContainer
-    let modelContext: ModelContext
+    private let modelContext: ModelContext
     private let injectedAuditLogger: AuditLogging?
 
-    lazy var sessionRepository: SessionRepository = SwiftDataSessionRepository(modelContext: modelContext)
-    lazy var gameRepository: GameRepository = SwiftDataGameRepository(modelContext: modelContext)
-    lazy var enabledGameSelectionRepository: EnabledGameSelectionRepository = SwiftDataEnabledGameSelectionRepository(
+    private(set) lazy var sessionRepository: SessionRepository = SwiftDataSessionRepository(modelContext: modelContext)
+    private(set) lazy var gameRepository: GameRepository = SwiftDataGameRepository(modelContext: modelContext)
+    private(set) lazy var enabledGameSelectionRepository: EnabledGameSelectionRepository = SwiftDataEnabledGameSelectionRepository(
         modelContext: modelContext
     )
-    lazy var friendRepository: FriendRepository = SwiftDataFriendRepository(modelContext: modelContext)
+    private(set) lazy var friendRepository: FriendRepository = SwiftDataFriendRepository(modelContext: modelContext)
 
-    lazy var gameArrangeManager = GameArrangeManager(sessionRepository: sessionRepository)
-    lazy var friendListArrangeManager = FriendListArrangeManager(
+    private lazy var gameArrangeManager = GameArrangeManager(sessionRepository: sessionRepository)
+    private lazy var friendListArrangeManager = FriendListArrangeManager(
         sessionRepository: sessionRepository,
         friendRepository: friendRepository
     )
-    lazy var analyticsService: AnalyticsService = SwiftDataAnalyticsService(sessionRepository: sessionRepository)
-    lazy var backupService: BackupService = StubBackupService(
+    private lazy var analyticsService: AnalyticsService = SwiftDataAnalyticsService(sessionRepository: sessionRepository)
+    private lazy var backupService: BackupService = StubBackupService(
         sessionRepository: sessionRepository,
         gameRepository: gameRepository,
         friendRepository: friendRepository
     )
-    lazy var gameCatalogService: GameCatalogService = FirebaseRemoteConfigGameCatalogService()
-    lazy var gameCatalogSyncService = GameCatalogSyncService(
+    private lazy var gameCatalogService: GameCatalogService = FirebaseRemoteConfigGameCatalogService()
+    private(set) lazy var gameCatalogSyncService = GameCatalogSyncService(
         gameRepository: gameRepository,
         enabledSelectionRepository: enabledGameSelectionRepository,
         catalogService: gameCatalogService,
         defaults: Self.makeCatalogDefaults()
     )
-    lazy var auditLogger: AuditLogging = injectedAuditLogger ?? FileAuditLogger(fileURL: Self.makeAuditLogFileURL())
+    private lazy var auditLogger: AuditLogging = injectedAuditLogger ?? FileAuditLogger(
+        fileURL: Self.makeAuditLogFileURL()
+    )
 
     init(modelContainer: ModelContainer, auditLogger: AuditLogging? = nil) {
-        self.modelContainer = modelContainer
         self.modelContext = ModelContext(modelContainer)
         self.injectedAuditLogger = auditLogger
     }
