@@ -706,6 +706,44 @@ struct MVIViewModelsTests {
     }
 
     @Test
+    func appleFriendImportStore_reactivatesMatchingInactiveFriend() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDIContainer(modelContainer: container)
+            let inactiveFriend = try dependencies.friendRepository.create(
+                name: " Luna ",
+                handle: "@luna",
+                avatarAssetName: "avatar-luna",
+                isActive: false,
+                order: 7,
+                note: "Keeps existing history"
+            )
+            var didClose = false
+            let viewModel = dependencies.makeAppleFriendImportViewModel(
+                onClose: { didClose = true }
+            )
+
+            viewModel.send(
+                .contactsSelected([
+                    ImportedAppleContact(id: "C1", fullName: "LUNA", email: nil, phone: nil)
+                ])
+            )
+            viewModel.send(.confirmImportTapped)
+
+            #expect(didClose)
+            let persisted = try dependencies.friendRepository.fetchAll()
+            #expect(persisted.count == 1)
+            #expect(persisted[0].id == inactiveFriend.id)
+            #expect(persisted[0].name == "LUNA")
+            #expect(persisted[0].handle == "@luna")
+            #expect(persisted[0].avatarAssetName == "avatar-luna")
+            #expect(persisted[0].note == "Keeps existing history")
+            #expect(persisted[0].isActive)
+            #expect(persisted[0].order == 0)
+        }
+    }
+
+    @Test
     func gameSettingsStore_doneTappedWithoutChangesClosesImmediately() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()

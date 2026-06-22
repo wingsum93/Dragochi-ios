@@ -178,22 +178,39 @@ final class AppleFriendImportViewModel: ObservableObject {
         defer { state.isImporting = false }
 
         do {
-            let existingFriends = try friendRepository.fetchActive()
-            var nextOrder = (existingFriends.map(\.order).max() ?? -1) + 1
+            let allFriends = try friendRepository.fetchAll()
+            let activeFriends = allFriends.filter(\.isActive)
+            var inactiveFriends = allFriends.filter { !$0.isActive }
+            var activeNames = Set(activeFriends.map { normalizeName($0.name) })
+            var nextOrder = (activeFriends.map(\.order).max() ?? -1) + 1
             var importedCount = 0
 
             for contact in contacts {
                 let trimmedName = contact.fullName.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !trimmedName.isEmpty else { continue }
 
-                _ = try friendRepository.create(
-                    name: trimmedName,
-                    handle: nil,
-                    avatarAssetName: nil,
-                    isActive: true,
-                    order: nextOrder,
-                    note: nil
-                )
+                let normalizedName = normalizeName(trimmedName)
+                if !activeNames.contains(normalizedName),
+                   let inactiveIndex = inactiveFriends.firstIndex(where: {
+                       normalizeName($0.name) == normalizedName
+                   }) {
+                    var reactivatedFriend = inactiveFriends.remove(at: inactiveIndex)
+                    reactivatedFriend.name = trimmedName
+                    reactivatedFriend.isActive = true
+                    reactivatedFriend.order = nextOrder
+                    _ = try friendRepository.upsert(reactivatedFriend)
+                } else {
+                    _ = try friendRepository.create(
+                        name: trimmedName,
+                        handle: nil,
+                        avatarAssetName: nil,
+                        isActive: true,
+                        order: nextOrder,
+                        note: nil
+                    )
+                }
+
+                activeNames.insert(normalizedName)
                 importedCount += 1
                 nextOrder += 1
             }
