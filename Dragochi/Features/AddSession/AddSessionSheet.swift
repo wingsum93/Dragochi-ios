@@ -215,3 +215,322 @@ struct AddSessionSheet: View {
             : L10n.string("button_discard_entry", locale: locale)
     }
 }
+
+#if DEBUG
+#Preview("Add Session Sheet - Manual Entry") {
+    AddSessionSheet(viewModel: AddSessionSheetPreview.makeViewModel())
+}
+
+@MainActor
+private enum AddSessionSheetPreview {
+    private static let valorantID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
+    private static let lolID = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
+    private static let apexID = UUID(uuidString: "33333333-3333-3333-3333-333333333333")!
+    private static let masonID = UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1")!
+    private static let avaID = UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaab1")!
+
+    static func makeViewModel() -> AddSessionViewModel {
+        let games = [
+            GameEntity(id: valorantID, name: "Valorant", imageAssetName: "volarant", remoteID: "valorant"),
+            GameEntity(id: lolID, name: "LOL", imageAssetName: "lol", remoteID: "lol"),
+            GameEntity(id: apexID, name: "Apex Legends", imageAssetName: "apex", remoteID: "apex")
+        ]
+        let friends = makeFriends()
+        let sessions = makeArrangeSessions(friends: friends)
+        let sessionRepository = PreviewSessionRepository(sessions: sessions)
+        let gameRepository = PreviewGameRepository(games: games)
+        let enabledGameSelectionRepository = PreviewEnabledGameSelectionRepository(
+            enabledRemoteIDs: Set(games.compactMap(\.remoteID))
+        )
+        let gameCatalogSyncService = GameCatalogSyncService(
+            gameRepository: gameRepository,
+            enabledSelectionRepository: enabledGameSelectionRepository,
+            catalogService: PreviewGameCatalogService(catalog: games.map {
+                CatalogGame(id: $0.remoteID ?? $0.id.uuidString, name: $0.name, imageAssetName: $0.imageAssetName)
+            }),
+            defaults: UserDefaults(suiteName: "AddSessionSheetPreview.\(UUID().uuidString)") ?? .standard
+        )
+        let startAt = Date(timeIntervalSinceReferenceDate: 0)
+
+        return AddSessionViewModel(
+            sessionRepository: sessionRepository,
+            gameRepository: gameRepository,
+            enabledGameSelectionRepository: enabledGameSelectionRepository,
+            friendRepository: PreviewFriendRepository(friends: friends),
+            gameArrangeManager: GameArrangeManager(sessionRepository: sessionRepository),
+            friendListArrangeManager: FriendListArrangeManager(
+                sessionRepository: sessionRepository,
+                friendRepository: PreviewFriendRepository(friends: friends)
+            ),
+            gameCatalogSyncService: gameCatalogSyncService,
+            auditLogger: PreviewAuditLogger(),
+            draft: AddSessionDraft(
+                id: UUID(uuidString: "44444444-4444-4444-4444-444444444444")!,
+                mode: .manualEntry,
+                sessionID: nil,
+                startAt: startAt,
+                endAt: startAt.addingTimeInterval(8_075),
+                selectedGameID: valorantID,
+                selectedPlatform: .pc,
+                selectedFriendIDs: [masonID, avaID],
+                note: ""
+            )
+        )
+    }
+
+    private static func makeFriends() -> [FriendEntity] {
+        [
+            FriendEntity(id: masonID, name: "Mason", avatarAssetName: "M1"),
+            FriendEntity(id: UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2")!, name: "Kai", avatarAssetName: "M2"),
+            FriendEntity(id: UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3")!, name: "Noah", avatarAssetName: "M3"),
+            FriendEntity(id: UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4")!, name: "Leo", avatarAssetName: "M4"),
+            FriendEntity(id: UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa5")!, name: "Aiden", avatarAssetName: "M5"),
+            FriendEntity(id: UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa6")!, name: "Ryan", avatarAssetName: "M6"),
+            FriendEntity(id: UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa7")!, name: "Evan", avatarAssetName: "M7"),
+            FriendEntity(id: UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa8")!, name: "Jude", avatarAssetName: "M8"),
+            FriendEntity(id: UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa9")!, name: "Liam", avatarAssetName: "M9"),
+            FriendEntity(id: UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa10")!, name: "Owen", avatarAssetName: "M10"),
+            FriendEntity(id: avaID, name: "Ava", avatarAssetName: "F1"),
+            FriendEntity(id: UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaab2")!, name: "Mia", avatarAssetName: "F2"),
+            FriendEntity(id: UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaab3")!, name: "Luna", avatarAssetName: "F3"),
+            FriendEntity(id: UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaab4")!, name: "Ivy", avatarAssetName: "F4"),
+            FriendEntity(id: UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaab5")!, name: "Nora", avatarAssetName: "F5")
+        ]
+    }
+
+    private static func makeArrangeSessions(friends: [FriendEntity]) -> [SessionEntity] {
+        let baseDate = Date(timeIntervalSinceReferenceDate: 0)
+        let friendSessions = friends.enumerated().map { index, friend in
+            SessionEntity(
+                startAt: baseDate.addingTimeInterval(TimeInterval(-3_600 - index)),
+                endAt: baseDate.addingTimeInterval(TimeInterval(-index)),
+                durationSeconds: 15_000 - index,
+                platform: .pc,
+                gameID: nil,
+                friendIDs: [friend.id]
+            )
+        }
+        let gameSessions = [
+            SessionEntity(
+                startAt: baseDate.addingTimeInterval(-600),
+                endAt: baseDate,
+                durationSeconds: 600,
+                platform: .pc,
+                gameID: valorantID
+            ),
+            SessionEntity(
+                startAt: baseDate.addingTimeInterval(-1_800),
+                endAt: baseDate.addingTimeInterval(-900),
+                durationSeconds: 900,
+                platform: .pc,
+                gameID: lolID
+            ),
+            SessionEntity(
+                startAt: baseDate.addingTimeInterval(-2_400),
+                endAt: baseDate.addingTimeInterval(-1_900),
+                durationSeconds: 500,
+                platform: .pc,
+                gameID: apexID
+            )
+        ]
+
+        return gameSessions + friendSessions
+    }
+}
+
+@MainActor
+private final class PreviewSessionRepository: SessionRepository {
+    private var sessions: [SessionEntity]
+
+    init(sessions: [SessionEntity]) {
+        self.sessions = sessions
+    }
+
+    func create(
+        startAt: Date,
+        endAt: Date?,
+        platform: Platform,
+        gameID: UUID?,
+        durationSeconds: Int?,
+        note: String?,
+        friendIDs: [UUID]
+    ) throws -> SessionEntity {
+        let session = SessionEntity(
+            startAt: startAt,
+            endAt: endAt,
+            durationSeconds: durationSeconds,
+            platform: platform,
+            gameID: gameID,
+            note: note,
+            friendIDs: friendIDs
+        )
+        sessions.insert(session, at: 0)
+        return session
+    }
+
+    func update(_ session: SessionEntity) throws -> SessionEntity {
+        if let index = sessions.firstIndex(where: { $0.id == session.id }) {
+            sessions[index] = session
+        } else {
+            sessions.insert(session, at: 0)
+        }
+        return session
+    }
+
+    func fetch(id: UUID) throws -> SessionEntity? {
+        sessions.first { $0.id == id }
+    }
+
+    func fetchEnded(between start: Date, and end: Date) throws -> [SessionEntity] {
+        sessions.filter { session in
+            guard let endAt = session.endAt else { return false }
+            return endAt >= start && endAt <= end
+        }
+    }
+
+    func delete(id: UUID) throws {
+        sessions.removeAll { $0.id == id }
+    }
+}
+
+@MainActor
+private final class PreviewGameRepository: GameRepository {
+    private var games: [GameEntity]
+
+    init(games: [GameEntity]) {
+        self.games = games
+    }
+
+    func create(name: String, imageAssetName: String?, remoteID: String?) throws -> GameEntity {
+        let game = GameEntity(name: name, imageAssetName: imageAssetName, remoteID: remoteID)
+        games.append(game)
+        return game
+    }
+
+    func upsert(_ game: GameEntity) throws -> GameEntity {
+        if let index = games.firstIndex(where: { $0.id == game.id }) {
+            games[index] = game
+        } else {
+            games.append(game)
+        }
+        return game
+    }
+
+    func fetch(id: UUID) throws -> GameEntity? {
+        games.first { $0.id == id }
+    }
+
+    func fetch(remoteID: String) throws -> GameEntity? {
+        games.first { $0.remoteID == remoteID }
+    }
+
+    func fetchAll() throws -> [GameEntity] {
+        games
+    }
+
+    func referencedGameIDs() throws -> Set<UUID> {
+        []
+    }
+
+    func delete(id: UUID) throws {
+        games.removeAll { $0.id == id }
+    }
+}
+
+@MainActor
+private final class PreviewFriendRepository: FriendRepository {
+    private var friends: [FriendEntity]
+
+    init(friends: [FriendEntity]) {
+        self.friends = friends
+    }
+
+    func create(
+        name: String,
+        handle: String?,
+        avatarAssetName: String?,
+        isActive: Bool,
+        order: Int,
+        note: String?
+    ) throws -> FriendEntity {
+        let friend = FriendEntity(
+            name: name,
+            handle: handle,
+            avatarAssetName: avatarAssetName,
+            isActive: isActive,
+            order: order,
+            note: note
+        )
+        friends.append(friend)
+        return friend
+    }
+
+    func upsert(_ friend: FriendEntity) throws -> FriendEntity {
+        if let index = friends.firstIndex(where: { $0.id == friend.id }) {
+            friends[index] = friend
+        } else {
+            friends.append(friend)
+        }
+        return friend
+    }
+
+    func fetch(id: UUID) throws -> FriendEntity? {
+        friends.first { $0.id == id }
+    }
+
+    func fetchActive() throws -> [FriendEntity] {
+        friends.filter(\.isActive)
+    }
+
+    func fetchAll() throws -> [FriendEntity] {
+        friends
+    }
+
+    func delete(id: UUID) throws {
+        friends.removeAll { $0.id == id }
+    }
+}
+
+@MainActor
+private final class PreviewEnabledGameSelectionRepository: EnabledGameSelectionRepository {
+    private var enabledRemoteIDs: Set<String>
+
+    init(enabledRemoteIDs: Set<String>) {
+        self.enabledRemoteIDs = enabledRemoteIDs
+    }
+
+    func fetchEnabledRemoteIDs() throws -> Set<String> {
+        enabledRemoteIDs
+    }
+
+    func enable(remoteID: String) throws {
+        enabledRemoteIDs.insert(remoteID)
+    }
+
+    func disable(remoteID: String) throws {
+        enabledRemoteIDs.remove(remoteID)
+    }
+
+    func removeMissing(remoteIDs: Set<String>) throws {
+        enabledRemoteIDs = enabledRemoteIDs.intersection(remoteIDs)
+    }
+}
+
+@MainActor
+private struct PreviewGameCatalogService: GameCatalogService {
+    let catalog: [CatalogGame]
+
+    func fallbackCatalog() -> [CatalogGame] {
+        catalog
+    }
+
+    func fetchLatestCatalog() async throws -> [CatalogGame] {
+        catalog
+    }
+}
+
+@MainActor
+private struct PreviewAuditLogger: AuditLogging {
+    func log(action: AuditAction, outcome: AuditOutcome, metadata: [String: String]) {}
+}
+#endif

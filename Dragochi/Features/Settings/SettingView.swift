@@ -307,7 +307,7 @@ struct SettingView: View {
                 }
                 .padding(.horizontal, DragonTheme.current.spacing(.lg))
                 .padding(.top, DragonTheme.current.spacing(.lg))
-                .padding(.bottom, 80)
+                .padding(.bottom, DragonTheme.current.spacing(.xl))
             }
         }
         .accessibilityIdentifier("screen.settings")

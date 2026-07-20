@@ -14,6 +14,7 @@ struct AppRootView: View {
 
     @State private var isShowingGameSettings = false
     @State private var isShowingFriendSettings = false
+    @State private var addSessionDraft: AddSessionDraft?
     @StateObject private var appRouter = AppRouter()
 
     @StateObject private var mainViewModel: MainViewModel
@@ -75,21 +76,18 @@ struct AppRootView: View {
             )
                 .tabItem {
                     Label("title_tab_home", systemImage: "gamecontroller")
-                        .accessibilityIdentifier("tab.home.button")
                 }
                 .tag(AppTab.home)
 
             HistoryView(viewModel: historyViewModel)
                 .tabItem {
                     Label("title_tab_history", systemImage: "clock.arrow.circlepath")
-                        .accessibilityIdentifier("tab.history.button")
                 }
                 .tag(AppTab.history)
 
             StatisticView(viewModel: statsViewModel)
                 .tabItem {
                     Label("title_tab_stats", systemImage: "chart.bar")
-                        .accessibilityIdentifier("tab.stats.button")
                 }
                 .tag(AppTab.stats)
 
@@ -101,15 +99,38 @@ struct AppRootView: View {
             )
                 .tabItem {
                     Label("title_tab_settings", systemImage: "gearshape")
-                        .accessibilityIdentifier("tab.settings.button")
                 }
                 .tag(AppTab.settings)
         }
+        .toolbar(.hidden, for: .tabBar)
         .tint(DragonTheme.current.color(.tabTintShine))
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            AppToolbar(
+                selectedTab: $appRouter.selectedTab,
+                onAddTapped: showManualAddSession
+            )
+        }
         .onAppear {
             if isUITesting {
                 appRouter.route(to: .home)
             }
+        }
+        .sheet(item: $addSessionDraft) { draft in
+            AddSessionSheet(
+                viewModel: makeAddSessionViewModel(
+                    draft,
+                    nil,
+                    {
+                        closeAddSessionSheet(refreshData: false)
+                        isShowingGameSettings = true
+                    },
+                    {
+                        closeAddSessionSheet(refreshData: false)
+                        isShowingFriendSettings = true
+                    },
+                    { closeAddSessionSheet(refreshData: true) }
+                )
+            )
         }
         .fullScreenCover(isPresented: $isShowingGameSettings) {
             GameSettingsFullPage(
@@ -125,6 +146,30 @@ struct AppRootView: View {
                 )
             )
         }
+    }
+
+    private func showManualAddSession() {
+        let draftDate = Date()
+        addSessionDraft = AddSessionDraft(
+            id: UUID(),
+            mode: .manualEntry,
+            sessionID: nil,
+            startAt: draftDate,
+            endAt: draftDate,
+            selectedGameID: nil,
+            selectedPlatform: .pc,
+            selectedFriendIDs: [],
+            note: ""
+        )
+    }
+
+    private func closeAddSessionSheet(refreshData: Bool) {
+        addSessionDraft = nil
+
+        guard refreshData else { return }
+        mainViewModel.send(.onAppear)
+        historyViewModel.send(.onAppear)
+        statsViewModel.send(.onAppear)
     }
 
     private static func seedUITestFriendsIfNeeded(friendRepository: FriendRepository, processInfo: ProcessInfo) {

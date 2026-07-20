@@ -54,7 +54,7 @@ final class ScreenshotUITests: XCTestCase {
     func testScreenshotHistory() throws {
         let app = launchAppForScreenshots()
 
-        app.tabBars.buttons["History"].tap()
+        tapTab("tab.history.button", in: app)
         let totalPlaytimeLabel = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "TOTAL PLAYTIME:")).firstMatch
         waitForElementToAppear(totalPlaytimeLabel)
         attachScreenshot(from: app, named: "history.png")
@@ -64,7 +64,7 @@ final class ScreenshotUITests: XCTestCase {
     func testScreenshotStats() throws {
         let app = launchAppForScreenshots()
 
-        app.tabBars.buttons["Stats"].tap()
+        tapTab("tab.stats.button", in: app)
         let totalPlaytime = app.staticTexts["Total Playtime"]
         let platformBreakdown = app.staticTexts["Platform Breakdown"]
         let gameBreakdown = app.staticTexts["Game Breakdown"]
@@ -87,7 +87,7 @@ final class ScreenshotUITests: XCTestCase {
     func testScreenshotSettings() throws {
         let app = launchAppForScreenshots()
 
-        app.tabBars.buttons["Settings"].tap()
+        tapTab("tab.settings.button", in: app)
         waitForElementToAppear(app.staticTexts["iCloud Sync"])
         attachScreenshot(from: app, named: "settings.png")
     }
@@ -96,7 +96,7 @@ final class ScreenshotUITests: XCTestCase {
     func testSettingsReportIssueShowsMailUnavailableFallbackActions() throws {
         let app = launchAppForScreenshots()
 
-        app.tabBars.buttons["Settings"].tap()
+        tapTab("tab.settings.button", in: app)
         waitForElementToAppear(app.staticTexts["iCloud Sync"])
 
         let reportIssueButton = element(in: app, id: "action.reportIssueToDeveloper")
@@ -117,7 +117,7 @@ final class ScreenshotUITests: XCTestCase {
     func testSettingsFriendImportSheetShowsAppleAndGoogleActions() throws {
         let app = launchAppForScreenshots()
 
-        app.tabBars.buttons["Settings"].tap()
+        tapTab("tab.settings.button", in: app)
         waitForElementToAppear(app.staticTexts["iCloud Sync"])
 
         let importFriendsButton = element(in: app, id: "action.openFriendImportOptionsFromSettings")
@@ -134,7 +134,7 @@ final class ScreenshotUITests: XCTestCase {
     func testSettingsGoogleImportShowsComingSoonAlert() throws {
         let app = launchAppForScreenshots()
 
-        app.tabBars.buttons["Settings"].tap()
+        tapTab("tab.settings.button", in: app)
         waitForElementToAppear(app.staticTexts["iCloud Sync"])
 
         let importFriendsButton = element(in: app, id: "action.openFriendImportOptionsFromSettings")
@@ -153,7 +153,7 @@ final class ScreenshotUITests: XCTestCase {
     func testSettingsAppleImportOpensFullScreenImportPage() throws {
         let app = launchAppForScreenshots()
 
-        app.tabBars.buttons["Settings"].tap()
+        tapTab("tab.settings.button", in: app)
         waitForElementToAppear(app.staticTexts["iCloud Sync"])
 
         let importFriendsButton = element(in: app, id: "action.openFriendImportOptionsFromSettings")
@@ -173,9 +173,7 @@ final class ScreenshotUITests: XCTestCase {
     func testLanguageSectionOpensPerAppLanguageSettings() throws {
         let app = launchAppForScreenshots()
 
-        let settingsTab = app.tabBars.buttons["Settings"]
-        waitForElementToAppear(settingsTab)
-        settingsTab.tap()
+        tapTab("tab.settings.button", in: app)
         waitForElementToAppear(app.staticTexts["iCloud Sync"])
 
         let openPerAppLanguageButton = app.buttons["Per-App Language"]
@@ -208,6 +206,19 @@ final class ScreenshotUITests: XCTestCase {
         XCTAssertFalse(element(in: app, id: "action.stopTracking").exists)
         XCTAssertLessThan(notesSection.frame.maxY, startTrackingButton.frame.minY)
         attachScreenshot(from: app, named: "add-session.png")
+    }
+
+    @MainActor
+    func testToolbarAddButtonOpensManualRecordSheet() throws {
+        let app = launchAppForScreenshots()
+
+        let addButton = element(in: app, id: "action.openAddSession")
+        waitForElementToAppear(addButton)
+        addButton.tap()
+
+        waitForElementToAppear(element(in: app, id: "screen.addSession"))
+        waitForElementToAppear(element(in: app, id: "action.saveSession"))
+        XCTAssertFalse(element(in: app, id: "action.stopTracking").exists)
     }
 
 
@@ -296,6 +307,12 @@ final class ScreenshotUITests: XCTestCase {
         app.descendants(matching: .any).matching(identifier: id).firstMatch
     }
 
+    private func tapTab(_ id: String, in app: XCUIApplication) {
+        let tab = element(in: app, id: id)
+        waitForElementToAppear(tab)
+        tab.tap()
+    }
+
     private func scrollToElementIfNeeded(_ element: XCUIElement, in app: XCUIApplication, maxSwipes: Int = 6) {
         guard !element.exists else { return }
 
@@ -360,9 +377,7 @@ final class ScreenshotUITests: XCTestCase {
 
     private func openFriendSettingsFromAddSession(in app: XCUIApplication) {
         if !element(in: app, id: "screen.addSession").exists {
-            if app.tabBars.buttons["Home"].waitForExistence(timeout: 5) {
-                app.tabBars.buttons["Home"].tap()
-            }
+            tapTab("tab.home.button", in: app)
 
             switch waitForAddSessionEntryState(in: app) {
             case .addSession:

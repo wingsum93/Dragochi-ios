@@ -129,6 +129,29 @@ struct DragonComponentStateMatrixView: View {
     }
 }
 
+private struct DragonPrimaryCTAButtonPreview: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            DragonPrimaryCTAButton(title: "Save Session", icon: "arrow.right", state: .enabled) {}
+            DragonPrimaryCTAButton(title: "Save Session", icon: "arrow.right", state: .pressed) {}
+            DragonPrimaryCTAButton(title: "Save Session", icon: "arrow.right", state: .disabled) {}
+            DragonPrimaryCTAButton(title: "Save Session", icon: "arrow.right", state: .loading) {}
+        }
+        .padding(24)
+        .background(DragonTheme.current.color(.bgBase))
+    }
+}
+
 #Preview("Dragon Component Matrix") {
     DragonComponentStateMatrixView()
+}
+
+#Preview("Dragon Primary CTA Button - Light") {
+    DragonPrimaryCTAButtonPreview()
+        .preferredColorScheme(.light)
+}
+
+#Preview("Dragon Primary CTA Button - Dark") {
+    DragonPrimaryCTAButtonPreview()
+        .preferredColorScheme(.dark)
 }
