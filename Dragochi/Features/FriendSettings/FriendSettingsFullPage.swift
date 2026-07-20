@@ -60,7 +60,7 @@ struct FriendSettingsFullPage: View {
                         if viewModel.state.isReorderMode {
                             Text("button_done")
                         } else {
-                            Text("Reorder")
+                            Text("button_reorder")
                         }
                     }
                     .accessibilityIdentifier("action.toggleFriendReorder")
@@ -79,7 +79,7 @@ struct FriendSettingsFullPage: View {
             }
         }
         .onAppear { viewModel.send(.onAppear) }
-        .sheet(isPresented: isShowingEditDialog) {
+        .sheet(item: editDraftBinding) { _ in
             editDialog
                 .presentationDetents([.medium, .large])
         }
@@ -273,7 +273,7 @@ struct FriendSettingsFullPage: View {
                     }
 
                     VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
-                        Text("Note")
+                        Text("title_note")
                             .font(DragonTheme.current.font(.labelSmall))
                             .foregroundStyle(DragonTheme.current.color(.textTertiary))
 
@@ -325,11 +325,11 @@ struct FriendSettingsFullPage: View {
         }
     }
 
-    private var isShowingEditDialog: Binding<Bool> {
+    private var editDraftBinding: Binding<FriendEditDraft?> {
         Binding(
-            get: { viewModel.state.isShowingEditDialog },
-            set: { isPresented in
-                if !isPresented {
+            get: { viewModel.state.editDraft },
+            set: { draft in
+                if draft == nil {
                     viewModel.send(.cancelEditingTapped)
                 }
             }

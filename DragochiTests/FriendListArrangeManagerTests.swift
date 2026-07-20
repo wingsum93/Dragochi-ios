@@ -15,8 +15,8 @@ struct FriendListArrangeManagerTests {
     func getFriendList_returnsAlphabeticalOrderWhenNoSessionsExist() throws {
         let friends = makeFriends(names: ["John", "Baby", "Alex", "Chris"])
         let manager = FriendListArrangeManager(
-            sessionRepository: StubSessionRepository(endedSessions: []),
-            friendRepository: StubFriendRepository(activeFriends: friends)
+            sessionRepository: FakeSessionRepository(),
+            friendRepository: FakeFriendRepository(friends: friends)
         )
 
         let orderedFriends = try manager.getFriendList()
@@ -30,8 +30,8 @@ struct FriendListArrangeManagerTests {
         let alex = FriendEntity(id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!, name: "Alex")
         let baby = FriendEntity(id: UUID(uuidString: "00000000-0000-0000-0000-000000000002")!, name: "Baby")
         let manager = FriendListArrangeManager(
-            sessionRepository: StubSessionRepository(
-                endedSessions: [
+            sessionRepository: FakeSessionRepository(
+                sessions: [
                     makeSession(
                         startAt: Date(timeIntervalSince1970: 1_700_000_000),
                         endAt: Date(timeIntervalSince1970: 1_700_003_600),
@@ -44,7 +44,7 @@ struct FriendListArrangeManagerTests {
                     )
                 ]
             ),
-            friendRepository: StubFriendRepository(activeFriends: [alex, baby])
+            friendRepository: FakeFriendRepository(friends: [alex, baby])
         )
 
         let orderedFriends = try manager.getFriendList()
@@ -78,93 +78,13 @@ struct FriendListArrangeManagerTests {
         }
 
         let manager = FriendListArrangeManager(
-            sessionRepository: StubSessionRepository(endedSessions: wwzSessions + apexSessions),
-            friendRepository: StubFriendRepository(activeFriends: [baby, john, alex, ben, cara, dylan])
+            sessionRepository: FakeSessionRepository(sessions: wwzSessions + apexSessions),
+            friendRepository: FakeFriendRepository(friends: [baby, john, alex, ben, cara, dylan])
         )
 
         let orderedFriends = try manager.getFriendList()
 
         #expect(orderedFriends.map(\.name) == ["Baby", "John", "Alex", "Ben", "Cara", "Dylan"])
-    }
-}
-
-@MainActor
-private final class StubFriendRepository: FriendRepository {
-    private let activeFriends: [FriendEntity]
-
-    init(activeFriends: [FriendEntity]) {
-        self.activeFriends = activeFriends
-    }
-
-    func create(
-        name: String,
-        handle: String?,
-        avatarAssetName: String?,
-        isActive: Bool,
-        order: Int,
-        note: String?
-    ) throws -> FriendEntity {
-        fatalError("Unused in FriendListArrangeManagerTests")
-    }
-
-    func upsert(_ friend: FriendEntity) throws -> FriendEntity {
-        fatalError("Unused in FriendListArrangeManagerTests")
-    }
-
-    func fetch(id: UUID) throws -> FriendEntity? {
-        activeFriends.first { $0.id == id }
-    }
-
-    func fetchActive() throws -> [FriendEntity] {
-        activeFriends
-    }
-
-    func fetchAll() throws -> [FriendEntity] {
-        activeFriends
-    }
-
-    func delete(id: UUID) throws {
-        fatalError("Unused in FriendListArrangeManagerTests")
-    }
-}
-
-@MainActor
-private final class StubSessionRepository: SessionRepository {
-    private let endedSessions: [SessionEntity]
-
-    init(endedSessions: [SessionEntity]) {
-        self.endedSessions = endedSessions
-    }
-
-    func create(
-        startAt: Date,
-        endAt: Date?,
-        platform: Platform,
-        gameID: UUID?,
-        durationSeconds: Int?,
-        note: String?,
-        friendIDs: [UUID]
-    ) throws -> SessionEntity {
-        fatalError("Unused in FriendListArrangeManagerTests")
-    }
-
-    func update(_ session: SessionEntity) throws -> SessionEntity {
-        fatalError("Unused in FriendListArrangeManagerTests")
-    }
-
-    func fetch(id: UUID) throws -> SessionEntity? {
-        fatalError("Unused in FriendListArrangeManagerTests")
-    }
-
-    func fetchEnded(between start: Date, and end: Date) throws -> [SessionEntity] {
-        endedSessions.filter { session in
-            guard let endAt = session.endAt else { return false }
-            return endAt >= start && endAt <= end
-        }
-    }
-
-    func delete(id: UUID) throws {
-        fatalError("Unused in FriendListArrangeManagerTests")
     }
 }
 

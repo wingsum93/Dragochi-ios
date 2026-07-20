@@ -110,3 +110,21 @@ struct AppToolbar: View {
         }
     }
 }
+
+#if DEBUG
+private struct AppToolbarPreview: View {
+    @State private var selectedTab: AppTab = .home
+
+    var body: some View {
+        VStack {
+            Spacer()
+            AppToolbar(selectedTab: $selectedTab, onAddTapped: {})
+        }
+        .background(DragonTheme.current.color(.bgBase))
+    }
+}
+
+#Preview("App Toolbar") {
+    AppToolbarPreview()
+}
+#endif

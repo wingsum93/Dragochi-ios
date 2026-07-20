@@ -410,15 +410,18 @@ struct MVIViewModelsTests {
             #expect(viewModel.state.friends.count == 1)
 
             viewModel.send(.addTapped)
+            #expect(viewModel.state.editDraft?.friendID == nil)
             viewModel.send(.updateEditingName("  mason  "))
             viewModel.send(.saveEditingTapped)
             #expect(viewModel.state.editValidationMessage != nil || viewModel.state.editValidationMessageKey != nil)
+            #expect(viewModel.state.editDraft != nil)
 
             viewModel.send(.updateEditingName("Ava"))
             viewModel.send(.selectEditingAvatar("F4"))
             viewModel.send(.updateEditingNote("Ava note"))
             viewModel.send(.saveEditingTapped)
             #expect(viewModel.state.friends.count == 2)
+            #expect(viewModel.state.editDraft == nil)
 
             guard let addedFriend = viewModel.state.friends.first(where: { $0.name == "Ava" }) else {
                 Issue.record("Expected newly added friend.")
@@ -430,6 +433,7 @@ struct MVIViewModelsTests {
             #expect(addedFriend.note == "Ava note")
 
             viewModel.send(.editTapped(existing.id))
+            #expect(viewModel.state.editDraft?.id == existing.id)
             #expect(viewModel.state.editingNote == "Original note")
             viewModel.send(.updateEditingName("Mason Prime"))
             viewModel.send(.selectEditingAvatar("M2"))
@@ -443,6 +447,7 @@ struct MVIViewModelsTests {
             viewModel.send(.editTapped(existing.id))
             #expect(viewModel.state.editingNote == "Updated note")
             viewModel.send(.cancelEditingTapped)
+            #expect(viewModel.state.editDraft == nil)
 
             viewModel.send(.deleteTapped(existing.id))
             #expect(viewModel.state.isShowingDeleteDialog)
@@ -1045,6 +1050,30 @@ struct MVIViewModelsTests {
     }
 
     @Test
+    func settingsStore_drivesPresentationRoutes() async throws {
+        try await MainActor.run {
+            let container = try SwiftDataStack.makeInMemoryContainer()
+            let dependencies = AppDIContainer(modelContainer: container)
+            let viewModel = dependencies.makeSettingViewModel()
+
+            viewModel.send(.openSourceLicensesTapped)
+            #expect(viewModel.state.presentation == .openSourceLicenses)
+
+            viewModel.send(.clearPresentation)
+            #expect(viewModel.state.presentation == nil)
+
+            viewModel.send(.friendImportOptionsTapped)
+            #expect(viewModel.state.presentation == .friendImportOptions)
+
+            viewModel.send(.appleFriendImportSelected)
+            #expect(viewModel.state.presentation == .appleFriendImport)
+
+            viewModel.send(.googleFriendImportSelected)
+            #expect(viewModel.state.presentation == .googleImportComingSoon)
+        }
+    }
+
+    @Test
     func settingsStore_reportIssueCreatesDraftWithAttachmentAndTemplateBody() async throws {
         try await MainActor.run {
             let container = try SwiftDataStack.makeInMemoryContainer()
@@ -1057,6 +1086,7 @@ struct MVIViewModelsTests {
                 Issue.record("Expected issue report draft when Mail is available.")
                 return
             }
+            #expect(viewModel.state.presentation == .issueReport(draft))
 
             #expect(draft.recipient == "wingsum.developer@gmail.com")
             #expect(draft.subject == "Dragochi Issue Report")
@@ -1086,6 +1116,7 @@ struct MVIViewModelsTests {
 
             #expect(viewModel.state.issueReportDraft == nil)
             #expect(viewModel.state.isShowingMailUnavailableAlert)
+            #expect(viewModel.state.presentation == .mailUnavailable)
         }
     }
 }

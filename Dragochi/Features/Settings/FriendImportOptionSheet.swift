@@ -10,12 +10,13 @@ import SwiftUI
 struct FriendImportOptionSheet: View {
     let onImportFromApple: () -> Void
     let onImportFromGoogle: () -> Void
-    let onCancel: () -> Void
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: DragonTheme.current.spacing(.sm)) {
                 Button {
+                    dismiss()
                     onImportFromApple()
                 } label: {
                     HStack {
@@ -30,6 +31,7 @@ struct FriendImportOptionSheet: View {
                 .accessibilityIdentifier("action.importFromAppleInSheet")
 
                 Button {
+                    dismiss()
                     onImportFromGoogle()
                 } label: {
                     HStack {
@@ -56,7 +58,7 @@ struct FriendImportOptionSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("button_cancel") {
-                        onCancel()
+                        dismiss()
                     }
                 }
             }
@@ -69,8 +71,7 @@ struct FriendImportOptionSheet: View {
 #Preview("Dark Mode") {
     FriendImportOptionSheet(
         onImportFromApple: {},
-        onImportFromGoogle: {},
-        onCancel: {}
+        onImportFromGoogle: {}
     )
     .frame(height: 220)
 }

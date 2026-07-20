@@ -12,6 +12,34 @@ extension Notification.Name {
     static let friendsDidChange = Notification.Name("friendsDidChange")
 }
 
+struct FriendEditDraft: Identifiable, Equatable {
+    let id: UUID
+    let friendID: UUID?
+    var name: String
+    var avatarAssetName: String
+    var note: String
+    var validationMessage: String?
+    var validationMessageKey: String?
+
+    init(
+        id: UUID = UUID(),
+        friendID: UUID?,
+        name: String,
+        avatarAssetName: String,
+        note: String,
+        validationMessage: String? = nil,
+        validationMessageKey: String? = nil
+    ) {
+        self.id = id
+        self.friendID = friendID
+        self.name = name
+        self.avatarAssetName = avatarAssetName
+        self.note = note
+        self.validationMessage = validationMessage
+        self.validationMessageKey = validationMessageKey
+    }
+}
+
 @MainActor
 final class FriendSettingViewModel: ObservableObject {
     struct State: Equatable {
@@ -20,16 +48,38 @@ final class FriendSettingViewModel: ObservableObject {
         var errorMessage: String?
         var isReorderMode = false
 
-        var isShowingEditDialog = false
-        var editingFriendID: UUID?
-        var editingName = ""
-        var editingAvatarAssetName = FriendAvatarOptions.defaultAssetName
-        var editingNote = ""
-        var editValidationMessage: String?
-        var editValidationMessageKey: String?
+        var editDraft: FriendEditDraft?
 
         var pendingDeleteFriend: FriendEntity?
         var isShowingDeleteDialog = false
+
+        var isShowingEditDialog: Bool {
+            editDraft != nil
+        }
+
+        var editingFriendID: UUID? {
+            editDraft?.friendID
+        }
+
+        var editingName: String {
+            editDraft?.name ?? ""
+        }
+
+        var editingAvatarAssetName: String {
+            editDraft?.avatarAssetName ?? FriendAvatarOptions.defaultAssetName
+        }
+
+        var editingNote: String {
+            editDraft?.note ?? ""
+        }
+
+        var editValidationMessage: String? {
+            editDraft?.validationMessage
+        }
+
+        var editValidationMessageKey: String? {
+            editDraft?.validationMessageKey
+        }
     }
 
     enum Action {
@@ -83,15 +133,15 @@ final class FriendSettingViewModel: ObservableObject {
         case .editTapped(let friendID):
             presentEditDialog(friendID: friendID)
         case .updateEditingName(let name):
-            state.editingName = name
-            state.editValidationMessage = nil
+            state.editDraft?.name = name
+            clearEditValidation()
         case .updateEditingNote(let note):
-            state.editingNote = note
-            state.editValidationMessage = nil
+            state.editDraft?.note = note
+            clearEditValidation()
         case .selectEditingAvatar(let assetName):
             guard FriendAvatarOptions.isValid(assetName: assetName) else { return }
-            state.editingAvatarAssetName = assetName
-            state.editValidationMessage = nil
+            state.editDraft?.avatarAssetName = assetName
+            clearEditValidation()
         case .saveEditingTapped:
             saveEditing()
         case .cancelEditingTapped:
@@ -126,34 +176,33 @@ final class FriendSettingViewModel: ObservableObject {
     }
 
     private func presentAddDialog() {
-        state.editingFriendID = nil
-        state.editingName = ""
-        state.editingAvatarAssetName = FriendAvatarOptions.defaultAssetName
-        state.editingNote = ""
-        state.editValidationMessage = nil
-        state.editValidationMessageKey = nil
-        state.isShowingEditDialog = true
+        state.editDraft = FriendEditDraft(
+            friendID: nil,
+            name: "",
+            avatarAssetName: FriendAvatarOptions.defaultAssetName,
+            note: ""
+        )
     }
 
     private func presentEditDialog(friendID: UUID) {
         guard let friend = state.friends.first(where: { $0.id == friendID }) else { return }
-        state.editingFriendID = friend.id
-        state.editingName = friend.name
-        state.editingAvatarAssetName = FriendAvatarOptions.isValid(assetName: friend.avatarAssetName)
-            ? (friend.avatarAssetName ?? FriendAvatarOptions.defaultAssetName)
-            : FriendAvatarOptions.defaultAssetName
-        state.editingNote = friend.note ?? ""
-        state.editValidationMessage = nil
-        state.editValidationMessageKey = nil
-        state.isShowingEditDialog = true
+        state.editDraft = FriendEditDraft(
+            id: friend.id,
+            friendID: friend.id,
+            name: friend.name,
+            avatarAssetName: FriendAvatarOptions.isValid(assetName: friend.avatarAssetName)
+                ? (friend.avatarAssetName ?? FriendAvatarOptions.defaultAssetName)
+                : FriendAvatarOptions.defaultAssetName,
+            note: friend.note ?? ""
+        )
     }
 
     private func saveEditing() {
-        let auditAction: AuditAction = state.editingFriendID == nil ? .friendAdded : .friendEdited
-        let trimmedName = state.editingName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let draft = state.editDraft else { return }
+        let auditAction: AuditAction = draft.friendID == nil ? .friendAdded : .friendEdited
+        let trimmedName = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else {
-            state.editValidationMessage = nil
-            state.editValidationMessageKey = "text_name_required"
+            setEditValidation(message: nil, key: "text_name_required")
             auditLogger.log(
                 action: auditAction,
                 outcome: .failure,
@@ -166,14 +215,13 @@ final class FriendSettingViewModel: ObservableObject {
 
         let normalizedName = trimmedName.lowercased()
         let hasDuplicate = state.friends.contains { friend in
-            if let editingID = state.editingFriendID, friend.id == editingID {
+            if let editingID = draft.friendID, friend.id == editingID {
                 return false
             }
             return friend.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalizedName
         }
         guard !hasDuplicate else {
-            state.editValidationMessage = nil
-            state.editValidationMessageKey = "text_friend_name_already_exists"
+            setEditValidation(message: nil, key: "text_friend_name_already_exists")
             auditLogger.log(
                 action: auditAction,
                 outcome: .failure,
@@ -184,14 +232,14 @@ final class FriendSettingViewModel: ObservableObject {
             return
         }
 
-        let avatarAssetName = FriendAvatarOptions.isValid(assetName: state.editingAvatarAssetName)
-            ? state.editingAvatarAssetName
+        let avatarAssetName = FriendAvatarOptions.isValid(assetName: draft.avatarAssetName)
+            ? draft.avatarAssetName
             : FriendAvatarOptions.defaultAssetName
-        let note = state.editingNote.isEmpty ? nil : state.editingNote
+        let note = draft.note.isEmpty ? nil : draft.note
 
         do {
             let savedFriendID: UUID
-            if let editingID = state.editingFriendID {
+            if let editingID = draft.friendID {
                 guard let existing = state.friends.first(where: { $0.id == editingID }) else {
                     throw RepositoryError.notFound
                 }
@@ -218,8 +266,6 @@ final class FriendSettingViewModel: ObservableObject {
             state.friends = try fetchAndNormalizeActiveFriends()
             notifyFriendsDidChange()
             state.errorMessage = nil
-            state.editValidationMessage = nil
-            state.editValidationMessageKey = nil
             auditLogger.log(
                 action: auditAction,
                 outcome: .success,
@@ -230,8 +276,7 @@ final class FriendSettingViewModel: ObservableObject {
                 ]
             )
         } catch {
-            state.editValidationMessage = error.localizedDescription
-            state.editValidationMessageKey = nil
+            setEditValidation(message: error.localizedDescription, key: nil)
             auditLogger.log(
                 action: auditAction,
                 outcome: .failure,
@@ -247,9 +292,17 @@ final class FriendSettingViewModel: ObservableObject {
     }
 
     private func dismissEditDialog() {
-        state.isShowingEditDialog = false
-        state.editValidationMessage = nil
-        state.editValidationMessageKey = nil
+        state.editDraft = nil
+    }
+
+    private func clearEditValidation() {
+        state.editDraft?.validationMessage = nil
+        state.editDraft?.validationMessageKey = nil
+    }
+
+    private func setEditValidation(message: String?, key: String?) {
+        state.editDraft?.validationMessage = message
+        state.editDraft?.validationMessageKey = key
     }
 
     private func requestDelete(friendID: UUID) {

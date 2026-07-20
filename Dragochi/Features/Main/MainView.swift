@@ -331,3 +331,72 @@ struct MainView: View {
         return formatter.string(from: date)
     }
 }
+
+#if DEBUG
+@MainActor
+private enum MainViewPreviewFactory {
+    static func makeView() -> MainView {
+        let games = PreviewFixtures.games
+        let friends = PreviewFixtures.friends
+        let sessionRepository = FakeSessionRepository(
+            sessions: [
+                SessionEntity(
+                    startAt: Date(timeIntervalSinceNow: -4_200),
+                    endAt: Date(timeIntervalSinceNow: -600),
+                    durationSeconds: 3_600,
+                    platform: .pc,
+                    gameID: games.first?.id,
+                    friendIDs: friends.map(\.id)
+                )
+            ]
+        )
+        let gameRepository = FakeGameRepository(games: games)
+        let enabledGameSelectionRepository = FakeEnabledGameSelectionRepository(
+            enabledRemoteIDs: Set(games.compactMap(\.remoteID))
+        )
+        let friendRepository = FakeFriendRepository(friends: friends)
+        let gameCatalogSyncService = PreviewFixtures.gameCatalogSyncService(
+            gameRepository: gameRepository,
+            enabledSelectionRepository: enabledGameSelectionRepository
+        )
+        let auditLogger = PreviewAuditLoggerFixture()
+        let viewModel = MainViewModel(
+            sessionRepository: sessionRepository,
+            gameRepository: gameRepository,
+            friendRepository: friendRepository,
+            gameCatalogSyncService: gameCatalogSyncService,
+            auditLogger: auditLogger
+        )
+
+        return MainView(
+            viewModel: viewModel,
+            makeAddSessionViewModel: { draft, onSetupConfirmed, onOpenGameSettings, onOpenFriendSettings, onClose in
+                AddSessionViewModel(
+                    sessionRepository: sessionRepository,
+                    gameRepository: gameRepository,
+                    enabledGameSelectionRepository: enabledGameSelectionRepository,
+                    friendRepository: friendRepository,
+                    gameArrangeManager: GameArrangeManager(sessionRepository: sessionRepository),
+                    friendListArrangeManager: FriendListArrangeManager(
+                        sessionRepository: sessionRepository,
+                        friendRepository: friendRepository
+                    ),
+                    gameCatalogSyncService: gameCatalogSyncService,
+                    auditLogger: auditLogger,
+                    draft: draft,
+                    onSetupConfirmed: onSetupConfirmed,
+                    onOpenGameSettings: onOpenGameSettings,
+                    onOpenFriendSettings: onOpenFriendSettings,
+                    onClose: onClose
+                )
+            },
+            onOpenGameSettings: {},
+            onOpenFriendSettings: {}
+        )
+    }
+}
+
+#Preview("Main View") {
+    MainViewPreviewFactory.makeView()
+}
+#endif

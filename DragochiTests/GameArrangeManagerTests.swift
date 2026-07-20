@@ -14,7 +14,7 @@ struct GameArrangeManagerTests {
     @MainActor
     func getWeightedGameList_returnsAlphabeticalOrderWhenNoSessions() throws {
         let games = makeGames()
-        let arranger = GameArrangeManager(sessionRepository: StubSessionRepository(endedSessions: []))
+        let arranger = GameArrangeManager(sessionRepository: FakeSessionRepository())
 
         let orderedGames = try arranger.getWeightedGameList(from: games)
 
@@ -27,8 +27,8 @@ struct GameArrangeManagerTests {
         let games = makeGames()
         let lol = games.first { $0.name == "LOL" }!
         let arranger = GameArrangeManager(
-            sessionRepository: StubSessionRepository(
-                endedSessions: [
+            sessionRepository: FakeSessionRepository(
+                sessions: [
                     makeSession(
                         gameID: lol.id,
                         startAt: Date(timeIntervalSince1970: 1_700_000_000),
@@ -52,8 +52,8 @@ struct GameArrangeManagerTests {
         let valorant = games.first { $0.name == "Valorant" }!
 
         let arranger = GameArrangeManager(
-            sessionRepository: StubSessionRepository(
-                endedSessions: [
+            sessionRepository: FakeSessionRepository(
+                sessions: [
                     makeSession(
                         gameID: apex.id,
                         startAt: Date(timeIntervalSince1970: 1_700_000_000),
@@ -81,46 +81,6 @@ struct GameArrangeManagerTests {
         let orderedGames = try arranger.getWeightedGameList(from: games)
 
         #expect(orderedGames.map(\.name) == ["Apex Legends", "Valorant", "LOL"])
-    }
-}
-
-@MainActor
-private final class StubSessionRepository: SessionRepository {
-    private let endedSessions: [SessionEntity]
-
-    init(endedSessions: [SessionEntity]) {
-        self.endedSessions = endedSessions
-    }
-
-    func create(
-        startAt: Date,
-        endAt: Date?,
-        platform: Platform,
-        gameID: UUID?,
-        durationSeconds: Int?,
-        note: String?,
-        friendIDs: [UUID]
-    ) throws -> SessionEntity {
-        fatalError("Unused in GameArrangeManagerTests")
-    }
-
-    func update(_ session: SessionEntity) throws -> SessionEntity {
-        fatalError("Unused in GameArrangeManagerTests")
-    }
-
-    func fetch(id: UUID) throws -> SessionEntity? {
-        fatalError("Unused in GameArrangeManagerTests")
-    }
-
-    func fetchEnded(between start: Date, and end: Date) throws -> [SessionEntity] {
-        endedSessions.filter { session in
-            guard let endAt = session.endAt else { return false }
-            return endAt >= start && endAt <= end
-        }
-    }
-
-    func delete(id: UUID) throws {
-        fatalError("Unused in GameArrangeManagerTests")
     }
 }
 

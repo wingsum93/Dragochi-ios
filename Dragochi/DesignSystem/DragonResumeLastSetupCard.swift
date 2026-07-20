@@ -128,3 +128,22 @@ struct DragonResumeLastSetupCard: View {
         }
     }
 }
+
+#if DEBUG
+#Preview("Resume Last Setup Card") {
+    DragonResumeLastSetupCard(
+        model: DragonResumeLastSetupModel(
+            id: UUID(),
+            gameTitle: "Valorant",
+            gameImageAssetName: "volarant",
+            platformLabel: "PC",
+            teammatesLabel: "Mason, Ava"
+        ),
+        isResumeEnabled: true,
+        onToggleResume: { _ in },
+        onTap: {}
+    )
+    .padding(DragonTheme.current.spacing(.lg))
+    .background(DragonTheme.current.color(.bgBase))
+}
+#endif

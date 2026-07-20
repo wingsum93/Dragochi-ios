@@ -158,3 +158,42 @@ struct StatisticView: View {
         return String(format: "%.1f%%", value)
     }
 }
+
+#if DEBUG
+@MainActor
+private enum StatisticViewPreviewFactory {
+    static func makeView() -> StatisticView {
+        let games = PreviewFixtures.games
+        let sessionRepository = FakeSessionRepository(
+            sessions: [
+                SessionEntity(
+                    startAt: Date(timeIntervalSinceNow: -7_200),
+                    endAt: Date(timeIntervalSinceNow: -3_600),
+                    durationSeconds: 3_600,
+                    platform: .pc,
+                    gameID: games.first?.id
+                ),
+                SessionEntity(
+                    startAt: Date(timeIntervalSinceNow: -2_400),
+                    endAt: Date(timeIntervalSinceNow: -600),
+                    durationSeconds: 1_800,
+                    platform: .console,
+                    gameID: games.last?.id
+                )
+            ]
+        )
+        let gameRepository = FakeGameRepository(games: games)
+        let viewModel = StatisticViewModel(
+            analyticsService: SwiftDataAnalyticsService(sessionRepository: sessionRepository),
+            sessionRepository: sessionRepository,
+            gameRepository: gameRepository
+        )
+
+        return StatisticView(viewModel: viewModel)
+    }
+}
+
+#Preview("Statistic View") {
+    StatisticViewPreviewFactory.makeView()
+}
+#endif

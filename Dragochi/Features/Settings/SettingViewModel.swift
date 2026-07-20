@@ -19,6 +19,32 @@ struct IssueReportDraft: Identifiable, Equatable {
     let attachmentMimeType: String
 }
 
+enum SettingsPresentation: Identifiable, Equatable {
+    case openSourceLicenses
+    case friendImportOptions
+    case appleFriendImport
+    case googleImportComingSoon
+    case issueReport(IssueReportDraft)
+    case mailUnavailable
+
+    var id: String {
+        switch self {
+        case .openSourceLicenses:
+            return "openSourceLicenses"
+        case .friendImportOptions:
+            return "friendImportOptions"
+        case .appleFriendImport:
+            return "appleFriendImport"
+        case .googleImportComingSoon:
+            return "googleImportComingSoon"
+        case .issueReport(let draft):
+            return "issueReport.\(draft.id.uuidString)"
+        case .mailUnavailable:
+            return "mailUnavailable"
+        }
+    }
+}
+
 @MainActor
 final class SettingViewModel: ObservableObject {
     static let reportIssueRecipientEmail = "wingsum.developer@gmail.com"
@@ -29,9 +55,17 @@ final class SettingViewModel: ObservableObject {
         var lastBackupDate: Date?
         var isExporting: Bool = false
         var isImporting: Bool = false
-        var issueReportDraft: IssueReportDraft?
-        var isShowingMailUnavailableAlert: Bool = false
+        var presentation: SettingsPresentation?
         var errorMessage: String?
+
+        var issueReportDraft: IssueReportDraft? {
+            guard case .issueReport(let draft) = presentation else { return nil }
+            return draft
+        }
+
+        var isShowingMailUnavailableAlert: Bool {
+            presentation == .mailUnavailable
+        }
     }
 
     enum Action {
@@ -39,7 +73,12 @@ final class SettingViewModel: ObservableObject {
         case toggleICloud(Bool)
         case exportTapped
         case importTapped
+        case openSourceLicensesTapped
+        case friendImportOptionsTapped
+        case appleFriendImportSelected
+        case googleFriendImportSelected
         case reportIssueTapped(canSendMail: Bool)
+        case clearPresentation
         case clearIssueReportDraft
         case dismissMailUnavailableAlert
     }
@@ -64,12 +103,18 @@ final class SettingViewModel: ObservableObject {
             exportBackup()
         case .importTapped:
             importBackup()
+        case .openSourceLicensesTapped:
+            state.presentation = .openSourceLicenses
+        case .friendImportOptionsTapped:
+            state.presentation = .friendImportOptions
+        case .appleFriendImportSelected:
+            state.presentation = .appleFriendImport
+        case .googleFriendImportSelected:
+            state.presentation = .googleImportComingSoon
         case .reportIssueTapped(let canSendMail):
             prepareIssueReport(canSendMail: canSendMail)
-        case .clearIssueReportDraft:
-            state.issueReportDraft = nil
-        case .dismissMailUnavailableAlert:
-            state.isShowingMailUnavailableAlert = false
+        case .clearPresentation, .clearIssueReportDraft, .dismissMailUnavailableAlert:
+            state.presentation = nil
         }
     }
 
@@ -136,13 +181,11 @@ final class SettingViewModel: ObservableObject {
         )
 
         if canSendMail {
-            state.issueReportDraft = draft
-            state.isShowingMailUnavailableAlert = false
+            state.presentation = .issueReport(draft)
             return
         }
 
-        state.issueReportDraft = nil
-        state.isShowingMailUnavailableAlert = true
+        state.presentation = .mailUnavailable
     }
 
     private func ensureAuditLogFileExistsIfPossible(fileManager: FileManager = .default) -> URL? {
